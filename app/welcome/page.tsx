@@ -15,7 +15,7 @@ export default function WelcomePage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-between gap-12 p-6 sm:p-10">
       <header className="flex items-center justify-between gap-3">
-        <span className="text-lg font-semibold text-foreground">Our Gym</span>
+        <span className="text-lg font-semibold text-foreground">GymGrid</span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button variant="outline" size="sm" asChild>

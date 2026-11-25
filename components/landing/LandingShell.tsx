@@ -184,7 +184,16 @@ export function LandingShell() {
       <a href="#main-content" className="lp-skip">Skip to content</a>
 
       <header className="lp-nav">
-        <Link href="/" className="lp-brand">Our Gym</Link>
+        <Link href="/" className="lp-brand flex items-center gap-2">
+          <Image
+            src="/images/gymgrid-mark.png"
+            alt=""
+            width={28}
+            height={28}
+            className="size-7 shrink-0 object-contain"
+          />
+          <span>GymGrid</span>
+        </Link>
         <nav aria-label="Primary" className="lp-nav-links">
           <a href="#story">How it works</a>
           <a href="#surfaces">Screens</a>
@@ -337,7 +346,7 @@ export function LandingShell() {
       </main>
 
       <footer className="lp-foot lp-wrap">
-        <span>Our Gym · Member operations for Bangladesh gyms</span>
+        <span>GymGrid · Member operations for Bangladesh gyms</span>
         <nav aria-label="Footer">
           <Link href="/admin">Admin</Link>
           <Link href="/member">Member</Link>

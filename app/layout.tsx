@@ -53,14 +53,18 @@ const editorial = Newsreader({
 
 export const metadata: Metadata = {
   title: {
-    default: "Gym Admin",
-    template: "%s — Gym",
+    default: "GymGrid",
+    template: "%s — GymGrid",
   },
   description:
-    "Gym member management, attendance check-in, billing, and workout plans.",
+    "GymGrid member management, QR check-in, billing, and workout plans.",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 

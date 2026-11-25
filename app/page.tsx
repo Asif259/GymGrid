@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LandingShell } from "@/components/landing/LandingShell";
 import { FAQ } from "@/components/landing/faq";
 
-const TITLE = "Our Gym: QR check in, bKash and Nagad billing for your front desk";
+const TITLE = "GymGrid: QR check in, bKash and Nagad billing for your front desk";
 const DESCRIPTION =
   "Replace the paper register at your gym. Members check in with a printed QR, bKash and Nagad TrxIDs land in one queue, and renewals come with a WhatsApp reminder.";
 

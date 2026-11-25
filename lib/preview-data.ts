@@ -1,6 +1,6 @@
 import type { DailyReport, Member, PulsePoint } from "@/types/gym";
 
-export const PREVIEW_GYM_NAME = "Our Gym";
+export const PREVIEW_GYM_NAME = "GymGrid";
 export const PREVIEW_TODAY = "2026-11-26";
 
 export const PREVIEW_REPORT: DailyReport = {
