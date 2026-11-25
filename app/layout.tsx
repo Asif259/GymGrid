@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Noto_Sans_Bengali } from "next/font/google";
+import { Inter, JetBrains_Mono, Newsreader, Noto_Sans_Bengali } from "next/font/google";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
@@ -22,6 +22,13 @@ const bengali = Noto_Sans_Bengali({
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono-source",
+  display: "swap",
+});
+
+const editorial = Newsreader({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-editorial",
   display: "swap",
 });
 
@@ -50,7 +57,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       lang="en"
       dir="ltr"
       suppressHydrationWarning
-      className={`${inter.variable} ${bengali.variable} ${mono.variable} h-full antialiased`}
+      className={`${inter.variable} ${bengali.variable} ${mono.variable} ${editorial.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider

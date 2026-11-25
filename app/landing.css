@@ -1,0 +1,261 @@
+/* Hallmark · shape: Workbench · genre: modern-minimal · theme: brand
+ * paper: oklch(96.3% 0.009 253) · accent: oklch(49% 0.21 262) · display: Newsreader · body: Inter · hero: Stage · nav: edge-aligned · footer: statement · signature: interactive four-act product stage (QR desk, bKash TrxID, member portal, upcoming AI split builder)
+ * axes: light/roman-serif/cool · posture: Restrained · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H5 E5 S5 R5 V4 · weakest: P, tightened copy into direct counter-level gym operations language with zero buzzwords */
+/* Hallmark · waive 74 · Ice Tonal palette (#f0f4f9 / #0b57d0) locked by DESIGN.md for GymGrid · pre-flight preserved the gym workspace tokens */
+
+.hl-page {
+  background: var(--hl-paper);
+  color: var(--hl-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.55;
+  min-height: 100dvh;
+  width: 100%;
+  overflow-x: clip;
+}
+
+.hl-page ::selection {
+  background: color-mix(in oklab, var(--hl-accent) 20%, transparent);
+  color: var(--hl-ink);
+}
+
+.hl-page :focus-visible {
+  outline: 2px solid var(--hl-focus);
+  outline-offset: 2px;
+}
+
+.hl-container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  min-width: 0;
+}
+
+.hl-h1,
+.hl-h2,
+.hl-h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-synthesis: none;
+  letter-spacing: var(--tracking-display);
+  color: var(--hl-ink);
+  overflow-wrap: break-word;
+  min-width: 0;
+  max-width: 100%;
+  text-wrap: balance;
+}
+
+.hl-h1 {
+  font-size: var(--text-display);
+  line-height: 1.04;
+  max-width: 18ch;
+}
+
+.hl-h2 {
+  font-size: var(--text-section);
+  line-height: 1.08;
+  max-width: 24ch;
+}
+
+.hl-h3 {
+  font-size: var(--text-title);
+  line-height: 1.2;
+  max-width: 36ch;
+}
+
+.hl-lead {
+  font-size: var(--text-lead);
+  line-height: 1.45;
+  color: var(--hl-ink-2);
+  max-width: min(48ch, 100%);
+  text-wrap: pretty;
+}
+
+.hl-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.hl-mono {
+  font-family: var(--font-outlier);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Primary & Secondary Controls (48px marketing height, 8 states) */
+.hl-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 48px;
+  padding: 0 var(--space-lg);
+  border: 1px solid var(--hl-accent);
+  border-radius: var(--radius-control);
+  background: var(--hl-accent);
+  color: var(--hl-accent-ink);
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
+}
+
+.hl-btn-primary:hover {
+  background: var(--hl-accent-hover);
+  border-color: var(--hl-accent-hover);
+}
+
+.hl-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.hl-btn-primary:disabled,
+.hl-btn-primary[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.hl-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 48px;
+  padding: 0 var(--space-lg);
+  border: 1px solid var(--hl-rule);
+  border-radius: var(--radius-control);
+  background: var(--hl-paper-2);
+  color: var(--hl-ink);
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-short) var(--ease-out),
+    border-color var(--dur-short) var(--ease-out),
+    transform var(--dur-micro) var(--ease-out);
+}
+
+.hl-btn-secondary:hover {
+  background: var(--hl-paper-3);
+}
+
+.hl-btn-secondary:active {
+  transform: translateY(1px);
+}
+
+.hl-btn-secondary:disabled,
+.hl-btn-secondary[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.hl-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-sm);
+  border-radius: var(--radius-control);
+  color: var(--hl-ink-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color var(--dur-micro) var(--ease-out),
+    background-color var(--dur-micro) var(--ease-out);
+}
+
+.hl-nav-link:hover {
+  color: var(--hl-ink);
+  background: var(--hl-paper-3);
+}
+
+.hl-input {
+  min-height: 48px;
+  width: 100%;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--hl-rule);
+  border-radius: var(--radius-control);
+  background: var(--hl-paper-2);
+  color: var(--hl-ink);
+  font-size: var(--text-md);
+  transition: border-color var(--dur-micro) var(--ease-out);
+}
+
+.hl-input:focus {
+  outline: 2px solid var(--hl-focus);
+  outline-offset: -2px;
+}
+
+.hl-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Captured Product Slot */
+.hl-screen-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--hl-paper-2);
+  outline: 1px solid color-mix(in oklab, var(--hl-ink) 10%, transparent);
+  outline-offset: -1px;
+  box-shadow: var(--shadow-card);
+  max-width: 100%;
+}
+
+.hl-screen-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: top left;
+}
+
+/* Grid helpers ensuring minmax(0, 1fr) on image-bearing tracks */
+.hl-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--space-2xl);
+  align-items: center;
+}
+
+.hl-stage-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+.hl-hero-grid > *,
+.hl-stage-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 60rem) {
+  .hl-hero-grid,
+  .hl-stage-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl-btn-primary,
+  .hl-btn-secondary,
+  .hl-nav-link,
+  .hl-input {
+    transition: none;
+  }
+}
