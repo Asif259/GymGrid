@@ -1,36 +1,38 @@
-/* Crisp Neutral Graphite: light-mode operations ledger with a single forest-green accent. */
+/* Ice Tonal Workspace: #F0F4F9 canvas & seamless sidebar, pure white floating cards, #C2E7FF active nav pill, #0B57D0 primary CTA. */
 :root {
-  /* Neutral graphite ramp */
-  --bg: #fafafa;
+  /* Ice-tonal neutral ramp */
+  --bg: #f0f4f9;
   --surface: #ffffff;
-  --surface-raised: #f4f4f5;
-  --surface-rail: #f4f4f5;
+  --surface-raised: #e8eef6;
+  --surface-rail: #f0f4f9;
 
   /* Ink roles (3 text roles) */
-  --ink: #171717;
-  --ink-secondary: #525252;
-  --ink-muted: #737373;
+  --ink: #1f1f1f;
+  --ink-secondary: #444746;
+  --ink-muted: #444746;
 
-  /* Hairlines */
-  --hairline: rgb(23 23 23 / 0.08);
-  --hairline-strong: rgb(23 23 23 / 0.16);
+  /* Subtle neutral borders */
+  --hairline: #e1e3e1;
+  --hairline-strong: #c4c7c5;
 
-  /* Single accent: forest green */
-  --accent: #0f5132;
-  --accent-hover: #146c43;
-  --accent-ink: #0b3d26;
-  --accent-soft: rgb(15 81 50 / 0.08);
+  /* Primary accent: Material 3 Blue + Soft Sky active pill */
+  --accent: #0b57d0;
+  --accent-hover: #0842a0;
+  --accent-ink: #001d35;
+  --accent-soft: #c2e7ff;
+  --nav-active-bg: #c2e7ff;
+  --nav-active-ink: #001d35;
 
-  /* Semantic status (toned into the ramp) */
-  --positive: #15803d;
-  --positive-bg: #f0fdf4;
-  --warning: #b45309;
-  --warning-bg: #fffbeb;
-  --danger: #dc2626;
-  --danger-ink: #991b1b;
-  --danger-bg: #fef2f2;
-  --frozen: #475569;
-  --frozen-bg: #f1f5f9;
+  /* Semantic status (tuned to Material 3 light palette) */
+  --positive: #137333;
+  --positive-bg: #e6f4ea;
+  --warning: #b06000;
+  --warning-bg: #fef7e0;
+  --danger: #c5221f;
+  --danger-ink: #8c1d18;
+  --danger-bg: #fce8e6;
+  --frozen: #444746;
+  --frozen-bg: #eef2f6;
 
   /* Legacy aliases kept for welcome.css compatibility */
   --green: var(--accent);
@@ -43,9 +45,9 @@
   --line-2: var(--hairline-strong);
   --red: var(--danger);
   --red-bg: var(--danger-bg);
-  --ochre: #d97706;
+  --ochre: var(--warning);
   --ochre-ink: var(--warning);
-  --blue: var(--frozen);
+  --blue: var(--accent);
   --ok-bg: var(--positive-bg);
 
   /* Typography */
@@ -82,8 +84,8 @@
   --rail: 248px;
   --header-h: 56px;
   --row: 52px;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
-  --shadow-float: 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-sm: 0 1px 2px rgb(0 29 53 / 0.04), 0 2px 6px rgb(0 29 53 / 0.03);
+  --shadow-float: 0 8px 24px rgb(0 29 53 / 0.1);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   color-scheme: light;
@@ -258,7 +260,7 @@ main.narrow {
     position: sticky;
     top: 0;
     z-index: 4;
-    background: rgb(250 250 250 / 0.92);
+    background: rgb(240 244 249 / 0.92);
     backdrop-filter: blur(8px);
     margin-inline: calc(-1 * var(--space-4));
     margin-block: calc(-1 * var(--space-4)) var(--space-5);
@@ -359,7 +361,7 @@ main.narrow {
     padding-inline: var(--space-3);
     background: var(--surface-rail);
     border-block-start: 0;
-    border-inline-end: 1px solid var(--hairline);
+    border-inline-end: 0;
   }
   .rail .rail-head {
     display: flex;
@@ -405,10 +407,10 @@ main.narrow {
     flex-direction: row;
     justify-content: flex-start;
     gap: var(--space-3);
-    height: 36px;
-    padding-inline: var(--space-3);
-    border-radius: var(--radius-md);
-    border: 1px solid transparent;
+    height: 40px;
+    padding-inline: var(--space-4);
+    border-radius: 999px;
+    border: 0;
     font-size: var(--text-ui);
     color: var(--ink-secondary);
   }
@@ -418,18 +420,16 @@ main.narrow {
     color: var(--ink-muted);
   }
   .rail a:hover {
-    background: rgb(23 23 23 / 0.04);
+    background: rgb(0 29 53 / 0.06);
     color: var(--ink);
   }
   .rail a[aria-current="page"] {
-    background: var(--surface);
-    border-color: var(--hairline);
-    box-shadow: var(--shadow-sm);
-    color: var(--ink);
+    background: var(--nav-active-bg);
+    color: var(--nav-active-ink);
     font-weight: 500;
   }
   .rail a[aria-current="page"] svg {
-    color: var(--accent);
+    color: var(--nav-active-ink);
   }
 }
 
@@ -497,7 +497,7 @@ main.narrow {
 }
 
 .card.alert {
-  border-color: rgb(220 38 38 / 0.28);
+  border-color: rgb(197 34 31 / 0.3);
 }
 
 .card.alert .card-head h2 {
@@ -526,7 +526,7 @@ main.narrow {
 
 .metric.hero {
   grid-column: 1 / -1;
-  border-color: rgb(15 81 50 / 0.22);
+  border-color: rgb(11 87 208 / 0.24);
 }
 
 .metric-label {
@@ -648,7 +648,7 @@ main.narrow {
   max-width: 36px;
   min-height: 4px;
   border-radius: var(--radius-sm) var(--radius-sm) 2px 2px;
-  background: #e4e4e7;
+  background: #dce4ef;
   transition: background-color 150ms var(--ease);
 }
 
@@ -929,25 +929,25 @@ main.narrow {
 .s-active {
   color: var(--positive);
   background: var(--positive-bg);
-  border-color: rgb(21 128 61 / 0.18);
+  border-color: rgb(19 115 51 / 0.18);
 }
 
 .s-due {
   color: var(--warning);
   background: var(--warning-bg);
-  border-color: rgb(180 83 9 / 0.22);
+  border-color: rgb(176 96 0 / 0.22);
 }
 
 .s-expired {
   color: var(--danger);
   background: var(--danger-bg);
-  border-color: rgb(220 38 38 / 0.22);
+  border-color: rgb(197 34 31 / 0.22);
 }
 
 .s-frozen {
   color: var(--frozen);
   background: var(--frozen-bg);
-  border-color: rgb(71 85 105 / 0.2);
+  border-color: var(--hairline);
 }
 
 /* ---------- Controls & Forms ---------- */
@@ -985,7 +985,7 @@ button,
 button:hover,
 .btn:hover {
   background: var(--surface-raised);
-  border-color: rgb(23 23 23 / 0.24);
+  border-color: var(--hairline-strong);
 }
 
 button:active,
@@ -998,7 +998,7 @@ button.primary,
   background: var(--accent);
   border-color: var(--accent);
   color: #ffffff;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16);
 }
 
 button.primary:hover,
@@ -1022,7 +1022,7 @@ button.quiet:hover,
 }
 
 button.danger {
-  border-color: rgb(220 38 38 / 0.32);
+  border-color: rgb(197 34 31 / 0.32);
   color: var(--danger);
 }
 
@@ -1031,9 +1031,9 @@ button.danger:hover {
 }
 
 button[aria-pressed="true"] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #ffffff;
+  background: var(--nav-active-bg);
+  border-color: var(--nav-active-bg);
+  color: var(--nav-active-ink);
 }
 
 button:disabled,
@@ -1088,7 +1088,7 @@ textarea {
 input:hover,
 select:hover,
 textarea:hover {
-  border-color: rgb(23 23 23 / 0.28);
+  border-color: var(--ink-secondary);
 }
 
 input:focus,
@@ -1096,7 +1096,7 @@ select:focus,
 textarea:focus {
   border-color: var(--accent);
   outline: none;
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 3px rgb(11 87 208 / 0.16);
 }
 
 input::placeholder,
@@ -1218,14 +1218,14 @@ label > textarea {
 
 .msg.err {
   background: var(--danger-bg);
-  border-color: rgb(220 38 38 / 0.3);
+  border-color: rgb(197 34 31 / 0.3);
   color: var(--danger-ink);
 }
 
 .msg.ok {
   background: var(--positive-bg);
-  border-color: rgb(21 128 61 / 0.25);
-  color: var(--accent-ink);
+  border-color: rgb(19 115 51 / 0.25);
+  color: var(--positive);
 }
 
 .toast {
@@ -1252,7 +1252,7 @@ dialog[open] {
 }
 
 dialog::backdrop {
-  background: rgb(23 23 23 / 0.4);
+  background: rgb(0 29 53 / 0.32);
   backdrop-filter: blur(2px);
 }
 
@@ -1328,12 +1328,12 @@ dialog::backdrop {
 
 .result.ok {
   background: var(--positive-bg);
-  border-color: rgb(21 128 61 / 0.28);
+  border-color: rgb(19 115 51 / 0.28);
 }
 
 .result.bad {
   background: var(--danger-bg);
-  border-color: rgb(220 38 38 / 0.28);
+  border-color: rgb(197 34 31 / 0.28);
 }
 
 .tabs {
