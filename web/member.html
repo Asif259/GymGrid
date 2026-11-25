@@ -2,17 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f5132">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fafafa">
   <title>My Gym</title>
-  <link rel="preload" href="fonts/alfa-slab-one-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="narrow">
-  <header>
+  <header class="topbar">
     <h1 id="title">My Gym</h1>
-    <div class="row"><span id="who" class="muted"></span><button id="logout" hidden>Log out</button></div>
+    <div class="who"><span id="who"></span><button id="logout" class="quiet" hidden>Log out</button></div>
   </header>
 
   <div id="flash" class="msg" hidden role="status"></div>
@@ -20,15 +19,17 @@
   <section id="checkin-result" hidden></section>
 
   <section id="login" class="card" hidden>
-    <h2>Sign in</h2>
+    <div class="card-head">
+      <h2>Sign in</h2>
+    </div>
     <p class="muted">Use the email you gave the front desk. We'll email you a sign-in link.</p>
-    <form id="login-form">
-      <input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email" aria-label="Email">
-      <button class="primary" style="margin-top:8px;width:100%">Email me a sign-in link</button>
+    <form id="login-form" class="login-form">
+      <label>Email<input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email"></label>
+      <button class="primary full-width">Email sign-in link</button>
     </form>
   </section>
 
-  <section id="no-member" class="card" hidden>
+  <section id="no-member" class="card card-stack" hidden>
     <h2>No membership found</h2>
     <p>No membership uses <b id="nm-email"></b>. Ask the front desk to add this email to your membership, then sign in again.</p>
   </section>
@@ -36,44 +37,52 @@
   <div id="app" hidden>
     <nav class="tabs" id="tabs" aria-label="Sections"></nav>
 
-    <section class="card" data-tab="home">
+    <section class="card card-stack" data-tab="home">
       <p class="muted" id="h-plan"></p>
       <p class="big"><span class="pill" id="h-status"></span></p>
       <p id="h-expiry"></p>
       <p class="muted" id="h-pending" hidden></p>
-      <button class="primary" type="button" id="h-pay" style="width:100%">Renew / pay</button>
+      <button class="primary full-width" type="button" id="h-pay">Renew / pay</button>
     </section>
 
-    <section class="card" data-tab="pay" hidden>
-      <h2>Pay for your membership</h2>
-      <ol>
+    <section class="card card-stack" data-tab="pay" hidden>
+      <div class="card-head">
+        <h2>Pay for your membership</h2>
+      </div>
+      <ol class="pay-steps">
         <li>Open bKash or Nagad and use <b>Send Money</b>.</li>
         <li>Send exactly <b id="p-amount"></b> to the gym number below.</li>
         <li>Type the <b>TrxID</b> from the confirmation SMS here. The gym confirms it and your receipt appears.</li>
       </ol>
       <div id="p-numbers"></div>
-      <form id="pay-form" style="margin-top:12px">
+      <form id="pay-form" class="form-stack">
         <label>Paid with<select name="method" id="p-method"></select></label>
-        <label style="margin-top:8px">TrxID<input name="trx_id" required autocapitalize="characters" autocomplete="off" placeholder="e.g. 9JK4L2M8NP" pattern="[A-Za-z0-9]{6,20}"></label>
-        <button class="primary" style="margin-top:12px;width:100%">Send TrxID to the gym</button>
+        <label>TrxID<input name="trx_id" required autocapitalize="characters" autocomplete="off" placeholder="9JK4L2M8NP" pattern="[A-Za-z0-9]{6,20}"></label>
+        <button class="primary full-width">Send TrxID to gym</button>
       </form>
     </section>
 
-    <section class="card" data-tab="plans" hidden>
-      <h2>My plans</h2>
+    <section class="card card-stack" data-tab="plans" hidden>
+      <div class="card-head">
+        <h2>My plans</h2>
+      </div>
       <p id="pl-trainer" class="muted"></p>
       <h3>Workout</h3><div id="pl-workout"></div>
       <h3>Diet</h3><div id="pl-diet"></div>
     </section>
 
     <section class="card" data-tab="receipts" hidden>
-      <h2>Payments</h2>
+      <div class="card-head">
+        <h2>Payments</h2>
+      </div>
       <ul class="remind" id="rc-list"></ul>
     </section>
 
-    <section class="card" data-tab="visits" hidden>
-      <h2>Visits</h2>
-      <p id="v-count"></p>
+    <section class="card card-stack" data-tab="visits" hidden>
+      <div class="card-head">
+        <h2>Visits</h2>
+      </div>
+      <p id="v-count" class="muted"></p>
       <ul class="remind" id="v-list"></ul>
     </section>
   </div>

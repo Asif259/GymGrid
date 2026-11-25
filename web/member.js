@@ -118,10 +118,10 @@ function renderPay(m) {
   const nums = [['bkash', 'bKash', s.bkash_number], ['nagad', 'Nagad', s.nagad_number]].filter(([, , n]) => n);
   $('p-numbers').replaceChildren(...(nums.length ? nums.map(([, label, n]) => {
     const copy = el('button', { type: 'button', textContent: 'Copy' });
-    copy.onclick = async () => { try { await navigator.clipboard.writeText(n); flash(`${label} number copied`, true); } catch { flash(`Copy failed; the number is ${n}`); } };
-    return el('div', { className: 'row', style: 'justify-content:space-between;margin:6px 0' },
+    copy.onclick = async () => { try { await navigator.clipboard.writeText(n); flash(`${label} number copied`, true); } catch { flash(`Copy failed — number is ${n}`); } };
+    return el('div', { className: 'pay-number-row' },
       el('span', {}, el('div', { className: 'muted', textContent: `${label} (Send Money)` }), el('div', { className: 'copy', textContent: n })), copy);
-  }) : [el('p', { className: 'muted', textContent: 'The gym has not set a bKash/Nagad number yet. Please pay at the desk.' })]));
+  }) : [el('p', { className: 'muted', textContent: 'The gym has not set a bKash or Nagad number yet. Please pay at the desk.' })]));
   $('p-method').replaceChildren(...nums.map(([v, label]) => el('option', { value: v, textContent: label })));
   $('pay-form').hidden = !nums.length || !m.plans;
 }
