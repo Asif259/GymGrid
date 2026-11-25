@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify:db": "node supabase/tests/verify-db.mjs .",
-    "test": "node --test web/*.test.mjs && node --test supabase/functions/_shared/*.test.mjs",
+    "test": "node --test web/*.test.mjs && node --test supabase/functions/_shared/*.test.mjs && node --test lib/*.test.mjs",
     "web": "npx --yes serve@14.2.4 web -l 3000"
   },
   "devDependencies": {

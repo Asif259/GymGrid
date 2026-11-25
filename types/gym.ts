@@ -73,6 +73,7 @@ export interface Member {
   trainer_id?: string | null;
   status: MemberStatus;
   expiry_date: string | null;
+  join_date?: string | null;
   goal?: string | null;
   age?: number | null;
   sex?: string | null;

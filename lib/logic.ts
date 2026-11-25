@@ -190,14 +190,14 @@ export function lastPaid(payments: Payment[] = []): Payment | null {
   );
 }
 
-export function attendancePulse(rows: Array<{ day?: string | null }> = [], todayIso: string): PulsePoint[] {
+export function attendancePulse(rows: Array<{ day?: string | null }> = [], todayIso: string, days = 7): PulsePoint[] {
   const counts = new Map<string, number>();
   for (const r of rows) {
     if (r?.day) counts.set(r.day, (counts.get(r.day) ?? 0) + 1);
   }
   const base = new Date(`${todayIso}T00:00:00Z`);
   const out: PulsePoint[] = [];
-  for (let offset = -6; offset <= 0; offset++) {
+  for (let offset = -(Math.max(1, days) - 1); offset <= 0; offset++) {
     const d = new Date(base.getTime() + offset * 86400000);
     const day = d.toISOString().slice(0, 10);
     const label = d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
@@ -278,4 +278,127 @@ export function dhakaToday(): string {
 
 export function hhmmDhaka(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' });
+}
+
+export interface MemberKpis {
+  standingLabel: string;
+  planCaption: string;
+  daysDelta: string;
+  daysTone: 'lime' | 'neutral' | 'rose';
+  expiryLabel: string;
+  billingCaption: string;
+  billingDelta: string;
+  billingTone: 'lime' | 'neutral' | 'rose';
+  visitsMonth: number;
+  todayVisitTime: string | null;
+  weekVisits: number;
+  currentStreak: number;
+  bestStreak: number;
+}
+
+/**
+ * Derive normalized KPI card values and attendance metrics for the member dashboard.
+ */
+export function computeMemberKpis(
+  member: Pick<Member, 'status' | 'expiry_date' | 'plans' | 'payments'>,
+  visits: Array<{ day: string; checked_in_at: string }>,
+  streak: AttendanceStreak | null,
+  todayIso: string,
+  currency = '৳',
+): MemberKpis {
+  const todayDate = new Date(`${todayIso}T00:00:00`);
+  const standingLabel = standing(member);
+  const planCaption = member.plans
+    ? `${member.plans.name} · ${money(member.plans.price, currency)}`
+    : 'No plan assigned';
+
+  const daysRemaining = daysLeft(member.expiry_date, todayIso);
+  const daysDelta =
+    daysRemaining === null
+      ? member.status === 'frozen'
+        ? 'Paused'
+        : 'Unpaid'
+      : daysRemaining > 0
+        ? `${daysRemaining}d left`
+        : daysRemaining === 0
+          ? 'Ends today'
+          : `${Math.abs(daysRemaining)}d ago`;
+
+  const daysTone: MemberKpis['daysTone'] =
+    member.status === 'frozen'
+      ? 'neutral'
+      : member.status === 'expired' ||
+          (daysRemaining !== null && daysRemaining < 0) ||
+          daysRemaining === null
+        ? 'rose'
+        : member.status === 'due'
+          ? 'neutral'
+          : 'lime';
+
+  const expiryLabel = member.expiry_date ? fmtDate(member.expiry_date, todayDate) : 'Not active';
+
+  const pending = pendingPayment(member.payments ?? []);
+  const paid = lastPaid(member.payments ?? []);
+
+  let billingCaption: string;
+  let billingDelta: string;
+  let billingTone: MemberKpis['billingTone'];
+
+  if (pending) {
+    billingCaption = pending.trx_id
+      ? `Pending ${money(pending.amount, currency)} · ${pending.trx_id}`
+      : `Pending ${money(pending.amount, currency)}`;
+    billingDelta = 'Pending';
+    billingTone = 'rose';
+  } else if (paid) {
+    billingCaption = paid.paid_on
+      ? `Paid ${fmtDate(paid.paid_on, todayDate)}`
+      : `Last paid ${money(paid.amount, currency)}`;
+    billingDelta =
+      member.status === 'expired' && member.plans
+        ? money(member.plans.price, currency)
+        : money(paid.amount, currency);
+    billingTone =
+      member.status === 'active'
+        ? 'lime'
+        : member.status === 'expired'
+          ? 'rose'
+          : 'neutral';
+  } else if (member.plans) {
+    billingCaption = member.status === 'active' ? member.plans.name : 'No payment recorded';
+    billingDelta = money(member.plans.price, currency);
+    billingTone =
+      member.status === 'active'
+        ? 'lime'
+        : member.status === 'frozen'
+          ? 'neutral'
+          : 'rose';
+  } else {
+    billingCaption = 'Ask desk to assign a plan';
+    billingDelta = 'No plan';
+    billingTone = 'neutral';
+  }
+
+  const todayVisit = visits.find((v) => v.day === todayIso);
+  const todayVisitTime = todayVisit ? hhmmDhaka(todayVisit.checked_in_at) : null;
+  const weekVisits = attendancePulse(visits, todayIso, 7).reduce((sum, p) => sum + p.count, 0);
+  const monthPrefix = todayIso.slice(0, 7);
+  const visitsMonth =
+    streak?.visits_month ?? visits.filter((v) => v.day.startsWith(monthPrefix)).length;
+
+  return {
+    standingLabel,
+    planCaption,
+    daysDelta,
+    daysTone,
+    expiryLabel,
+    billingCaption,
+    billingDelta,
+    billingTone,
+    visitsMonth,
+    todayVisitTime,
+    weekVisits,
+    currentStreak: streak?.current ?? 0,
+    bestStreak: streak?.best ?? 0,
+  };
 }
