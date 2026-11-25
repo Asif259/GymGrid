@@ -1,622 +1,132 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ClipboardList,
-  Copy,
-  CreditCard,
-  Download,
-  Dumbbell,
-  ExternalLink,
-  Home,
-  LogOut,
-  Send,
-  UserPlus,
-} from "lucide-react";
+import { Suspense } from "react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { getSupabaseEnv } from "@/lib/supabase/env";
-import {
-  useMemberAppStore,
-  type MemberTab,
-} from "@/lib/stores/member-app-store";
-import { LoginCard } from "@/components/LoginCard";
-import { PlanView } from "@/components/PlanView";
-import { StatusBadge } from "@/components/StatusBadge";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  fmtDate,
-  hhmmDhaka,
-  money,
-  pendingPayment,
-  streakText,
-} from "@/lib/logic";
-import { cn } from "@/lib/utils";
-import type { Payment, PublicGym } from "@/types/gym";
+import { buildMemberUrl, type MemberTab } from "@/lib/member-helpers";
+import { useMemberAppStore } from "@/lib/stores/member-app-store";
+import { MemberShell, DashboardLoadingSkeleton } from "@/components/member/MemberShell";
+import { MemberOverview } from "@/components/member/MemberOverview";
+import { MemberPlans } from "@/components/member/MemberPlans";
+import { MemberPay } from "@/components/member/MemberPay";
+import { MemberVisits } from "@/components/member/MemberVisits";
+import { MemberReceipts } from "@/components/member/MemberReceipts";
+import type { Payment } from "@/types/gym";
 
-function MemberAppInner() {
-  const searchParams = useSearchParams();
-  const gymSlugParam = searchParams.get("gym");
-  const supabase = useMemo(() => createClient(), []);
-  const { gymName: defaultGymName } = useMemo(() => getSupabaseEnv(), []);
+async function downloadPdf(payment: Payment) {
+  if (!payment.receipt_path) return;
+  const supabase = createClient();
+  const { data, error } = await supabase.storage
+    .from("receipts")
+    .createSignedUrl(payment.receipt_path, 60);
+  if (error || !data?.signedUrl) {
+    toast.error("Could not generate PDF link. Please try again.");
+    return;
+  }
+  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+}
 
-  const status = useMemberAppStore((s) => s.status);
-  const user = useMemberAppStore((s) => s.user);
-  const settings = useMemberAppStore((s) => s.settings);
-  const member = useMemberAppStore((s) => s.member);
-  const workout = useMemberAppStore((s) => s.workout);
-  const diet = useMemberAppStore((s) => s.diet);
-  const visits = useMemberAppStore((s) => s.visits);
-  const trainerName = useMemberAppStore((s) => s.trainerName);
-  const streak = useMemberAppStore((s) => s.streak);
-  const tab = useMemberAppStore((s) => s.tab);
-  const checkinBanner = useMemberAppStore((s) => s.checkinBanner);
-
-  const loadMemberData = useMemberAppStore((s) => s.loadMemberData);
-  const signOut = useMemberAppStore((s) => s.signOut);
-  const setTab = useMemberAppStore((s) => s.setTab);
-  const setUser = useMemberAppStore((s) => s.setUser);
-  const setStatus = useMemberAppStore((s) => s.setStatus);
-  const setGymBranding = useMemberAppStore((s) => s.setGymBranding);
-  const setPendingCheckin = useMemberAppStore((s) => s.setPendingCheckin);
-  const setPendingTab = useMemberAppStore((s) => s.setPendingTab);
-
-  const [payMethod, setPayMethod] = useState<"bkash" | "nagad">("bkash");
-  const [trxId, setTrxId] = useState("");
-  const [submittingTrx, setSubmittingTrx] = useState(false);
-
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith("#checkin=")) {
-      const tok = decodeURIComponent(hash.slice("#checkin=".length));
-      if (tok) setPendingCheckin(tok, null);
-      window.history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search,
-      );
-    } else if (hash === "#pay") {
-      setPendingTab("pay");
-      window.history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search,
-      );
-    }
-
-    let cancelled = false;
-    async function resolvePreferredGym(): Promise<string | null> {
-      if (!gymSlugParam) return null;
-      const { data } = await supabase.rpc("get_public_gym_by_slug", {
-        p_slug: gymSlugParam,
-      });
-      if (!cancelled && data && typeof data === "object") {
-        const pub = data as PublicGym;
-        setGymBranding(pub);
-        return pub.id;
-      }
-      return null;
-    }
-
-    async function init() {
-      const [preferredGymId, authRes] = await Promise.all([
-        resolvePreferredGym(),
-        supabase.auth.getUser(),
-      ]);
-      if (cancelled) return;
-      const authUser = authRes.data.user;
-      setUser(authUser);
-      if (!authUser) {
-        setStatus("signed_out");
-        return;
-      }
-      await loadMemberData(preferredGymId);
-    }
-
-    void init();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event: AuthChangeEvent, session: Session | null) => {
-        if (!session?.user) {
-          setUser(null);
-          setStatus("signed_out");
-        } else {
-          setUser(session.user);
-          void resolvePreferredGym().then((gid) => loadMemberData(gid));
-        }
-      },
-    );
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, [
-    supabase,
-    gymSlugParam,
+function MemberPageInner() {
+  const {
+    member,
+    settings,
+    workout,
+    diet,
+    gymPlans,
+    visits,
+    streak,
+    trainerName,
+    tab,
+    setTab,
+    checkinBanner,
+    setCheckinBanner,
     loadMemberData,
-    setGymBranding,
-    setPendingCheckin,
-    setPendingTab,
-    setStatus,
-    setUser,
-  ]);
+    refreshMemberData,
+    refreshing,
+  } = useMemberAppStore();
 
-  async function copyNumber(num: string, label: string) {
-    try {
-      await navigator.clipboard.writeText(num);
-      toast.success(`${label} number copied`);
-    } catch {
-      toast.error("Copy failed");
-    }
-  }
+  const navigateTab = (next: MemberTab) => {
+    setTab(next);
+    window.history.replaceState(
+      null,
+      "",
+      buildMemberUrl(window.location.pathname, window.location.search, next),
+    );
+  };
 
-  async function submitTrx(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!member || submittingTrx) return;
-    const price = member.plans?.price;
-    if (price == null) {
-      toast.error("Ask the front desk to assign a plan first");
-      return;
-    }
-    setSubmittingTrx(true);
-    try {
-      const { error } = await supabase.from("payments").insert({
-        member_id: member.id,
-        amount: price,
-        method: payMethod,
-        trx_id: trxId.trim(),
-      });
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-      setTrxId("");
-      toast.success("Submitted! The gym will verify your TrxID.");
-      await loadMemberData(member.gym_id);
-      setTab("home");
-    } finally {
-      setSubmittingTrx(false);
-    }
-  }
-
-  async function downloadPdf(p: Payment) {
-    if (!p.receipt_path) return;
-    const { data, error } = await supabase.storage
-      .from("receipts")
-      .createSignedUrl(p.receipt_path, 60);
-    if (error || !data?.signedUrl) {
-      toast.error(error?.message ?? "Could not open receipt PDF");
-      return;
-    }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-  }
-
-  const gymName = settings.name || defaultGymName;
-  const currency = settings.currency || "৳";
-  const owed = member ? pendingPayment(member.payments ?? []) : null;
-  const paidReceipts = (member?.payments ?? []).filter((p) => p.status === "paid");
-
-  const initials =
-    gymName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase())
-      .join("") || "G";
-
-  const joinHref = settings.slug
-    ? `/join/${encodeURIComponent(settings.slug)}`
-    : "/join";
+  const payments = member?.payments ?? [];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-5 p-4 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <Avatar className="size-8 shrink-0">
-            {settings.logo_url ? (
-              <AvatarImage src={settings.logo_url} alt={gymName} />
-            ) : null}
-            <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <h1 className="text-xl font-medium text-foreground">{gymName}</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {user?.email ? (
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {user.email}
-            </span>
-          ) : null}
-          <ThemeToggle />
-          {user ? (
-            <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-              <LogOut className="size-4" aria-hidden="true" />
-              <span>Log out</span>
-            </Button>
-          ) : null}
-        </div>
-      </header>
+    <MemberShell>
+      {({ openProfile }) => {
+        switch (tab) {
+          case "plans":
+            return member ? (
+              <MemberPlans
+                member={member}
+                workout={workout}
+                diet={diet}
+                trainerName={trainerName}
+              />
+            ) : null;
 
-      {checkinBanner ? (
-        <Card
-          className={cn(
-            "rounded-3xl p-6 text-center shadow-xs",
-            checkinBanner.ok
-              ? "bg-status-lime-bg text-status-lime-fg"
-              : "border-destructive bg-status-rose-bg text-status-rose-fg",
-          )}
-        >
-          <CardContent className="flex flex-col items-center gap-3 p-0">
-            {checkinBanner.ok ? (
-              <CheckCircle2 className="size-8" aria-hidden="true" />
-            ) : (
-              <AlertTriangle className="size-8" aria-hidden="true" />
-            )}
-            <p className="text-lg font-semibold text-foreground">
-              {checkinBanner.text}
-            </p>
-            {!checkinBanner.ok ? (
-              <Button onClick={() => setTab("pay")}>Renew membership</Button>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
+          case "pay":
+            return member ? (
+              <MemberPay
+                member={member}
+                settings={settings}
+                gymPlans={gymPlans}
+                onSubmitted={async () => {
+                  await loadMemberData(member.gym_id ?? null);
+                }}
+                onRefresh={() => void refreshMemberData()}
+                refreshing={refreshing}
+              />
+            ) : null;
 
-      {status === "loading" ? (
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-44 rounded-3xl" />
-          <Skeleton className="h-44 rounded-3xl" />
-        </div>
-      ) : null}
+          case "visits":
+            return <MemberVisits visits={visits} streak={streak} />;
 
-      {status === "signed_out" ? (
-        <LoginCard
-          title="Members app"
-          subtitle="Use the email you gave the front desk. We'll email you a sign-in link."
-          placeholder="member@example.com"
-          nextPath={gymSlugParam ? `/member?gym=${encodeURIComponent(gymSlugParam)}` : "/member"}
-        />
-      ) : null}
+          case "receipts":
+            return (
+              <MemberReceipts
+                payments={payments}
+                currency={
+                  (settings as { currency?: string }).currency ?? "৳"
+                }
+                onDownloadPdf={(payment) => void downloadPdf(payment)}
+              />
+            );
 
-      {status === "no_member" ? (
-        <Card className="rounded-3xl shadow-xs">
-          <CardHeader>
-            <CardTitle>Account not linked yet</CardTitle>
-            <CardDescription>
-              Ask the front desk to add your email to your member profile, or
-              register with the gym signup link.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" asChild>
-              <Link href={joinHref}>
-                <UserPlus className="size-4" aria-hidden="true" />
-                <span>Self-register</span>
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {status === "ready" && member ? (
-        <Tabs
-          value={tab}
-          onValueChange={(val) => setTab(val as MemberTab)}
-          className="gap-5"
-        >
-          <div className="overflow-x-auto pb-1">
-            <TabsList>
-              <TabsTrigger value="home" className="gap-1.5">
-                <Home className="size-4" aria-hidden="true" />
-                <span>Home</span>
-              </TabsTrigger>
-              <TabsTrigger value="pay" className="gap-1.5">
-                <CreditCard className="size-4" aria-hidden="true" />
-                <span>Renew / Pay</span>
-              </TabsTrigger>
-              <TabsTrigger value="plans" className="gap-1.5">
-                <Dumbbell className="size-4" aria-hidden="true" />
-                <span>Plans</span>
-              </TabsTrigger>
-              <TabsTrigger value="receipts" className="gap-1.5">
-                <ClipboardList className="size-4" aria-hidden="true" />
-                <span>Receipts</span>
-              </TabsTrigger>
-              <TabsTrigger value="visits" className="gap-1.5">
-                <CheckCircle2 className="size-4" aria-hidden="true" />
-                <span>Visits</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="home">
-            <Card className="rounded-3xl shadow-xs">
-              <CardHeader>
-                <CardDescription>
-                  {member.plans
-                    ? `${member.plans.name} · ${money(member.plans.price, currency)}`
-                    : "No plan assigned"}
-                </CardDescription>
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  <StatusBadge member={member} />
-                  <span className="text-sm font-medium text-foreground">
-                    {member.expiry_date
-                      ? `Valid until ${fmtDate(member.expiry_date)}`
-                      : "No active expiry date yet."}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                {owed ? (
-                  <div className="rounded-xl bg-status-yellow-bg px-3 py-2 text-xs font-medium text-status-yellow-fg">
-                    Payment of {money(owed.amount, currency)} ({owed.method}
-                    {owed.trx_id ? `, TrxID ${owed.trx_id}` : ""}) is awaiting
-                    confirmation.
-                  </div>
-                ) : null}
-
-                {streak ? (
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {streakText(streak)}
-                  </p>
-                ) : null}
-
-                <Button className="w-full" onClick={() => setTab("pay")}>
-                  Renew / pay
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pay">
-            <Card className="rounded-3xl shadow-xs">
-              <CardHeader>
-                <CardTitle>Renew membership</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-5">
-                <ol className="list-decimal space-y-1.5 ps-5 text-sm text-muted-foreground">
-                  <li>
-                    Send{" "}
-                    <strong className="text-foreground">
-                      {member.plans
-                        ? money(member.plans.price, currency)
-                        : "your plan fee"}
-                    </strong>{" "}
-                    to the gym’s number below.
-                  </li>
-                  <li>Enter your bKash/Nagad TrxID below for desk verification.</li>
-                </ol>
-
-                <div className="flex flex-col divide-y rounded-2xl border bg-secondary/60 px-4">
-                  {settings.bkash_number ? (
-                    <div className="flex items-center justify-between gap-3 py-3">
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground">
-                          bKash
-                        </div>
-                        <span className="font-mono text-base font-medium text-foreground">
-                          {settings.bkash_number}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          void copyNumber(settings.bkash_number!, "bKash")
-                        }
-                      >
-                        <Copy className="size-4" aria-hidden="true" />
-                        <span>Copy</span>
-                      </Button>
-                    </div>
-                  ) : null}
-                  {settings.nagad_number ? (
-                    <div className="flex items-center justify-between gap-3 py-3">
-                      <div>
-                        <div className="text-xs font-medium text-muted-foreground">
-                          Nagad
-                        </div>
-                        <span className="font-mono text-base font-medium text-foreground">
-                          {settings.nagad_number}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          void copyNumber(settings.nagad_number!, "Nagad")
-                        }
-                      >
-                        <Copy className="size-4" aria-hidden="true" />
-                        <span>Copy</span>
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-
-                <form
-                  className="flex flex-col gap-4"
-                  onSubmit={(e) => void submitTrx(e)}
-                >
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="m-pay-method">Method</Label>
-                    <Select
-                      value={payMethod}
-                      onValueChange={(v) => setPayMethod(v as "bkash" | "nagad")}
-                    >
-                      <SelectTrigger id="m-pay-method" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bkash">bKash</SelectItem>
-                        <SelectItem value="nagad">Nagad</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="m-pay-trx">Transaction ID (TrxID) *</Label>
-                    <Input
-                      id="m-pay-trx"
-                      required
-                      placeholder="e.g. 9A7B2C3D4E"
-                      value={trxId}
-                      onChange={(e) => setTrxId(e.target.value)}
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={submittingTrx}
-                  >
-                    <Send className="size-4" aria-hidden="true" />
-                    <span>
-                      {submittingTrx ? "Submitting…" : "Send TrxID to gym"}
-                    </span>
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="plans">
-            <Card className="rounded-3xl shadow-xs">
-              <CardHeader>
-                <CardTitle>Your workout & diet plans</CardTitle>
-                {trainerName ? (
-                  <CardDescription>Coach: {trainerName}</CardDescription>
-                ) : null}
-              </CardHeader>
-              <CardContent>
-                <PlanView workout={workout} diet={diet} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="receipts">
-            <Card className="rounded-3xl shadow-xs">
-              <CardHeader>
-                <CardTitle>Payment receipts</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col divide-y">
-                {paidReceipts.map((p) => (
-                  <div
-                    key={String(p.id)}
-                    className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-                  >
-                    <div>
-                      <div className="text-sm font-medium text-foreground">
-                        {money(p.amount, currency)} · {p.method ?? "cash"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {p.paid_on ? fmtDate(p.paid_on) : ""}
-                        {p.receipt_no ? ` · ${p.receipt_no}` : ""}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {p.receipt_path ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void downloadPdf(p)}
-                        >
-                          <Download className="size-4" aria-hidden="true" />
-                          <span>PDF</span>
-                        </Button>
-                      ) : null}
-                      <Button variant="outline" size="sm" asChild>
-                        <Link
-                          href={`/receipt?id=${encodeURIComponent(String(p.id))}`}
-                        >
-                          <span>View</span>
-                          <ExternalLink className="size-3.5" aria-hidden="true" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {paidReceipts.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No receipts yet.</p>
-                ) : null}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="visits">
-            <Card className="rounded-3xl shadow-xs">
-              <CardHeader>
-                <CardTitle>Gym visits</CardTitle>
-                <CardDescription>
-                  {streak ? streakText(streak) : `${visits.length} recent visits`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col divide-y">
-                {visits.map((v, idx) => (
-                  <div
-                    key={`${v.checked_in_at}-${idx}`}
-                    className="flex items-center justify-between py-2.5 text-sm first:pt-0 last:pb-0"
-                  >
-                    <span className="text-foreground">{fmtDate(v.day)}</span>
-                    <span className="font-mono text-xs text-muted-foreground tabular-nums">
-                      {hhmmDhaka(v.checked_in_at)}
-                    </span>
-                  </div>
-                ))}
-                {visits.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    No visits recorded yet.
-                  </p>
-                ) : null}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      ) : null}
-    </main>
+          default: // "home"
+            return member ? (
+              <MemberOverview
+                member={member}
+                settings={settings}
+                workout={workout}
+                diet={diet}
+                visits={visits}
+                streak={streak}
+                trainerName={trainerName}
+                checkinBanner={checkinBanner}
+                onDismissCheckin={() => setCheckinBanner(null)}
+                onNavigateTab={navigateTab}
+                onOpenProfile={openProfile}
+                onRefresh={() => void refreshMemberData()}
+                onDownloadPdf={(payment) => void downloadPdf(payment)}
+                refreshing={refreshing}
+              />
+            ) : null;
+        }
+      }}
+    </MemberShell>
   );
 }
 
 export default function MemberAppPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-5 p-6">
-          <Skeleton className="h-44 rounded-3xl" />
-          <Skeleton className="h-44 rounded-3xl" />
-        </main>
-      }
-    >
-      <MemberAppInner />
+    <Suspense fallback={<DashboardLoadingSkeleton />}>
+      <MemberPageInner />
     </Suspense>
   );
 }
