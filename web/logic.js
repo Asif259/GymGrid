@@ -155,3 +155,39 @@ export function attendancePulse(rows = [], todayIso) {
   }
   return out;
 }
+
+const STATUS_RANK = { expired: 0, due: 1, active: 2, frozen: 3 };
+
+export function memberAmount(m) {
+  const pending = pendingPayment(m.payments);
+  const amount = pending ? Number(pending.amount) : (m.plans?.price != null ? Number(m.plans.price) : null);
+  const isOwed = Boolean(pending || m.status === 'expired' || (m.status === 'due' && !m.expiry_date));
+  const label = pending ? 'Owes' : standing(m);
+  return { amount, isOwed, label, pending };
+}
+
+export function memberExpiryLabel(m) {
+  if (!m.expiry_date) return 'Never paid';
+  return m.status === 'expired' ? `Ended ${fmtDate(m.expiry_date)}` : `Until ${fmtDate(m.expiry_date)}`;
+}
+
+export function sortMembers(rows = [], key = 'name', dir = 'asc') {
+  const factor = dir === 'desc' ? -1 : 1;
+  return [...rows].sort((a, b) => {
+    let cmp = 0;
+    if (key === 'amount') {
+      const av = memberAmount(a).amount ?? -1;
+      const bv = memberAmount(b).amount ?? -1;
+      cmp = av - bv;
+    } else if (key === 'status') {
+      cmp = (STATUS_RANK[a.status] ?? 9) - (STATUS_RANK[b.status] ?? 9);
+    } else if (key === 'expiry') {
+      const ae = a.expiry_date ?? '';
+      const be = b.expiry_date ?? '';
+      cmp = ae.localeCompare(be);
+    } else {
+      cmp = (a.name ?? '').localeCompare(b.name ?? '');
+    }
+    return cmp !== 0 ? cmp * factor : (a.name ?? '').localeCompare(b.name ?? '');
+  });
+}

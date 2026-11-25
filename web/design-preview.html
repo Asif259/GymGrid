@@ -45,17 +45,11 @@
       </div>
     </div>
     <div class="view" data-view="members" hidden>
-      <section class="card members-region">
+      <section class="card card-table">
         <div class="card-head only-phone">
           <h2>Members</h2>
         </div>
-        <div class="toolbar">
-          <div class="filters" id="filters"></div>
-          <div class="search">
-            <svg aria-hidden="true"><use href="#i-search"/></svg>
-            <input type="search" placeholder="Search name or phone" aria-label="Search members">
-          </div>
-        </div>
+        <div class="dt-toolbar-wrap" id="members-toolbar"></div>
         <div id="member-rows"></div>
       </section>
     </div>
@@ -63,8 +57,8 @@
 </div>
 <script type="module">
   import { el, ensureSprite, icon } from './dom.js';
-  import { money, renewalLink, fmtDate } from './logic.js';
-  import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, memberRow } from './views.js';
+  import { money, renewalLink, fmtDate, sortMembers } from './logic.js';
+  import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, renderMembersTable, renderTableToolbar } from './views.js';
   import { REPORT, MEMBERS, PULSE_7D } from './preview-data.js';
 
   ensureSprite();
@@ -82,12 +76,51 @@
   $('col-remind').replaceChildren(
     remindCard('Ends in 2 days', REPORT.expiring, (m) => `${m.plan} · ends ${fmtDate(m.expiry_date)}`, wa),
     remindCard('Expired in last 30 days', REPORT.expired_recent, (m) => `Ended ${fmtDate(m.expiry_date)}`, wa));
-  $('filters').replaceChildren(...['all', 'active', 'due', 'expired', 'frozen'].map((f, i) => {
-    const b = el('button', { type: 'button', textContent: `${cap(f)} (${f === 'all' ? MEMBERS.length : MEMBERS.filter((m) => m.status === f).length})` });
-    b.setAttribute('aria-pressed', String(i === 0));
-    return b;
-  }));
-  $('member-rows').replaceChildren(...MEMBERS.map((m, i) => memberRow(m, { cur, wa, checkedIn: i % 3 === 0 }, h)));
+
+  const checkedInSet = new Set(MEMBERS.filter((_, i) => i % 3 === 0).map((m) => m.id));
+  const previewState = { filter: 'all', search: '', sort: { key: 'name', dir: 'asc' } };
+  const sortOptions = [
+    { key: 'name', dir: 'asc', label: 'Name (A–Z)' },
+    { key: 'name', dir: 'desc', label: 'Name (Z–A)' },
+    { key: 'amount', dir: 'desc', label: 'Amount (high–low)' },
+    { key: 'status', dir: 'asc', label: 'Status (urgent first)' },
+    { key: 'expiry', dir: 'asc', label: 'Expiry (earliest)' },
+  ];
+
+  const renderPreviewToolbar = () => {
+    const counts = { all: MEMBERS.length };
+    for (const m of MEMBERS) counts[m.status] = (counts[m.status] ?? 0) + 1;
+    renderTableToolbar($('members-toolbar'), {
+      filters: ['all', 'active', 'due', 'expired', 'frozen'].map((k) => ({ key: k, label: cap(k), count: counts[k] ?? 0 })),
+      activeFilter: previewState.filter,
+      onFilter: (f) => { previewState.filter = f; renderPreviewToolbar(); renderPreviewMembers(); },
+      sort: previewState.sort,
+      sortOptions,
+      onSort: (key, dir) => { previewState.sort = { key, dir }; renderPreviewToolbar(); renderPreviewMembers(); },
+      search: previewState.search,
+      onSearch: (val) => { previewState.search = val.trim(); renderPreviewMembers(); },
+      searchPlaceholder: 'Search name or phone',
+      searchLabel: 'Search members',
+    });
+  };
+
+  const renderPreviewMembers = () => {
+    const q = previewState.search.toLowerCase();
+    const filtered = MEMBERS
+      .filter((m) => previewState.filter === 'all' || m.status === previewState.filter)
+      .filter((m) => !q || m.name.toLowerCase().includes(q) || m.phone.includes(q));
+    const sorted = sortMembers(filtered, previewState.sort.key, previewState.sort.dir);
+    renderMembersTable($('member-rows'), sorted, {
+      cur,
+      wa,
+      checkedInSet,
+      sort: previewState.sort,
+      onSortChange: (key, dir) => { previewState.sort = { key, dir }; renderPreviewToolbar(); renderPreviewMembers(); },
+    }, h);
+  };
+
+  renderPreviewToolbar();
+  renderPreviewMembers();
 
   const views = [['today', 'Today', 'today'], ['members', 'Members', 'members'], ['add', 'Add', 'add'], ['plans', 'Plans', 'plans'], ['settings', 'Settings', 'settings']];
   $('rail').append(...views.map(([k, label, ic]) => el('a', { href: `#${k}`, id: `nav-${k}` }, icon(ic), el('span', { textContent: label }))));

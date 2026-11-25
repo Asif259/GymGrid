@@ -96,7 +96,7 @@ test('pendingPayment picks oldest pending, lastPaid newest paid', () => {
   assert.equal(lastPaid([]), null);
 });
 
-import { fmtDate, standing, attendancePulse } from './logic.js';
+import { fmtDate, standing, attendancePulse, memberAmount, memberExpiryLabel, sortMembers } from './logic.js';
 test('fmtDate and standing', () => {
   assert.equal(fmtDate('2026-11-27', new Date('2026-11-25')), '27 Nov');
   assert.equal(fmtDate('2027-02-23', new Date('2026-11-25')), '23 Feb 2027');
@@ -121,4 +121,21 @@ test('attendancePulse builds 7-day series ending on today', () => {
   assert.equal(series[6].day, '2026-11-25');
   assert.equal(series[6].count, 2);
   assert.equal(series[6].isToday, true);
+});
+
+test('memberAmount, memberExpiryLabel, and sortMembers', () => {
+  const rows = [
+    { id: '1', name: 'Zara', status: 'active', expiry_date: '2026-12-20', plans: { price: 1500 }, payments: [] },
+    { id: '2', name: 'Arif', status: 'expired', expiry_date: '2026-11-10', plans: { price: 4000 }, payments: [] },
+    { id: '3', name: 'Bina', status: 'due', expiry_date: null, plans: { price: 1500 }, payments: [{ id: 9, amount: 2500, status: 'pending', created_at: '2026-11-25' }] },
+  ];
+  assert.deepEqual(memberAmount(rows[2]).amount, 2500);
+  assert.equal(memberAmount(rows[2]).isOwed, true);
+  assert.equal(memberExpiryLabel(rows[2]), 'Never paid');
+  assert.match(memberExpiryLabel(rows[1]), /^Ended /);
+  assert.match(memberExpiryLabel(rows[0]), /^Until /);
+  assert.deepEqual(sortMembers(rows, 'name', 'asc').map((r) => r.id), ['2', '3', '1']);
+  assert.deepEqual(sortMembers(rows, 'amount', 'desc').map((r) => r.id), ['2', '3', '1']);
+  assert.deepEqual(sortMembers(rows, 'status', 'asc').map((r) => r.id), ['2', '3', '1']);
+  assert.deepEqual(sortMembers(rows, 'expiry', 'asc').map((r) => r.id), ['3', '2', '1']);
 });

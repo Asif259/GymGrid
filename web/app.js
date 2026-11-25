@@ -1,13 +1,13 @@
 import { sb, $, el, flash, act, loadSettings, session, sendLoginLink, planView } from './common.js';
 import { ensureSprite, icon } from './dom.js';
 import {
-  normalizePhone, renewalLink, money, fmtDate, parseWorkout, parseDiet, workoutLines, dietLines, attendancePulse,
+  normalizePhone, renewalLink, money, fmtDate, parseWorkout, parseDiet, workoutLines, dietLines, attendancePulse, sortMembers,
 } from './logic.js';
-import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, memberRow } from './views.js';
+import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, renderMembersTable, renderTableToolbar } from './views.js';
 
 const VIEWS = [['today', 'Today', 'today'], ['members', 'Members', 'members'], ['add', 'Add', 'add'], ['plans', 'Plans', 'plans'], ['settings', 'Settings', 'settings']];
 let state = { user: null, role: null, members: [], plans: [], staff: [], templates: [], settings: {}, date: null,
-  checkedIn: new Set(), pulse: [], filter: 'all', search: '', report: null };
+  checkedIn: new Set(), pulse: [], filter: 'all', search: '', sort: { key: 'name', dir: 'asc' }, report: null };
 const cur = (n) => money(n, state.settings.currency);
 const wa = (m, plan) => renewalLink(plan === undefined ? m : { ...m, plans: plan ? { name: plan } : undefined }, state.settings.name, state.date, state.settings.app_url);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' });
@@ -139,24 +139,44 @@ function renderPlanSelect() {
     el('option', { value: p.id, textContent: `${p.name} · ${p.months} mo · ${cur(p.price)}` })));
 }
 
+const SORT_OPTIONS = [
+  { key: 'name', dir: 'asc', label: 'Name (A–Z)' },
+  { key: 'name', dir: 'desc', label: 'Name (Z–A)' },
+  { key: 'amount', dir: 'desc', label: 'Amount (high–low)' },
+  { key: 'status', dir: 'asc', label: 'Status (urgent first)' },
+  { key: 'expiry', dir: 'asc', label: 'Expiry (earliest)' },
+];
+
 function renderFilters() {
   const counts = { all: state.members.length };
   for (const m of state.members) counts[m.status] = (counts[m.status] ?? 0) + 1;
-  $('filters').replaceChildren(...['all', 'active', 'due', 'expired', 'frozen'].map((f) => {
-    const b = el('button', { type: 'button', textContent: `${cap(f)} (${counts[f] ?? 0})` });
-    b.setAttribute('aria-pressed', String(state.filter === f));
-    b.onclick = () => { state.filter = f; renderFilters(); renderMembers(); };
-    return b;
-  }));
+  renderTableToolbar($('members-toolbar'), {
+    filters: ['all', 'active', 'due', 'expired', 'frozen'].map((k) => ({ key: k, label: cap(k), count: counts[k] ?? 0 })),
+    activeFilter: state.filter,
+    onFilter: (f) => { state.filter = f; renderFilters(); renderMembers(); },
+    sort: state.sort,
+    sortOptions: SORT_OPTIONS,
+    onSort: (key, dir) => { state.sort = { key, dir }; renderFilters(); renderMembers(); },
+    search: state.search,
+    onSearch: (val) => { state.search = val.trim(); renderMembers(); },
+    searchPlaceholder: 'Search name or phone',
+    searchLabel: 'Search members',
+  });
 }
 
 function renderMembers() {
   const q = state.search.toLowerCase();
-  const rows = state.members
+  const filtered = state.members
     .filter((m) => state.filter === 'all' || m.status === state.filter)
-    .filter((m) => !q || m.name.toLowerCase().includes(q) || m.phone.includes(q))
-    .map((m) => memberRow(m, { cur, wa, checkedIn: state.checkedIn.has(m.id) }, handlers));
-  $('member-rows').replaceChildren(...(rows.length ? rows : [el('p', { className: 'empty', textContent: 'No members match' })]));
+    .filter((m) => !q || m.name.toLowerCase().includes(q) || m.phone.includes(q));
+  const sorted = sortMembers(filtered, state.sort.key, state.sort.dir);
+  renderMembersTable($('member-rows'), sorted, {
+    cur,
+    wa,
+    checkedInSet: state.checkedIn,
+    sort: state.sort,
+    onSortChange: (key, dir) => { state.sort = { key, dir }; renderFilters(); renderMembers(); },
+  }, handlers);
 }
 
 function renderTemplates() {
@@ -266,7 +286,6 @@ $('login-form').onsubmit = async (e) => {
 };
 
 $('logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
-$('search').oninput = (e) => { state.search = e.target.value.trim(); renderMembers(); };
 $('md-close').onclick = () => $('member-dialog').close();
 
 $('join-form').onsubmit = async (e) => {

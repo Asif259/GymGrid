@@ -1,7 +1,8 @@
 // Dashboard and member-list renderers. Pure DOM from data, no network: app.js wires the actions,
 // design-preview.html feeds fixtures. Handlers arrive in `h`.
 import { el, icon } from './dom.js';
-import { pendingPayment, lastPaid, fmtDate, standing } from './logic.js';
+import { lastPaid, standing, memberAmount, memberExpiryLabel } from './logic.js';
+import { renderDataTable, renderTableToolbar } from './table.js';
 
 const metric = (cls, label, value, meta) =>
   el('div', { className: `metric${cls ? ` ${cls}` : ''}` },
@@ -69,7 +70,7 @@ const item = (name, sub, owed, ...actions) => el('li', { className: 'item' },
 
 export function unpaidCard(rows, wa) {
   return card('Came in without paying', rows.length, rows,
-    (m) => item(m.name, [m.expiry_date ? `Ended ${fmtDate(m.expiry_date)}` : 'Never paid', m.time && `in at ${m.time}`].filter(Boolean).join(' · '), true, waBtn(wa(m, null))),
+    (m) => item(m.name, [m.expiry_date ? `Ended ${memberExpiryLabel(m).replace(/^Ended /, '')}` : 'Never paid', m.time && `in at ${m.time}`].filter(Boolean).join(' · '), true, waBtn(wa(m, null))),
     { alert: true, empty: 'No unpaid check-ins today' });
 }
 
@@ -88,65 +89,136 @@ export function remindCard(title, rows, note, wa) {
     { empty: 'No reminders due' });
 }
 
-// One row of the members list.
-export function memberRow(m, c, h) {
-  const pending = pendingPayment(m.payments);
-  const paid = lastPaid(m.payments);
-  const go = el('div', { className: 'go' });
-  const extra = el('div', { className: 'extra' });
+const detailItem = (label, value) =>
+  el('div', { className: 'dt-detail-item' },
+    el('span', { className: 'dt-detail-label', textContent: label }),
+    typeof value === 'string'
+      ? el('span', { className: 'dt-detail-value', textContent: value })
+      : el('div', { className: 'dt-detail-value' }, value));
 
-  if (pending) {
-    const online = Boolean(pending.trx_id);
-    const b = el('button', { className: 'primary', textContent: online ? 'Verify & mark paid' : `Mark paid ${c.cur(pending.amount)}` });
-    b.onclick = () => h.onVerify(b, m, pending);
-    go.append(b);
-  } else if (m.plans) {
-    const b = el('button', { textContent: 'Renew (cash)' });
-    b.onclick = () => h.onRenew(b, m);
-    go.append(b);
-  }
-  if (!c.checkedIn) {
-    const b = el('button', { textContent: 'Check in' });
-    b.onclick = () => h.onCheckin(b, m);
-    extra.append(b);
-  }
-  if (m.status === 'due' || m.status === 'expired') extra.append(waBtn(c.wa(m)));
-  if (paid?.receipt_no) extra.append(el('a', { className: 'btn', href: `receipt.html?id=${paid.id}`, target: '_blank', textContent: 'Receipt' }));
+export function renderMembersTable(container, members, ctx, h) {
+  renderDataTable(container, {
+    rows: members,
+    rowLabel: (m) => m.name,
+    sort: ctx.sort,
+    onSortChange: ctx.onSortChange,
+    emptyText: 'No members match the current filter',
+    columns: [
+      {
+        key: 'name',
+        label: 'Member',
+        role: 'identity',
+        sortable: true,
+        render: (m) => {
+          const checked = ctx.checkedInSet.has(m.id);
+          return el('span', {},
+            el('span', { className: 'dt-identity-name', textContent: m.name }),
+            el('span', { className: 'dt-identity-sub', textContent: `+${m.phone}${checked ? ' · In today' : ''}` }));
+        },
+      },
+      {
+        key: 'plan',
+        label: 'Plan',
+        role: 'detail',
+        desktopOnly: true,
+        render: (m) => el('span', { className: 'dt-expiry', textContent: m.plans?.name ?? 'No plan' }),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        role: 'state',
+        sortable: true,
+        desktopOnly: true,
+        render: (m) => el('span', { className: `pill s-${m.status}`, textContent: m.status }),
+      },
+      {
+        key: 'expiry',
+        label: 'Expiry',
+        role: 'detail',
+        sortable: true,
+        desktopOnly: true,
+        render: (m) => el('span', { className: 'dt-expiry', textContent: memberExpiryLabel(m) }),
+      },
+      {
+        key: 'amount',
+        label: 'Amount',
+        role: 'value',
+        align: 'end',
+        sortable: true,
+        render: (m) => {
+          const { amount, isOwed, label, pending } = memberAmount(m);
+          const subText = pending?.trx_id ? `${label} · ${pending.method} ${pending.trx_id}` : label;
+          return el('span', {},
+            el('span', { className: `dt-amount${isOwed ? ' is-owed' : ''}`, textContent: amount != null ? ctx.cur(amount) : '—' }),
+            el('span', { className: `dt-amount-sub${isOwed ? ' is-owed' : ''}`, textContent: subText }));
+        },
+      },
+    ],
+    mobileSummary: (m) => el('span', { className: 'dt-mobile-meta-inner' },
+      el('span', { className: `dt-inline-state s-${m.status}`, textContent: m.status }),
+      el('span', { 'aria-hidden': 'true', textContent: '·' }),
+      el('span', { className: 'dt-inline-detail', textContent: memberExpiryLabel(m) })),
+    rowActions: (m) => {
+      const { pending } = memberAmount(m);
+      const paid = lastPaid(m.payments);
+      const checkedIn = ctx.checkedInSet.has(m.id);
 
-  const d = el('button', { className: 'quiet', textContent: 'Details' });
-  d.onclick = () => h.onDetails(m);
-  go.append(d);
+      const primary = pending
+        ? {
+            label: pending.trx_id ? `Verify ${ctx.cur(pending.amount)}` : `Mark paid ${ctx.cur(pending.amount)}`,
+            onClick: (b) => h.onVerify(b, m, pending),
+          }
+        : m.plans
+          ? { label: 'Renew (cash)', onClick: (b) => h.onRenew(b, m) }
+          : null;
 
-  // On narrow containers secondary actions collapse behind an explicit disclosure label; wide containers show all.
-  const row = el('div', { className: `mrow${m.status === 'active' && !pending ? ' settled' : ''}` });
-  const extraCount = extra.children.length;
-  if (extraCount) {
-    const closedLabel = `Show ${extraCount} more`;
-    const openLabel = 'Hide extra actions';
-    const more = el('button', { className: 'more-btn quiet', type: 'button', textContent: closedLabel, ariaExpanded: 'false' });
-    more.onclick = () => {
-      const open = row.classList.toggle('open');
-      more.textContent = open ? openLabel : closedLabel;
-      more.setAttribute('aria-expanded', String(open));
-    };
-    go.append(more);
-    go.append(extra);
-  }
+      const menu = [];
+      if (!checkedIn) menu.push({ label: 'Check in', onClick: (b) => h.onCheckin(b, m) });
+      if (m.status === 'due' || m.status === 'expired') menu.push({ label: 'Send WhatsApp', href: ctx.wa(m), wa: true });
+      if (paid?.receipt_no) menu.push({ label: 'View receipt', href: `receipt.html?id=${paid.id}` });
+      menu.push({ label: 'Profile & plans', onClick: () => h.onDetails(m) });
+      return { primary, menu };
+    },
+    expandedContent: (m) => {
+      const { amount, isOwed, label, pending } = memberAmount(m);
+      const paid = lastPaid(m.payments);
+      const checkedIn = ctx.checkedInSet.has(m.id);
+      const standingText = pending
+        ? `${label} ${ctx.cur(pending.amount)} (${pending.method}${pending.trx_id ? ` · TrxID ${pending.trx_id}` : ''})`
+        : `${standing(m)}${amount != null ? ` · ${ctx.cur(amount)}` : ''}`;
 
-  const owes = pending ? `Owes ${c.cur(pending.amount)}` : standing(m);
-  const alarm = pending || m.status === 'expired' || (m.status === 'due' && !m.expiry_date);
-  row.append(
-    el('div', { className: 'mrow-identity' },
-      el('span', { className: 'who-name', textContent: m.name }),
-      el('span', { className: 'sub', textContent: `${c.checkedIn ? 'In today · ' : ''}+${m.phone} · ${m.plans?.name ?? 'No plan'}` })),
-    el('div', { className: 'mrow-status' },
-      el('span', { className: `pill s-${m.status}`, textContent: m.status }),
-      el('span', { className: 'sub', textContent: m.expiry_date ? `Until ${fmtDate(m.expiry_date)}` : 'Never paid' })),
-    el('div', { className: `mrow-standing sub${alarm ? ' owed' : ''}` },
-      owes,
-      pending?.trx_id && el('span', { className: 'sub mono', textContent: `${pending.method} · ${pending.trx_id}` })),
-    go);
-  return row;
+      const actions = [];
+      if (pending) {
+        const b = el('button', { type: 'button', className: 'primary', textContent: pending.trx_id ? `Verify ${ctx.cur(pending.amount)}` : `Mark paid ${ctx.cur(pending.amount)}` });
+        b.onclick = () => h.onVerify(b, m, pending);
+        actions.push(b);
+      } else if (m.plans) {
+        const b = el('button', { type: 'button', textContent: 'Renew (cash)' });
+        b.onclick = () => h.onRenew(b, m);
+        actions.push(b);
+      }
+      if (!checkedIn) {
+        const b = el('button', { type: 'button', textContent: 'Check in' });
+        b.onclick = () => h.onCheckin(b, m);
+        actions.push(b);
+      }
+      if (m.status === 'due' || m.status === 'expired') actions.push(waBtn(ctx.wa(m)));
+      if (paid?.receipt_no) actions.push(el('a', { className: 'btn', href: `receipt.html?id=${paid.id}`, target: '_blank', rel: 'noopener', textContent: 'Receipt' }));
+      const profileBtn = el('button', { type: 'button', className: 'quiet', textContent: 'Profile & plans' });
+      profileBtn.onclick = () => h.onDetails(m);
+      actions.push(profileBtn);
+
+      return el('div', { className: 'dt-expand-panel' },
+        el('div', { className: 'dt-detail-grid' },
+          detailItem('Phone', `+${m.phone}`),
+          detailItem('Plan', m.plans ? `${m.plans.name} (${ctx.cur(m.plans.price)})` : 'No plan'),
+          detailItem('Status', el('span', { className: `pill s-${m.status}`, textContent: m.status })),
+          detailItem('Expiry', memberExpiryLabel(m)),
+          detailItem('Payment', el('span', { className: isOwed ? 'sub owed' : '', textContent: standingText })),
+          detailItem('Today', checkedIn ? 'Checked in' : 'Not checked in')),
+        el('div', { className: 'dt-detail-actions' }, actions));
+    },
+  });
 }
 
-export { icon };
+export { renderTableToolbar, icon };

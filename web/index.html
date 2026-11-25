@@ -71,17 +71,11 @@
 
       <!-- MEMBERS -->
       <div class="view" data-view="members" hidden>
-        <section class="card members-region">
+        <section class="card card-table">
           <div class="card-head only-phone">
             <h2>Members</h2>
           </div>
-          <div class="toolbar">
-            <div class="filters" id="filters"></div>
-            <div class="search">
-              <svg aria-hidden="true"><use href="#i-search"/></svg>
-              <input id="search" type="search" placeholder="Search name or phone" aria-label="Search members" autocomplete="off">
-            </div>
-          </div>
+          <div class="dt-toolbar-wrap" id="members-toolbar"></div>
           <div id="member-rows"></div>
         </section>
       </div>
