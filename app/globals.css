@@ -179,4 +179,9 @@
   html {
     @apply font-sans;
   }
+  .hl-page {
+    --font-heading: var(--font-geist), "Geist", system-ui, -apple-system, sans-serif;
+    --font-body: var(--font-geist), "Geist", system-ui, -apple-system, sans-serif;
+    --font-ui: var(--font-geist-mono), "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  }
 }

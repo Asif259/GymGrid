@@ -1,0 +1,30 @@
+[
+ {
+  "shape": "Workbench",
+  "theme": "brand",
+  "axes": "light/roman-serif/cool",
+  "hero": "Stage",
+  "nav": "edge-aligned",
+  "footer": "statement",
+  "imagery": "screenshots 2 (chrome-headless)",
+  "photos": [],
+  "entry": "app/page.tsx",
+  "fingerprint": "gymgrid-hallmark-v1",
+  "sections": [
+   "hero",
+   "stage",
+   "statement",
+   "portals",
+   "faq",
+   "closing",
+   "footer"
+  ],
+  "signature": "interactive four-act product stage (QR desk, bKash TrxID, member portal, upcoming AI split builder)",
+  "waived": [
+   "74"
+  ],
+  "prompt": "Use Hallmark skill to build a professional interactive landing page",
+  "date": "2026-11-25",
+  "mode": "build"
+ }
+]

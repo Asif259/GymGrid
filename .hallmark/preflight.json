@@ -1,0 +1,20 @@
+{
+  "scanned": "2026-11-25",
+  "findings": {
+    "design_md": "DESIGN.md (Gym Admin — Ice Tonal Workspace: #f0f4f9 bg, #ffffff surface, #0b57d0 accent, #c2e7ff/#001d35 active pill)",
+    "fonts": "Inter + JetBrains Mono + Noto Sans Bengali (next/font/google, app/layout.tsx L2-26)",
+    "palette": "OKLCH custom properties in app/globals.css + DESIGN.md Ice Tonal tokens",
+    "motion": "tw-animate-css + CSS transitions (package.json L44)",
+    "spacing": "Tailwind CSS v4 (package.json L17, app/globals.css L1)",
+    "framework": "Next.js 16.4.6 App Router + React 19 + shadcn/ui"
+  },
+  "preserve": [
+    "DESIGN.md Ice Tonal palette (#f0f4f9, #ffffff, #0b57d0, #c2e7ff)",
+    "Inter + JetBrains Mono + Noto Sans Bengali font stack",
+    "Next.js App Router + Tailwind CSS v4 + existing routes (/admin, /member, /desk, /desk-qr, /onboarding, /join)"
+  ],
+  "introduce": [
+    "Hallmark Floor & gates compliance",
+    "Shape, hero posture, signature interactive product view, real/captured product imagery or stand-in slots"
+  ]
+}

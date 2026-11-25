@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "gym-admin", "runtimeExecutable": "npm", "runtimeArgs": ["run", "web"], "port": 3000 }
+    { "name": "gym-admin", "runtimeExecutable": "npm", "runtimeArgs": ["run", "web"], "port": 3000 },
+    { "name": "landing-prod", "runtimeExecutable": "npx", "runtimeArgs": ["next", "start", "-p", "3100"], "port": 3100 }
   ]
 }
