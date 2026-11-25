@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import {
   AlertTriangle,
@@ -28,6 +29,7 @@ import { LoginCard } from "@/components/LoginCard";
 import { PlanView } from "@/components/PlanView";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -55,9 +57,11 @@ import {
   streakText,
 } from "@/lib/logic";
 import { cn } from "@/lib/utils";
-import type { Payment } from "@/types/gym";
+import type { Payment, PublicGym } from "@/types/gym";
 
-export default function MemberAppPage() {
+function MemberAppInner() {
+  const searchParams = useSearchParams();
+  const gymSlugParam = searchParams.get("gym");
   const supabase = useMemo(() => createClient(), []);
   const { gymName: defaultGymName } = useMemo(() => getSupabaseEnv(), []);
 
@@ -78,7 +82,7 @@ export default function MemberAppPage() {
   const setTab = useMemberAppStore((s) => s.setTab);
   const setUser = useMemberAppStore((s) => s.setUser);
   const setStatus = useMemberAppStore((s) => s.setStatus);
-  const setGymName = useMemberAppStore((s) => s.setGymName);
+  const setGymBranding = useMemberAppStore((s) => s.setGymBranding);
   const setPendingCheckin = useMemberAppStore((s) => s.setPendingCheckin);
   const setPendingTab = useMemberAppStore((s) => s.setPendingTab);
 
@@ -90,7 +94,7 @@ export default function MemberAppPage() {
     const hash = window.location.hash;
     if (hash.startsWith("#checkin=")) {
       const tok = decodeURIComponent(hash.slice("#checkin=".length));
-      if (tok) setPendingCheckin(tok);
+      if (tok) setPendingCheckin(tok, null);
       window.history.replaceState(
         null,
         "",
@@ -106,24 +110,32 @@ export default function MemberAppPage() {
     }
 
     let cancelled = false;
+    async function resolvePreferredGym(): Promise<string | null> {
+      if (!gymSlugParam) return null;
+      const { data } = await supabase.rpc("get_public_gym_by_slug", {
+        p_slug: gymSlugParam,
+      });
+      if (!cancelled && data && typeof data === "object") {
+        const pub = data as PublicGym;
+        setGymBranding(pub);
+        return pub.id;
+      }
+      return null;
+    }
+
     async function init() {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+      const [preferredGymId, authRes] = await Promise.all([
+        resolvePreferredGym(),
+        supabase.auth.getUser(),
+      ]);
       if (cancelled) return;
+      const authUser = authRes.data.user;
       setUser(authUser);
       if (!authUser) {
-        const sRes = await supabase
-          .from("gym_settings")
-          .select("name")
-          .maybeSingle();
-        if (!cancelled && sRes.data?.name) {
-          setGymName(sRes.data.name);
-        }
         setStatus("signed_out");
         return;
       }
-      await loadMemberData();
+      await loadMemberData(preferredGymId);
     }
 
     void init();
@@ -136,7 +148,7 @@ export default function MemberAppPage() {
           setStatus("signed_out");
         } else {
           setUser(session.user);
-          void loadMemberData();
+          void resolvePreferredGym().then((gid) => loadMemberData(gid));
         }
       },
     );
@@ -146,8 +158,9 @@ export default function MemberAppPage() {
     };
   }, [
     supabase,
+    gymSlugParam,
     loadMemberData,
-    setGymName,
+    setGymBranding,
     setPendingCheckin,
     setPendingTab,
     setStatus,
@@ -185,7 +198,7 @@ export default function MemberAppPage() {
       }
       setTrxId("");
       toast.success("Submitted! The gym will verify your TrxID.");
-      await loadMemberData();
+      await loadMemberData(member.gym_id);
       setTab("home");
     } finally {
       setSubmittingTrx(false);
@@ -209,10 +222,32 @@ export default function MemberAppPage() {
   const owed = member ? pendingPayment(member.payments ?? []) : null;
   const paidReceipts = (member?.payments ?? []).filter((p) => p.status === "paid");
 
+  const initials =
+    gymName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase())
+      .join("") || "G";
+
+  const joinHref = settings.slug
+    ? `/join/${encodeURIComponent(settings.slug)}`
+    : "/join";
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-5 p-4 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-medium text-foreground">{gymName}</h1>
+        <div className="flex items-center gap-2.5">
+          <Avatar className="size-8 shrink-0">
+            {settings.logo_url ? (
+              <AvatarImage src={settings.logo_url} alt={gymName} />
+            ) : null}
+            <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <h1 className="text-xl font-medium text-foreground">{gymName}</h1>
+        </div>
         <div className="flex items-center gap-2">
           {user?.email ? (
             <span className="hidden text-xs text-muted-foreground sm:inline">
@@ -266,7 +301,7 @@ export default function MemberAppPage() {
           title="Members app"
           subtitle="Use the email you gave the front desk. We'll email you a sign-in link."
           placeholder="member@example.com"
-          nextPath="/member"
+          nextPath={gymSlugParam ? `/member?gym=${encodeURIComponent(gymSlugParam)}` : "/member"}
         />
       ) : null}
 
@@ -281,7 +316,7 @@ export default function MemberAppPage() {
           </CardHeader>
           <CardContent>
             <Button variant="outline" asChild>
-              <Link href="/join">
+              <Link href={joinHref}>
                 <UserPlus className="size-4" aria-hidden="true" />
                 <span>Self-register</span>
               </Link>
@@ -568,5 +603,20 @@ export default function MemberAppPage() {
         </Tabs>
       ) : null}
     </main>
+  );
+}
+
+export default function MemberAppPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-5 p-6">
+          <Skeleton className="h-44 rounded-3xl" />
+          <Skeleton className="h-44 rounded-3xl" />
+        </main>
+      }
+    >
+      <MemberAppInner />
+    </Suspense>
   );
 }

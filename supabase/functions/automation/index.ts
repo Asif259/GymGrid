@@ -1,4 +1,4 @@
-// Automation worker: outbox dispatch (receipt PDF, email, Sheets), renewal reminders, owner digest.
+// Automation worker (multi-tenant): outbox dispatch (receipt PDF, email, Sheets), renewal reminders, owner digest per gym.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import nodemailer from 'npm:nodemailer@6.9.16';
@@ -9,11 +9,12 @@ import { memberRow, paymentRow, MEMBER_HEADERS, PAYMENT_HEADERS } from '../_shar
 
 const env = (k: string) => Deno.env.get(k) ?? '';
 const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
-const MEMBER_SELECT = 'id, name, phone, email, status, expiry_date, plans(name)';
+const MEMBER_SELECT = 'id, gym_id, name, phone, email, status, expiry_date, plans(name)';
 const MAX_ATTEMPTS = 5;
 
-// Gym calendar day (Asia/Dhaka) as YYYY-MM-DD, so manual or retried runs never use the UTC day.
-const dhakaToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+const todayForZone = (tz = 'Asia/Dhaka') =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: tz || 'Asia/Dhaka' }).format(new Date());
+
 // Error text can echo an address or a message body: keep the cause, drop the addresses.
 const safeMsg = (e: unknown) => String((e as Error)?.message ?? e).replace(/[^\s@<>"']+@[^\s@<>"']+/g, '[email]').slice(0, 300);
 
@@ -27,11 +28,26 @@ function sendMail(msg: Record<string, unknown>) {
   return mailer.sendMail({ from: env('MAIL_FROM'), ...msg });
 }
 
-async function settings() {
-  const { data, error } = await db.from('gym_settings')
-    .select('name, currency, app_url, sheet_id, owner_digest_email').limit(1).single();
+interface GymConfig {
+  id: string;
+  name: string;
+  gym_name: string;
+  slug: string;
+  currency: string;
+  timezone: string;
+  app_url: string | null;
+  sheet_id: string | null;
+  owner_digest_email: string | null;
+  saas_status: string;
+}
+
+async function loadActiveGyms(): Promise<GymConfig[]> {
+  const { data, error } = await db
+    .from('gyms')
+    .select('id, name, slug, currency, timezone, app_url, sheet_id, owner_digest_email, saas_status')
+    .in('saas_status', ['trial', 'active']);
   if (error) throw error;
-  return { ...data, gym_name: data.name };
+  return (data ?? []).map((g) => ({ ...g, gym_name: g.name }));
 }
 
 // ---------- Google Sheets ----------
@@ -69,7 +85,6 @@ async function sheets(sheetId: string, path: string, init: RequestInit = {}) {
   return res.json();
 }
 
-// Upsert by id in column A: update the matching row, else append (header row written when the tab is empty).
 async function upsertRow(sheetId: string, tab: 'Members' | 'Payments', row: string[]) {
   const ids: string[][] = (await sheets(sheetId, encodeURIComponent(`${tab}!A:A`))).values ?? [];
   const body = (values: string[][]) => ({ method: 'PUT', body: JSON.stringify({ values }) });
@@ -87,7 +102,6 @@ async function upsertRow(sheetId: string, tab: 'Members' | 'Payments', row: stri
 }
 
 // ---------- dispatch ----------
-// Standard PDF fonts are WinAnsi only: map the taka sign and dashes, drop anything else non-ASCII.
 const pdfSafe = (s: string) => s.replace(/৳/g, 'Tk ').replace(/[—–]/g, '-').replace(/[^\x20-\x7E]/g, '?');
 
 async function receiptPdf(lines: string[]) {
@@ -99,30 +113,34 @@ async function receiptPdf(lines: string[]) {
   return doc.save();
 }
 
-type Ev = { id: number; kind: string; member_id: string | null; payment_id: string | null; attempts: number };
+type Ev = { id: number; gym_id: string; kind: string; member_id: string | null; payment_id: string | null; attempts: number };
 
-async function handle(ev: Ev, s: Awaited<ReturnType<typeof settings>>) {
+async function handle(ev: Ev, gym: GymConfig) {
   if (!ev.member_id) return;
-  const { data: m, error } = await db.from('members').select(MEMBER_SELECT).eq('id', ev.member_id).maybeSingle();
+  const { data: m, error } = await db
+    .from('members')
+    .select(MEMBER_SELECT)
+    .eq('id', ev.member_id)
+    .eq('gym_id', gym.id)
+    .maybeSingle();
   if (error) throw error;
-  if (!m) return; // member deleted: nothing to sync
+  if (!m) return;
   if (ev.kind === 'member.created' || ev.kind === 'member.updated') {
-    if (s.sheet_id) await upsertRow(s.sheet_id, 'Members', memberRow(m));
-    else console.log(`event ${ev.id}: sheets skipped, no sheet_id`);
+    if (gym.sheet_id) await upsertRow(gym.sheet_id, 'Members', memberRow(m));
+    else console.log(`event ${ev.id} (gym ${gym.slug}): sheets skipped, no sheet_id`);
     return;
   }
-  if (ev.kind !== 'payment.paid') return; // payment.created: nothing to automate yet
+  if (ev.kind !== 'payment.paid') return;
   const { data: p, error: pe } = await db.from('payments').select('*').eq('id', ev.payment_id).single();
   if (pe) throw pe;
-  if (p.status !== 'paid') return; // flipped back by staff after the event was queued: no receipt
-  const lines = receiptLines(p, m, s);
+  if (p.status !== 'paid') return;
+  const lines = receiptLines(p, m, gym);
   const pdf = await receiptPdf(lines);
   const path = `${m.id}/${p.id}.pdf`;
   const up = await db.storage.from('receipts').upload(path, pdf, { contentType: 'application/pdf', upsert: true });
   if (up.error) throw up.error;
   const { error: ue } = await db.from('payments').update({ receipt_path: path }).eq('id', p.id);
   if (ue) throw ue;
-  // Claim the stamp first (only one run gets a row back), then send; clear it if the send fails so a retry can.
   if (m.email) {
     const { data: claimed, error: ce } = await db.from('payments')
       .update({ receipt_emailed_at: new Date().toISOString() }).eq('id', p.id).is('receipt_emailed_at', null).select('id');
@@ -139,21 +157,31 @@ async function handle(ev: Ev, s: Awaited<ReturnType<typeof settings>>) {
       }
     }
   }
-  if (s.sheet_id) {
-    await upsertRow(s.sheet_id, 'Payments', paymentRow(p, m));
-    await upsertRow(s.sheet_id, 'Members', memberRow(m));
-  } else console.log(`event ${ev.id}: sheets skipped, no sheet_id`);
+  if (gym.sheet_id) {
+    await upsertRow(gym.sheet_id, 'Payments', paymentRow(p, m));
+    await upsertRow(gym.sheet_id, 'Members', memberRow(m));
+  } else console.log(`event ${ev.id} (gym ${gym.slug}): sheets skipped, no sheet_id`);
 }
 
 async function dispatch() {
-  const s = await settings();
-  // Atomic claim (pending -> processing, stale claims retaken after 10 min): overlapping runs never share an event.
+  const gyms = await loadActiveGyms();
+  const gymsById = new Map(gyms.map((g) => [g.id, g]));
   const { data: events, error } = await db.rpc('claim_automation_events', { max_n: 25 });
   if (error) throw error;
-  let done = 0, failed = 0;
+  let done = 0, failed = 0, skipped = 0;
+
   for (const ev of (events ?? []) as Ev[]) {
+    const gym = gymsById.get(ev.gym_id);
+    if (!gym) {
+      await db.from('automation_events')
+        .update({ status: 'done', processed_at: new Date().toISOString(), last_error: 'gym inactive or missing' })
+        .eq('id', ev.id);
+      skipped++;
+      continue;
+    }
+
     try {
-      await handle(ev, s);
+      await handle(ev, gym);
       const { error: de } = await db.from('automation_events')
         .update({ status: 'done', processed_at: new Date().toISOString(), last_error: null }).eq('id', ev.id);
       if (de) throw de;
@@ -163,33 +191,47 @@ async function dispatch() {
       const msg = safeMsg(e);
       const { error: fe } = await db.from('automation_events')
         .update({ attempts, last_error: msg, claimed_at: null, status: attempts >= MAX_ATTEMPTS ? 'failed' : 'pending' }).eq('id', ev.id);
-      console.error(`event ${ev.id} (${ev.kind}) failed: ${msg}${fe ? ' (and status write failed)' : ''}`);
+      console.error(`event ${ev.id} (gym ${gym.slug}, ${ev.kind}) failed: ${msg}${fe ? ' (and status write failed)' : ''}`);
       failed++;
     }
   }
-  return { done, failed };
+  return { done, failed, skipped };
 }
 
 // ---------- reminders ----------
 async function reminders() {
-  const s = await settings();
-  const today = dhakaToday();
-  const { data: members, error } = await db.from('members').select(MEMBER_SELECT).not('email', 'is', null);
-  if (error) throw error;
-  const { data: log } = await db.from('reminder_log').select('member_id').eq('day', today);
+  const gyms = await loadActiveGyms();
   let sent = 0, failed = 0;
-  for (const m of selectReminders(members, today, (log ?? []).map((r) => r.member_id))) {
-    // Claim first: only the run that inserts the log row sends the email.
-    const { data: claimed, error: ce } = await db.from('reminder_log')
-      .upsert({ member_id: m.id, day: today }, { onConflict: 'member_id,day', ignoreDuplicates: true }).select('member_id');
-    if (ce || !claimed?.length) continue;
-    try {
-      await sendMail(reminderEmail(m, s));
-      sent++;
-    } catch (e) {
-      await db.from('reminder_log').delete().eq('member_id', m.id).eq('day', today); // let the next run retry
-      console.error(`reminder ${m.id} failed: ${safeMsg(e)}`);
-      failed++;
+
+  for (const gym of gyms) {
+    const today = todayForZone(gym.timezone);
+    const { data: members, error } = await db
+      .from('members')
+      .select(MEMBER_SELECT)
+      .eq('gym_id', gym.id)
+      .not('email', 'is', null);
+    if (error) throw error;
+
+    const { data: log } = await db
+      .from('reminder_log')
+      .select('member_id')
+      .eq('gym_id', gym.id)
+      .eq('day', today);
+
+    for (const m of selectReminders(members ?? [], today, (log ?? []).map((r) => r.member_id))) {
+      const { data: claimed, error: ce } = await db.from('reminder_log')
+        .upsert({ gym_id: gym.id, member_id: m.id, day: today }, { onConflict: 'member_id,day', ignoreDuplicates: true })
+        .select('member_id');
+      if (ce || !claimed?.length) continue;
+
+      try {
+        await sendMail(reminderEmail(m, gym));
+        sent++;
+      } catch (e) {
+        await db.from('reminder_log').delete().eq('member_id', m.id).eq('day', today);
+        console.error(`reminder ${m.id} (gym ${gym.slug}) failed: ${safeMsg(e)}`);
+        failed++;
+      }
     }
   }
   return { sent, failed };
@@ -197,21 +239,38 @@ async function reminders() {
 
 // ---------- digest ----------
 async function digest() {
-  const s = await settings();
-  const { data: d, error } = await db.rpc('owner_digest');
-  if (error) throw error;
-  const { data: owners, error: oe } = await db.from('staff').select('user_id').eq('role', 'owner');
-  if (oe) throw oe;
-  const to = new Set<string>();
-  if (s.owner_digest_email) to.add(s.owner_digest_email);
-  for (const o of owners ?? []) {
-    const { data } = await db.auth.admin.getUserById(o.user_id);
-    if (data?.user?.email) to.add(data.user.email.toLowerCase());
+  const gyms = await loadActiveGyms();
+  let sent = 0;
+
+  for (const gym of gyms) {
+    const { data: d, error } = await db.rpc('owner_digest_for_gym', { p_gym_id: gym.id });
+    if (error) throw error;
+
+    const { data: owners, error: oe } = await db
+      .from('gym_staff')
+      .select('user_id')
+      .eq('gym_id', gym.id)
+      .eq('role', 'owner');
+    if (oe) throw oe;
+
+    const to = new Set<string>();
+    if (gym.owner_digest_email) to.add(gym.owner_digest_email);
+    for (const o of owners ?? []) {
+      const { data } = await db.auth.admin.getUserById(o.user_id);
+      if (data?.user?.email) to.add(data.user.email.toLowerCase());
+    }
+
+    for (const addr of to) {
+      await sendMail({
+        to: addr,
+        subject: `${gym.gym_name} daily digest ${d.date}`,
+        text: digestText(d, gym),
+        html: digestHtml(d, gym),
+      });
+      sent++;
+    }
   }
-  for (const addr of to) {
-    await sendMail({ to: addr, subject: `${s.gym_name ?? 'Gym'} daily digest ${d.date}`, text: digestText(d, s), html: digestHtml(d, s) });
-  }
-  return { sent: to.size };
+  return { gyms: gyms.length, sent };
 }
 
 // ---------- router ----------

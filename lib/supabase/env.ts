@@ -8,5 +8,6 @@ export function getSupabaseEnv() {
     url,
     key,
     gymName: process.env.NEXT_PUBLIC_GYM_NAME ?? 'Our Gym',
+    defaultGymSlug: process.env.NEXT_PUBLIC_DEFAULT_GYM_SLUG ?? 'default-gym',
   };
 }

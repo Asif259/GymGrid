@@ -28,6 +28,8 @@ import type { Member, MemberFilter } from "@/types/gym";
 export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter }) {
   const supabase = useMemo(() => createClient(), []);
   const user = useAuthStore((s) => s.user);
+  const gymId = useGymStore((s) => s.gymId);
+  const currency = useGymStore((s) => s.currency);
   const templates = useGymStore((s) => s.templates);
   const members = useMembersStore((s) => s.members);
   const reloadAll = useMembersStore((s) => s.reloadAll);
@@ -104,10 +106,9 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
 
   async function handleFreezeToggle(m: Member) {
     const nextStatus = m.status === "frozen" ? "due" : "frozen";
-    const { error } = await supabase
-      .from("members")
-      .update({ status: nextStatus })
-      .eq("id", m.id);
+    let q = supabase.from("members").update({ status: nextStatus }).eq("id", m.id);
+    if (gymId) q = q.eq("gym_id", gymId);
+    const { error } = await q;
     if (error) {
       toast.error(error.message);
       return;
@@ -178,6 +179,7 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
           <DataTable
             members={members}
             today={today}
+            currency={currency}
             filter={filter}
             onFilterChange={setFilter}
             query={query}

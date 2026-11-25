@@ -67,6 +67,8 @@ function MemberDialogContent({
 }) {
   const supabase = useMemo(() => createClient(), []);
   const user = useAuthStore((s) => s.user);
+  const gymId = useGymStore((s) => s.gymId);
+  const currency = useGymStore((s) => s.currency);
   const staff = useGymStore((s) => s.staff);
   const templates = useGymStore((s) => s.templates);
   const gymName = useGymStore((s) => s.gymName);
@@ -124,10 +126,9 @@ function MemberDialogContent({
     setBusy(true);
     try {
       const clean = email.trim().toLowerCase() || null;
-      const { error } = await supabase
-        .from("members")
-        .update({ email: clean })
-        .eq("id", member.id);
+      let q = supabase.from("members").update({ email: clean }).eq("id", member.id);
+      if (gymId) q = q.eq("gym_id", gymId);
+      const { error } = await q;
       if (error) {
         toast.error(error.message);
         return;
@@ -143,10 +144,12 @@ function MemberDialogContent({
     if (busy) return;
     setBusy(true);
     try {
-      const { error } = await supabase
+      let q = supabase
         .from("members")
         .update({ trainer_id: trainerId || null })
         .eq("id", member.id);
+      if (gymId) q = q.eq("gym_id", gymId);
+      const { error } = await q;
       if (error) {
         toast.error(error.message);
         return;
@@ -230,10 +233,12 @@ function MemberDialogContent({
     setBusy(true);
     try {
       const nextStatus = member.status === "frozen" ? "due" : "frozen";
-      const { error } = await supabase
+      let q = supabase
         .from("members")
         .update({ status: nextStatus })
         .eq("id", member.id);
+      if (gymId) q = q.eq("gym_id", gymId);
+      const { error } = await q;
       if (error) {
         toast.error(error.message);
         return;
@@ -339,7 +344,7 @@ function MemberDialogContent({
             {owed ? (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-3">
                 <div className="text-sm text-foreground">
-                  Pending <strong>{money(owed.amount)}</strong> via {owed.method ?? "—"}
+                  Pending <strong>{money(owed.amount, currency)}</strong> via {owed.method ?? "—"}
                   {owed.trx_id ? ` (TrxID ${owed.trx_id})` : ""}
                 </div>
                 <Button
@@ -409,7 +414,7 @@ function MemberDialogContent({
                     className="flex items-center justify-between gap-2 px-3 py-2 text-xs"
                   >
                     <span className="text-foreground">
-                      <strong>{money(p.amount)}</strong> · {p.method ?? "cash"} ·{" "}
+                      <strong>{money(p.amount, currency)}</strong> · {p.method ?? "cash"} ·{" "}
                       {p.paid_on ? fmtDate(p.paid_on) : ""}
                     </span>
                     <Link

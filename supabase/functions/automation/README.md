@@ -3,11 +3,11 @@
 Deno edge function. POST only. Every route requires header `x-automation-secret` equal to `AUTOMATION_SECRET` and must be deployed with `verify_jwt = false` (see `supabase/config.toml`): pg_net sends only that header.
 
 ## Routes
-- `POST /automation/dispatch` - processes pending `automation_events`. `payment.paid`: receipt PDF to bucket `receipts` at `<member_id>/<payment_id>.pdf`, sets `payments.receipt_path`, emails it when the member has an email, upserts Sheets rows. `member.created` / `member.updated`: upserts the Members row. Failures increment `attempts` and set `last_error`; after 5 attempts status becomes `failed`.
-- `POST /automation/reminders` - emails members expiring in 2 days, logs to `reminder_log`.
-- `POST /automation/digest` - emails `owner_digest()` to every owner's auth email and `gym_settings.owner_digest_email`.
+- `POST /automation/dispatch` - processes pending `automation_events` grouped/handled per `gym_id`. `payment.paid`: receipt PDF to bucket `receipts` at `<member_id>/<payment_id>.pdf`, sets `payments.receipt_path`, emails it when the member has an email, upserts Sheets rows. `member.created` / `member.updated`: upserts the Members row. Failures increment `attempts` and set `last_error`; after 5 attempts status becomes `failed`.
+- `POST /automation/reminders` - loops over active/trial `gyms`, emails members expiring in 2 days with gym-scoped renewal links, logs to `reminder_log`.
+- `POST /automation/digest` - loops over active/trial `gyms`, emails `owner_digest_for_gym(gym.id)` to each gym's owners (`gym_staff`) and `gyms.owner_digest_email`.
 
-Sheets sync is skipped (logged) when `gym_settings.sheet_id` is empty. Tabs `Members` and `Payments`; Members upsert by member id and Payments by receipt number, both in column A. Share the sheet with the service account email.
+Sheets sync is skipped (logged) when a gym's `gyms.sheet_id` is empty. Tabs `Members` and `Payments`; Members upsert by member id and Payments by receipt number, both in column A. Share the sheet with the service account email.
 
 ## Function secrets
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` come from the runtime. Set:

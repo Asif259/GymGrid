@@ -30,6 +30,8 @@ import { money, normalizePhone } from "@/lib/logic";
 export default function AddMemberPage() {
   const supabase = useMemo(() => createClient(), []);
   const user = useAuthStore((s) => s.user);
+  const gymId = useGymStore((s) => s.gymId);
+  const currency = useGymStore((s) => s.currency);
   const plans = useGymStore((s) => s.plans);
   const reloadAll = useMembersStore((s) => s.reloadAll);
 
@@ -53,7 +55,7 @@ export default function AddMemberPage() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (saving || !user) return;
+    if (saving || !user || !gymId) return;
 
     const cleanPhone = normalizePhone(phone);
     if (!cleanPhone) {
@@ -70,6 +72,7 @@ export default function AddMemberPage() {
     setSaving(true);
     try {
       const payload = {
+        gym_id: gymId,
         name: name.trim(),
         phone: cleanPhone,
         email: email.trim().toLowerCase() || null,
@@ -184,7 +187,7 @@ export default function AddMemberPage() {
                 <SelectContent>
                   {plans.map((p) => (
                     <SelectItem key={String(p.id)} value={String(p.id)}>
-                      {p.name} ({money(p.price)} / {p.months} mo)
+                      {p.name} ({money(p.price, currency)} / {p.months} mo)
                     </SelectItem>
                   ))}
                 </SelectContent>

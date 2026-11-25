@@ -40,8 +40,9 @@ const [e] = await q(`select count(*)::int n from members m where expiry_date is 
   (select max(period_end) from payments where member_id=m.id and status='paid')`);
 check('expiry = latest paid period_end', e.n === 0, e);
 
-check('bad phone rejected', await fails(`insert into members(name, phone) values ('x', '+880 17')`), 'phone "+880 17"');
-check('duplicate phone rejected', await fails(`insert into members(name, phone) values ('x', '15550000001')`), 'dup 15550000001');
+const DEFAULT_GYM = '00000000-0000-0000-0000-000000000001';
+check('bad phone rejected', await fails(`insert into members(gym_id, name, phone) values ('${DEFAULT_GYM}', 'x', '+880 17')`), 'phone "+880 17"');
+check('duplicate phone rejected', await fails(`insert into members(gym_id, name, phone) values ('${DEFAULT_GYM}', 'x', '15550000001')`), 'dup 15550000001');
 
 // Mark paid: Charlie's pending renewal (late) starts today.
 await db.exec(`update payments set status='paid' where status='pending' and member_id='00000000-0000-0000-0000-00000000000c'`);
@@ -54,7 +55,7 @@ await db.exec(`insert into payments(member_id, amount, status) values ('00000000
 const [a1] = await q(`select period_start from payments where member_id='00000000-0000-0000-0000-00000000000a' order by created_at desc, period_start desc limit 1`);
 check('early renewal continues from old expiry', +a1.period_start === +a0.expiry_date + 86400000, { old_expiry: a0.expiry_date, new_start: a1.period_start });
 
-check('paid without plan raises', await fails(`insert into members(id, name, phone) values ('00000000-0000-0000-0000-0000000000ff','NoPlan','15550000099');
+check('paid without plan raises', await fails(`insert into members(gym_id, id, name, phone) values ('${DEFAULT_GYM}', '00000000-0000-0000-0000-0000000000ff','NoPlan','15550000099');
   insert into payments(member_id, amount, status) values ('00000000-0000-0000-0000-0000000000ff', 1, 'paid')`), 'member without plan');
 await db.exec(`delete from members where name='NoPlan'`);
 
@@ -86,7 +87,7 @@ check('daily_report lists Bravo as expiring', rep.expiring.some((m) => m.name ==
 const MEMBER = '11111111-1111-1111-1111-111111111111', STAFF = '22222222-2222-2222-2222-222222222222';
 await db.exec(`insert into auth.users values ('${MEMBER}'), ('${STAFF}');
   update members set auth_user_id='${MEMBER}' where name='Demo Alpha';
-  insert into staff values ('${STAFF}', 'trainer');`);
+  insert into gym_staff (gym_id, user_id, role) values ('${DEFAULT_GYM}', '${STAFF}', 'trainer');`);
 const as = async (uid, fn, email = null) => {
   const claims = JSON.stringify({ sub: uid, role: 'authenticated', email });
   await db.exec(`set role authenticated; select set_config('request.jwt.claims', '${claims}', false);`);
@@ -100,21 +101,21 @@ await as(MEMBER, async () => {
   check('RLS: member cannot insert payment without TrxID', await fails(`insert into payments(member_id, amount) values ('00000000-0000-0000-0000-00000000000a', 1)`), 'insert');
   const [u] = await q(`with x as (update members set status='frozen' returning 1) select count(*)::int n from x`);
   check('RLS: member cannot update own row', u.n === 0, u);
-  check('RLS: member cannot add plans', await fails(`insert into plans(name, months, price) values ('Free', 1, 0)`), 'insert plan');
+  check('RLS: member cannot add plans', await fails(`insert into plans(gym_id, name, months, price) values ('${DEFAULT_GYM}', 'Free', 1, 0)`), 'insert plan');
   const [{ r: mr }] = await q(`select daily_report() r`);
   check('RLS: member report shows no other members', mr.expiring.length === 0 && mr.pending.every((p) => p.name === 'Demo Alpha'), mr);
 });
 await as(STAFF, async () => {
   const [m] = await q(`select count(*)::int n from members`);
   check('RLS: trainer sees all members', m.n === 5, m);
-  check('RLS: trainer cannot edit plans (owner only)', await fails(`insert into plans(name, months, price) values ('Free', 1, 0)`), 'insert plan');
+  check('RLS: trainer cannot edit plans (owner only)', await fails(`insert into plans(gym_id, name, months, price) values ('${DEFAULT_GYM}', 'Free', 1, 0)`), 'insert plan');
 });
 // ---------- Phase A: settings, member payments, receipts, attendance, claim, plans, dashboard ----------
 const A = '00000000-0000-0000-0000-00000000000a', B = '00000000-0000-0000-0000-00000000000b', E = '00000000-0000-0000-0000-00000000000e';
 const OWNER = '33333333-3333-3333-3333-333333333333', CLAIMER = '44444444-4444-4444-4444-444444444444', CLAIMER2 = '55555555-5555-5555-5555-555555555555';
 const setup = await fails(`insert into auth.users values ('${OWNER}', 'owner@example.test'), ('${CLAIMER}', 'echo@example.test'), ('${CLAIMER2}', 'echo2@example.test');
-  insert into staff (user_id, role) values ('${OWNER}', 'owner');
-  update gym_settings set checkin_token = 'testtoken', bkash_number = '8801700000000';
+  insert into gym_staff (gym_id, user_id, role) values ('${DEFAULT_GYM}', '${OWNER}', 'owner');
+  update gyms set owner_id = '${OWNER}', checkin_token = 'testtoken', bkash_number = '8801700000000' where id = '${DEFAULT_GYM}';
   update members set email = 'echo@example.test' where id = '${E}';
   insert into workout_plans (member_id, plan, verified) values ('${A}', '{"days":[]}', true), ('${A}', '{"days":["draft"]}', false);`);
 check('phase A schema exists (settings, email, plans)', !setup, setup);
@@ -143,10 +144,10 @@ await as(MEMBER, async () => {
 
   const [wp] = await q(`select count(*)::int n from workout_plans`);
   check('member sees only verified plans', wp.n === 1, wp);
-  check('member cannot read check-in token', await fails(`select checkin_token from gym_settings`), 'token column');
-  const [gs] = await q(`select name, bkash_number from gym_settings`).catch(() => [null]);
+  check('member cannot read check-in token', await fails(`select checkin_token from gyms`), 'token column');
+  const [gs] = await q(`select name, bkash_number from gyms`).catch(() => [null]);
   check('member can read gym name and bKash number', gs && gs.bkash_number === '8801700000000', gs);
-  const [gu] = await q(`with x as (update gym_settings set bkash_number = '1' returning 1) select count(*)::int n from x`).catch(() => [{ n: 0 }]);
+  const [gu] = await q(`with x as (update gyms set bkash_number = '1' returning 1) select count(*)::int n from x`).catch(() => [{ n: 0 }]);
   check('member cannot change settings', gu.n === 0, gu);
 });
 
@@ -166,7 +167,7 @@ await as(STAFF, async () => {
   check('trainer cannot rotate check-in token', await fails(`select rotate_checkin_token()`), 'rotate');
   const [t] = await q(`select checkin_qr_token() t`).catch(() => [{}]);
   check('staff can read check-in token for desk QR', t.t === 'testtoken', t);
-  const tpl = await fails(`insert into plan_templates (kind, name, plan) values ('workout', 'Beginner 3-day', '{"days":[]}')`);
+  const tpl = await fails(`insert into plan_templates (gym_id, kind, name, plan) values ('${DEFAULT_GYM}', 'workout', 'Beginner 3-day', '{"days":[]}')`);
   check('staff can create plan templates', !tpl, tpl);
 });
 
@@ -181,7 +182,7 @@ await as(OWNER, async () => {
     { summary: r.summary, raw2 });
   const [t] = await q(`select rotate_checkin_token() t`).catch((e) => [{ t: e.message }]);
   check('owner rotates check-in token', t.t && t.t !== 'testtoken' && t.t.length >= 16, t);
-  const [u] = await q(`with x as (update gym_settings set nagad_number = '8801800000000' returning 1) select count(*)::int n from x`).catch(() => [{ n: 0 }]);
+  const [u] = await q(`with x as (update gyms set nagad_number = '8801800000000' where id = '${DEFAULT_GYM}' returning 1) select count(*)::int n from x`).catch(() => [{ n: 0 }]);
   check('owner can change settings', u.n === 1, u);
 });
 
@@ -207,7 +208,7 @@ check('claimed member stays linked to first account', linked.auth_user_id === CL
 const ev = async (kind) => (await q(`select count(*)::int n from automation_events where kind = $1`, [kind]).catch(() => [{ n: -1 }]))[0].n;
 {
   const m0 = await ev('member.created'), p0 = await ev('payment.paid');
-  await fails(`insert into members (id, name, phone, plan_id) values ('00000000-0000-0000-0000-0000000000b1', 'Outbox One', '15550000201', 1);
+  await fails(`insert into members (gym_id, id, name, phone, plan_id) values ('${DEFAULT_GYM}', '00000000-0000-0000-0000-0000000000b1', 'Outbox One', '15550000201', 1);
     insert into payments (member_id, amount) values ('00000000-0000-0000-0000-0000000000b1', 1500);
     update payments set status = 'paid' where member_id = '00000000-0000-0000-0000-0000000000b1';`);
   check('outbox: one event per member insert', m0 >= 0 && (await ev('member.created')) === m0 + 1, { m0 });
@@ -223,7 +224,7 @@ const ev = async (kind) => (await q(`select count(*)::int n from automation_even
 }
 const SIGN = '77777777-7777-7777-7777-777777777777', UNCONF = '88888888-8888-8888-8888-888888888888';
 await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${SIGN}', 'sign@example.test', now()), ('${UNCONF}', 'unconf@example.test', null)`);
-const [tok] = await q(`select signup_token t from gym_settings`).catch(() => [{}]);
+const [tok] = await q(`select signup_token t from gyms where id = '${DEFAULT_GYM}'`).catch(() => [{}]);
 const reg = (t, phone) => `select self_register('${t}', 'New Person', '${phone}', 1, 'strength', 30, 'male', 175, 70, null, null) id`;
 await as(MEMBER, async () => check('signup_link_token is staff-only', await fails(`select signup_link_token()`), 'member'));
 await as(STAFF, async () => {
@@ -335,26 +336,88 @@ await db.exec(`reset role`);
   const REG = '99999999-9999-9999-9999-999999999999';
   await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${REG}', 'reg9@example.test', now())`);
   await as(REG, async () => {
-    const tok = (await q(`select signup_token t from gym_settings`).catch(() => [{ t: null }]))[0].t;
-    await db.exec(`reset role`); const [tk] = await q(`select signup_token t from gym_settings`); await db.exec(`set role authenticated`);
-    const e1 = await fails(`select self_register('${tk.t}', '  ', '15550000301', 1)`);
+    const [tk] = await q(`select null t`);
+    void tk;
+    await db.exec(`reset role`); const [tk2] = await q(`select signup_token t from gyms where id = '${DEFAULT_GYM}'`); await db.exec(`set role authenticated`);
+    const e1 = await fails(`select self_register('${tk2.t}', '  ', '15550000301', 1)`);
     check('self_register: blank name rejected', !!e1, e1);
-    const e2 = await fails(`select self_register('${tk.t}', 'Dup Phone', '15550000001', 1)`);
+    const e2 = await fails(`select self_register('${tk2.t}', 'Dup Phone', '15550000001', 1)`);
     check('self_register: phone conflict gives the generic message', e2 && !/phone/i.test(e2) && /front desk/i.test(e2), e2);
-    const e3 = await fails(`select self_register('${tk.t}', 'Long Text', '15550000302', 1, null, null, null, null, null, '${'x'.repeat(400)}')`);
+    const e3 = await fails(`select self_register('${tk2.t}', 'Long Text', '15550000302', 1, null, null, null, null, null, '${'x'.repeat(400)}')`);
     check('self_register: over-long free text rejected', !!e3, e3);
   }, 'reg9@example.test');
 }
 
-// ---------- Service role grants (migration 22): automation function reads/writes only what index.ts uses ----------
+// ---------- Multi-tenant isolation: Gym B vs Default Gym (Gym A) ----------
+const OWNER_B = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const MEMBER_B = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${OWNER_B}', 'ownerb@example.test', now()), ('${MEMBER_B}', 'memberb@example.test', now())`);
+let gymBId;
+await as(OWNER_B, async () => {
+  const [g] = await q(`select create_gym('Iron Pulse B', 'iron-pulse-b', '$', 'UTC', '8801900000000', 'Road 1') id`);
+  gymBId = g.id;
+  check('multitenant: create_gym returns uuid and seeds starter plans', !!gymBId && (await q(`select count(*)::int n from plans where gym_id = $1`, [gymBId]))[0].n === 3, g);
+  check('multitenant: slug availability works', (await q(`select is_gym_slug_available('iron-pulse-b') ok`))[0].ok === false && (await q(`select is_gym_slug_available('iron-pulse-c') ok`))[0].ok === true, 'slug check');
+
+  // Owner B sees 0 Gym A rows
+  check('multitenant: Gym B owner sees 0 members from Gym A', (await q(`select count(*)::int n from members`))[0].n === 0, 'members=0');
+  check('multitenant: Gym B owner sees only own plans', (await q(`select count(*)::int n from plans where gym_id <> $1`, [gymBId]))[0].n === 0, 'plans=0');
+  check('multitenant: Gym B owner sees 0 payments from Gym A', (await q(`select count(*)::int n from payments`))[0].n === 0, 'payments=0');
+  check('multitenant: Gym B owner sees 0 templates from Gym A', (await q(`select count(*)::int n from plan_templates`))[0].n === 0, 'tpl=0');
+  check('multitenant: Gym B owner sees 0 attendance from Gym A', (await q(`select count(*)::int n from attendance`))[0].n === 0, 'att=0');
+  check('multitenant: Gym B owner cannot read Gym A settings', (await q(`select count(*)::int n from gyms where id <> $1`, [gymBId]))[0].n === 0, 'gyms=0');
+  check('multitenant: Gym B owner cannot read Gym A automation_settings', !!(await fails(`select automation_settings('${DEFAULT_GYM}')`)), 'auto_settings');
+  check('multitenant: Gym B owner cannot read Gym A checkin_qr_token', !!(await fails(`select checkin_qr_token('${DEFAULT_GYM}')`)), 'qr_token');
+  check('multitenant: Gym B owner cannot rotate Gym A token', !!(await fails(`select rotate_checkin_token('${DEFAULT_GYM}')`)), 'rotate');
+  check('multitenant: Gym B owner cannot insert member into Gym A', !!(await fails(`insert into members (gym_id, name, phone) values ('${DEFAULT_GYM}', 'Hack', '15550000999')`)), 'cross insert');
+  check('multitenant: Gym B owner cannot assign Gym A template', !!(await fails(`select assign_plan('${tpl.id}', array['${A}']::uuid[])`)), 'cross assign');
+
+  // Same phone is allowed across different gyms
+  const [bp] = await q(`select id from plans where gym_id = $1 limit 1`, [gymBId]);
+  const dupPhoneOk = !(await fails(`insert into members (gym_id, name, phone, plan_id) values ('${gymBId}', 'Bob B', '15550000001', ${bp.id})`));
+  check('multitenant: same phone allowed in Gym B independently', dupPhoneOk, 'dup phone across gyms');
+  const [{ r: repB }] = await q(`select daily_report('${gymBId}') r`);
+  check('multitenant: daily_report scoped to Gym B only', repB.summary.active === 0 && repB.summary.due === 1, repB.summary);
+}, 'ownerb@example.test');
+
+// Gym A owner still cannot see Gym B
+await as(OWNER, async () => {
+  check('multitenant: Gym A owner sees 0 Gym B members', (await q(`select count(*)::int n from members where gym_id = $1`, [gymBId]))[0].n === 0, 'a->b=0');
+});
+
+// Gym B member cannot check in with Gym A QR or register on Gym A with Gym B plan
+const [gymATok] = await q(`select checkin_token, signup_token from gyms where id = '${DEFAULT_GYM}'`);
+const [gymBTok] = await q(`select checkin_token, signup_token from gyms where id = $1`, [gymBId]);
+const [gymBPlan] = await q(`select id from plans where gym_id = $1 limit 1`, [gymBId]);
+await as(MEMBER_B, async () => {
+  const regErr = await fails(`select self_register('${gymBTok.signup_token}', 'Member B', '15550000888', 1)`);
+  check('multitenant: cannot self_register into Gym B using Gym A plan_id', !!regErr, regErr);
+  const regOk = await fails(`select self_register('${gymBTok.signup_token}', 'Member B', '15550000888', ${gymBPlan.id}, null, null, null, null, null, null, null, '${gymBId}')`);
+  check('multitenant: self_register succeeds for Gym B with Gym B token+plan', !regOk, regOk);
+  const wrongQr = await fails(`select check_in('${gymATok.checkin_token}')`);
+  check('multitenant: Gym B member rejected on Gym A QR check-in', !!wrongQr, wrongQr);
+  const wrongParam = await fails(`select check_in('${gymBTok.checkin_token}', '${DEFAULT_GYM}')`);
+  check('multitenant: check_in rejects mismatched gym param', !!wrongParam, wrongParam);
+  const [goodQr] = await q(`select check_in('${gymBTok.checkin_token}', '${gymBId}') r`).catch((e) => [{ r: { error: e.message } }]);
+  check('multitenant: Gym B member checks into Gym B ok', goodQr.r && goodQr.r.gym_id === gymBId, goodQr);
+}, 'memberb@example.test');
+
+// Public RPC check as anon
+await db.exec(`set role anon`);
+const [pubSlug] = await q(`select get_public_gym_by_slug('iron-pulse-b') g`);
+check('multitenant: anon can fetch public gym + plans by slug (no secrets)',
+  pubSlug.g && pubSlug.g.name === 'Iron Pulse B' && pubSlug.g.plans.length === 3 && !('checkin_token' in pubSlug.g), pubSlug);
+await db.exec(`reset role`);
+
+// ---------- Service role grants (migration 22 + 24): automation function reads/writes only what index.ts uses ----------
 await db.exec(`set role service_role`);
 try {
-  const gsRead = await fails(`select name, currency, app_url, sheet_id, owner_digest_email from gym_settings limit 1`);
-  check('service_role: can read gym_settings', !gsRead, gsRead);
-  const stRead = await fails(`select user_id from staff where role = 'owner'`);
-  check('service_role: can read staff', !stRead, stRead);
-  const odCall = await fails(`select owner_digest()`);
-  check('service_role: can execute owner_digest()', !odCall, odCall);
+  const gsRead = await fails(`select id, name, slug, currency, app_url, sheet_id, owner_digest_email, saas_status from gyms limit 1`);
+  check('service_role: can read gyms', !gsRead, gsRead);
+  const stRead = await fails(`select gym_id, user_id from gym_staff where role = 'owner'`);
+  check('service_role: can read gym_staff', !stRead, stRead);
+  const odCall = await fails(`select owner_digest_for_gym('${DEFAULT_GYM}')`);
+  check('service_role: can execute owner_digest_for_gym()', !odCall, odCall);
   const tblReads = await fails(`
     select id from members limit 1;
     select id from plans limit 1;
@@ -362,17 +425,17 @@ try {
     select id from plan_templates limit 1;
     select id from payments limit 1;
     select id from automation_events limit 1;
-    select member_id from reminder_log limit 1;
+    select member_id, gym_id from reminder_log limit 1;
   `);
   check('service_role: can read automation tables', !tblReads, tblReads);
   const payUpd = await fails(`update payments set receipt_path = receipt_path where false`);
   const evUpd = await fails(`update automation_events set status = status where false`);
   const remWrite = await fails(`
-    insert into reminder_log (member_id, day) values ('${A}', current_date + 30) on conflict (member_id, day) do nothing;
+    insert into reminder_log (gym_id, member_id, day) values ('${DEFAULT_GYM}', '${A}', current_date + 30) on conflict (member_id, day) do nothing;
     delete from reminder_log where member_id = '${A}' and day = current_date + 30;
   `);
   check('service_role: can update payments/automation_events and insert/delete reminder_log', !payUpd && !evUpd && !remWrite, { payUpd, evUpd, remWrite });
-  check('service_role: cannot write gym_settings', !!(await fails(`update gym_settings set name = name where false`)), 'gs write');
+  check('service_role: cannot write gyms', !!(await fails(`update gyms set name = name where false`)), 'gyms write');
 } finally {
   await db.exec(`reset role`);
 }

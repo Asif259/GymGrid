@@ -7,6 +7,7 @@ import { ArrowLeft, MessageCircle, Printer } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -20,13 +21,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { fmtDate, money, receiptLink } from "@/lib/logic";
-import type { Payment } from "@/types/gym";
+import type { Gym, Payment } from "@/types/gym";
 
 interface ReceiptPayment extends Payment {
   members?: {
     name: string;
     phone: string;
     plans?: { name?: string | null } | null;
+    gyms?: Pick<Gym, "id" | "name" | "logo_url" | "currency" | "phone" | "address"> | null;
   } | null;
 }
 
@@ -36,8 +38,6 @@ function ReceiptInner() {
   const supabase = useMemo(() => createClient(), []);
   const { gymName: defaultGymName } = useMemo(() => getSupabaseEnv(), []);
 
-  const [gymName, setGymName] = useState(defaultGymName);
-  const [currency, setCurrency] = useState("৳");
   const [payment, setPayment] = useState<ReceiptPayment | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(true);
@@ -50,18 +50,15 @@ function ReceiptInner() {
         setLoading(false);
         return;
       }
-      const [settingsRes, payRes] = await Promise.all([
-        supabase.from("gym_settings").select("name, currency").maybeSingle(),
-        supabase
-          .from("payments")
-          .select("*, members(name, phone, plans(name))")
-          .eq("id", id)
-          .maybeSingle(),
-      ]);
-      if (cancelled) return;
+      const payRes = await supabase
+        .from("payments")
+        .select(
+          "*, members(name, phone, plans(name), gyms(id, name, logo_url, currency, phone, address))",
+        )
+        .eq("id", id)
+        .maybeSingle();
 
-      if (settingsRes.data?.name) setGymName(settingsRes.data.name);
-      if (settingsRes.data?.currency) setCurrency(settingsRes.data.currency);
+      if (cancelled) return;
 
       if (payRes.error || !payRes.data) {
         setErrorMsg(
@@ -79,11 +76,22 @@ function ReceiptInner() {
     };
   }, [id, supabase]);
 
+  const gym = payment?.members?.gyms ?? null;
+  const gymName = gym?.name || defaultGymName;
+  const currency = gym?.currency || "৳";
   const member = payment?.members ?? { name: "Member", phone: "", plans: null };
   const waHref =
     payment && member.phone
       ? receiptLink(payment, member, gymName, currency)
       : "";
+
+  const initials =
+    gymName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase())
+      .join("") || "G";
 
   const rows = payment
     ? [
@@ -116,7 +124,15 @@ function ReceiptInner() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-6 p-4 sm:p-6">
       <header className="flex items-center justify-between gap-3 print:hidden">
-        <h1 className="text-xl font-medium text-foreground">{gymName}</h1>
+        <div className="flex items-center gap-2.5">
+          <Avatar className="size-8 shrink-0">
+            {gym?.logo_url ? <AvatarImage src={gym.logo_url} alt={gymName} /> : null}
+            <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <h1 className="text-xl font-medium text-foreground">{gymName}</h1>
+        </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button variant="outline" size="sm" asChild>
@@ -142,8 +158,15 @@ function ReceiptInner() {
         <Card className="rounded-3xl shadow-xs print:border-0 print:shadow-none">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
             <div>
-              <p className="text-xs text-muted-foreground">Payment receipt</p>
-              <p className="font-mono text-2xl font-medium text-foreground">
+              <p className="text-xs font-medium text-foreground">{gymName}</p>
+              {gym?.address || gym?.phone ? (
+                <p className="text-xs text-muted-foreground">
+                  {[gym.address, gym.phone].filter(Boolean).join(" · ")}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Payment receipt</p>
+              )}
+              <p className="mt-1 font-mono text-2xl font-medium text-foreground">
                 {payment.receipt_no ?? String(payment.id)}
               </p>
             </div>

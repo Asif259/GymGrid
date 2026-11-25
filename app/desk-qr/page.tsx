@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { ArrowLeft, Printer } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ export default function DeskQrPage() {
   const { gymName: defaultGymName } = useMemo(() => getSupabaseEnv(), []);
 
   const [gymName, setGymName] = useState(defaultGymName);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState("");
   const [dataUrl, setDataUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -22,13 +24,41 @@ export default function DeskQrPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [settingsRes, tokenRes] = await Promise.all([
-        supabase.from("gym_settings").select("name, app_url").maybeSingle(),
-        supabase.rpc("checkin_qr_token"),
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (!user) {
+        setErrorMsg("Staff only. Sign in on Admin to view this QR.");
+        return;
+      }
+
+      const { data: staffRow } = await supabase
+        .from("gym_staff")
+        .select("gym_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (!staffRow?.gym_id) {
+        setErrorMsg("Staff only. Sign in on Admin to view this QR.");
+        return;
+      }
+
+      const [gymRes, tokenRes] = await Promise.all([
+        supabase
+          .from("gyms")
+          .select("id, name, logo_url, app_url")
+          .eq("id", staffRow.gym_id)
+          .maybeSingle(),
+        supabase.rpc("checkin_qr_token", { p_gym_id: staffRow.gym_id }),
       ]);
       if (cancelled) return;
 
-      if (settingsRes.data?.name) setGymName(settingsRes.data.name);
+      if (gymRes.data?.name) setGymName(gymRes.data.name);
+      if (gymRes.data?.logo_url) setLogoUrl(gymRes.data.logo_url);
       if (tokenRes.error || !tokenRes.data) {
         setErrorMsg(
           tokenRes.error?.message ?? "Staff only. Sign in on Admin to view this QR.",
@@ -36,11 +66,11 @@ export default function DeskQrPage() {
         return;
       }
 
-      const base = (settingsRes.data?.app_url || window.location.origin).replace(
+      const base = (gymRes.data?.app_url || window.location.origin).replace(
         /\/$/,
         "",
       );
-      const url = `${base}/member#checkin=${encodeURIComponent(String(tokenRes.data))}`;
+      const url = `${base}/checkin?gym=${encodeURIComponent(staffRow.gym_id)}#checkin=${encodeURIComponent(String(tokenRes.data))}`;
       setQrUrl(url);
 
       const png = await QRCode.toDataURL(url, { width: 360, margin: 2 });
@@ -52,6 +82,14 @@ export default function DeskQrPage() {
       cancelled = true;
     };
   }, [supabase]);
+
+  const initials =
+    gymName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase())
+      .join("") || "G";
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center p-4 sm:p-6">
@@ -74,7 +112,15 @@ export default function DeskQrPage() {
       {dataUrl ? (
         <Card className="rounded-3xl shadow-xs print:border-0 print:shadow-none">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-            <h1 className="text-xl font-medium text-foreground">{gymName}</h1>
+            <div className="flex items-center gap-2.5">
+              <Avatar className="size-9">
+                {logoUrl ? <AvatarImage src={logoUrl} alt={gymName} /> : null}
+                <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <h1 className="text-xl font-medium text-foreground">{gymName}</h1>
+            </div>
             <p className="text-2xl font-semibold text-foreground">
               Scan to check in
             </p>

@@ -17,7 +17,7 @@ import { useGymStore } from "@/lib/stores/gym-store";
 import { useMembersStore } from "@/lib/stores/members-store";
 import { LoginCard } from "@/components/LoginCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -78,6 +78,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const role = useAuthStore((s) => s.role);
   const signOut = useAuthStore((s) => s.signOut);
+  const gym = useGymStore((s) => s.gym);
   const gymName = useGymStore((s) => s.gymName);
   const membersCount = useMembersStore((s) => s.members.length);
   const lastSync = useMembersStore((s) => s.lastSync);
@@ -145,6 +146,26 @@ export function AdminShell({ children }: { children: ReactNode }) {
             />
           ) : null}
 
+          {status === "no_gym" ? (
+            <Card className="mx-auto mt-12 w-full max-w-[460px] rounded-3xl">
+              <CardHeader>
+                <CardTitle>Complete gym setup</CardTitle>
+                <CardDescription>
+                  Create your gym workspace to unlock the dashboard, or visit the
+                  member portal if you joined an existing gym.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link href="/onboarding">Set up gym</Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/member">Members app</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
+
           {status === "not_staff" ? (
             <Card className="mx-auto mt-12 w-full max-w-[460px] rounded-3xl">
               <CardHeader>
@@ -182,6 +203,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <SidebarHeader className="gap-3 p-3">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <Avatar className="size-8 shrink-0">
+              {gym?.logo_url ? (
+                <AvatarImage src={gym.logo_url} alt={gymName} />
+              ) : null}
               <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
                 {initials}
               </AvatarFallback>

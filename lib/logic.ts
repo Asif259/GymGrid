@@ -34,6 +34,17 @@ export function money(n: number | string | null | undefined, currency = '৳'): 
   return `${currency}${Number(n ?? 0).toLocaleString('en-US')}`;
 }
 
+export function slugifyGymName(name: string): string {
+  const clean = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  if (clean.length >= 3) return clean;
+  return clean ? `${clean}-gym`.slice(0, 60) : '';
+}
+
 export function renewalLink(
   member: { name: string; phone: string; expiry_date?: string | null; plans?: { name?: string | null } | null },
   gymName: string,
@@ -131,7 +142,12 @@ export function daysLeft(expiry: string | null | undefined, todayIso = new Date(
   return expiry ? Math.round((Date.parse(expiry) - Date.parse(todayIso)) / 86400000) : null;
 }
 
-export function reportMarkdown(r: DailyReport, gymName: string, appUrl: string | null = null): string {
+export function reportMarkdown(
+  r: DailyReport,
+  gymName: string,
+  appUrl: string | null = null,
+  currency = '৳',
+): string {
   const link = (m: { name: string; phone: string; plan?: string | null; expiry_date?: string | null }) =>
     renewalLink({ ...m, plans: { name: m.plan } }, gymName, r.date, appUrl);
   const s = r.summary;
@@ -141,7 +157,7 @@ export function reportMarkdown(r: DailyReport, gymName: string, appUrl: string |
     '',
     `| Active | Due (≤2 days) | Expired | Attendance today | Revenue today | Revenue this month | Pending payments |`,
     `|---|---|---|---|---|---|---|`,
-    `| ${s.active} | ${s.due} | ${s.expired} | ${s.attendance_today ?? 0} | ${money(s.revenue_today)} | ${money(s.revenue_month)} | ${s.pending_payments} (${money(s.pending_amount)}) |`,
+    `| ${s.active} | ${s.due} | ${s.expired} | ${s.attendance_today ?? 0} | ${money(s.revenue_today, currency)} | ${money(s.revenue_month, currency)} | ${s.pending_payments} (${money(s.pending_amount, currency)}) |`,
     '',
     `## Checked in today without paying (${r.unpaid_checkins?.length ?? 0})`,
     list(r.unpaid_checkins, (m) => `- ${m.name} (+${m.phone}), ${m.expiry_date ? `ended ${m.expiry_date}` : 'never paid'}: [WhatsApp](${link(m)})`),
@@ -153,7 +169,7 @@ export function reportMarkdown(r: DailyReport, gymName: string, appUrl: string |
     list(r.expired_recent, (m) => `- ${m.name} (+${m.phone}), ended ${m.expiry_date}: [WhatsApp](${link(m)})`),
     '',
     `## Pending payments (${r.pending.length})`,
-    list(r.pending, (p) => `- ${p.name} (+${p.phone}): ${money(p.amount)}${p.trx_id ? ` ${p.method} TrxID ${p.trx_id}` : ''}, waiting ${p.days_waiting} day(s)`),
+    list(r.pending, (p) => `- ${p.name} (+${p.phone}): ${money(p.amount, currency)}${p.trx_id ? ` ${p.method} TrxID ${p.trx_id}` : ''}, waiting ${p.days_waiting} day(s)`),
     '',
   ].join('\n');
 }

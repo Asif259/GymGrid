@@ -73,6 +73,7 @@ export interface MemberRowActionHandlers {
 interface DataTableProps extends MemberRowActionHandlers {
   members: Member[];
   today: string;
+  currency?: string;
   filter: MemberFilter;
   onFilterChange: (filter: MemberFilter) => void;
   query: string;
@@ -99,6 +100,7 @@ const PAGE_SIZE = 15;
 export function DataTable({
   members,
   today,
+  currency = "৳",
   filter,
   onFilterChange,
   query,
@@ -294,7 +296,7 @@ export function DataTable({
                                 : "font-medium tabular-nums text-foreground"
                             }
                           >
-                            {amt.amount != null ? money(amt.amount) : "—"}
+                            {amt.amount != null ? money(amt.amount, currency) : "—"}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {amt.label}

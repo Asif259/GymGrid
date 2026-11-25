@@ -8,8 +8,10 @@ export function selectReminders(members, today, alreadySentIds = []) {
 }
 
 export function reminderEmail(m, settings = {}) {
-  const link = `${settings.app_url}/member.html#pay`;
-  const gym = settings.gym_name ?? 'Gym';
+  const base = (settings.app_url ?? '').replace(/\/$/, '');
+  const slugQuery = settings.slug ? `?gym=${encodeURIComponent(settings.slug)}` : '';
+  const link = `${base}/member${slugQuery}#pay`;
+  const gym = settings.gym_name ?? settings.name ?? 'Gym';
   return {
     to: m.email,
     subject: `${gym}: your membership expires on ${m.expiry_date}`,

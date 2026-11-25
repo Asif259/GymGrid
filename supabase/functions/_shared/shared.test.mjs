@@ -28,7 +28,8 @@ test('sheets', () => {
 test('reminders', () => {
   const ms = [m, { ...m, id: 2, status: 'frozen' }, { ...m, id: 3, email: null }, { ...m, id: 4 }, { ...m, id: 5, expiry_date: '2026-11-28' }];
   assert.deepEqual(selectReminders(ms, '2026-11-25', [4]).map((x) => x.id), [1]);
-  assert.match(reminderEmail(m, { app_url: 'https://a.b' }).text, /https:\/\/a\.b\/member\.html#pay/);
+  assert.match(reminderEmail(m, { app_url: 'https://a.b' }).text, /https:\/\/a\.b\/member#pay/);
+  assert.match(reminderEmail(m, { app_url: 'https://a.b/', slug: 'iron-pulse', gym_name: 'Iron Pulse' }).text, /https:\/\/a\.b\/member\?gym=iron-pulse#pay/);
 });
 
 import { reminderEmail as _re } from './reminders.js';

@@ -18,7 +18,9 @@ export interface DeskEntry {
 
 interface DeskState {
   status: "loading" | "denied" | "ready";
+  gymId: string | null;
   gymName: string;
+  gymLogoUrl: string | null;
   userEmail: string;
   entries: DeskEntry[];
   liveOk: boolean;
@@ -29,14 +31,16 @@ const defaultGymName = getSupabaseEnv().gymName;
 let activeRunId = 0;
 
 /**
- * Zustand store managing the live reception desk check-in monitor (`/desk`)
+ * Zustand store managing the tenant-isolated live reception desk check-in monitor (`/desk`)
  * and its Supabase Realtime attendance subscription.
  */
 export const useDeskStore = create<DeskState>()(
   devtools(
     (set) => ({
       status: "loading",
+      gymId: null,
       gymName: defaultGymName,
+      gymLogoUrl: null,
       userEmail: "",
       entries: [],
       liveOk: false,
@@ -46,11 +50,12 @@ export const useDeskStore = create<DeskState>()(
         const supabase = createClient();
         let channel: ReturnType<typeof supabase.channel> | null = null;
 
-        const loadMemberSummary = async (memberId: string) => {
+        const loadMemberSummary = async (memberId: string, gymId: string) => {
           const { data } = await supabase
             .from("members")
             .select("name, status, expiry_date")
             .eq("id", memberId)
+            .eq("gym_id", gymId)
             .maybeSingle();
           return (
             (data as Pick<Member, "name" | "status" | "expiry_date"> | null) ??
@@ -59,14 +64,8 @@ export const useDeskStore = create<DeskState>()(
         };
 
         void (async () => {
-          const [{ data: settings }, { data: auth }] = await Promise.all([
-            supabase.from("gym_settings").select("name").maybeSingle(),
-            supabase.auth.getUser(),
-          ]);
+          const { data: auth } = await supabase.auth.getUser();
           if (runId !== activeRunId) return;
-          if (settings?.name) {
-            set({ gymName: settings.name }, false, "desk/gymName");
-          }
 
           const user = auth.user;
           if (!user) {
@@ -76,29 +75,53 @@ export const useDeskStore = create<DeskState>()(
           set({ userEmail: user.email ?? "" }, false, "desk/userEmail");
 
           const { data: staffRow } = await supabase
-            .from("staff")
-            .select("role")
+            .from("gym_staff")
+            .select("gym_id, role")
             .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .limit(1)
             .maybeSingle();
 
           if (runId !== activeRunId) return;
-          if (!staffRow) {
+          if (!staffRow?.gym_id) {
             set({ status: "denied" }, false, "desk/notStaff");
             return;
           }
 
-          const { data: rows } = await supabase
-            .from("attendance")
-            .select("member_id, checked_in_at")
-            .order("checked_in_at", { ascending: false })
-            .limit(10);
+          const gymId = staffRow.gym_id as string;
+
+          const [{ data: gymRow }, { data: rows }] = await Promise.all([
+            supabase
+              .from("gyms")
+              .select("name, logo_url")
+              .eq("id", gymId)
+              .maybeSingle(),
+            supabase
+              .from("attendance")
+              .select("member_id, checked_in_at, members!inner(gym_id)")
+              .eq("members.gym_id", gymId)
+              .order("checked_in_at", { ascending: false })
+              .limit(10),
+          ]);
+          if (runId !== activeRunId) return;
+
+          set(
+            {
+              gymId,
+              gymName: gymRow?.name ?? defaultGymName,
+              gymLogoUrl: gymRow?.logo_url ?? null,
+            },
+            false,
+            "desk/gym",
+          );
 
           const resolved = await Promise.all(
             ((rows as { member_id: string; checked_in_at: string }[] | null) ??
               []
             ).map(async (r) => ({
-              ...r,
-              member: await loadMemberSummary(r.member_id),
+              member_id: r.member_id,
+              checked_in_at: r.checked_in_at,
+              member: await loadMemberSummary(r.member_id, gymId),
             })),
           );
           if (runId !== activeRunId) return;
@@ -106,7 +129,7 @@ export const useDeskStore = create<DeskState>()(
           set({ entries: resolved, status: "ready" }, false, "desk/ready");
 
           channel = supabase
-            .channel("desk-attendance")
+            .channel(`desk-attendance-${gymId}`)
             .on(
               "postgres_changes",
               {
@@ -121,8 +144,8 @@ export const useDeskStore = create<DeskState>()(
                 }>,
               ) => {
                 const row = payload.new;
-                void loadMemberSummary(row.member_id).then((member) => {
-                  if (runId !== activeRunId) return;
+                void loadMemberSummary(row.member_id, gymId).then((member) => {
+                  if (runId !== activeRunId || !member) return;
                   set(
                     (state) => ({
                       entries: [{ ...row, member }, ...state.entries].slice(

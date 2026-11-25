@@ -59,6 +59,7 @@ export function TodayClient() {
   const supabase = useMemo(() => createClient(), []);
   const user = useAuthStore((s) => s.user);
   const gymName = useGymStore((s) => s.gymName);
+  const currency = useGymStore((s) => s.currency);
   const settings = useGymStore((s) => s.settings);
   const members = useMembersStore((s) => s.members);
   const todayReport = useMembersStore((s) => s.todayReport);
@@ -103,8 +104,8 @@ export function TodayClient() {
     {
       icon: Coins,
       label: "Month revenue",
-      value: money(revenueMonth),
-      delta: money(revenueToday),
+      value: money(revenueMonth, currency),
+      delta: money(revenueToday, currency),
       deltaTone: revenueToday > 0 ? "lime" : "neutral",
       iconBgClass: "bg-chart-3",
       caption: "Collected today",
@@ -112,7 +113,7 @@ export function TodayClient() {
     {
       icon: Clock,
       label: "Pending payments",
-      value: money(pendingAmount),
+      value: money(pendingAmount, currency),
       delta: `${pendingCount} waiting`,
       deltaTone: pendingAmount > 0 ? "rose" : "neutral",
       iconBgClass: pendingAmount > 0 ? "bg-chart-5" : "bg-chart-4",
@@ -195,7 +196,7 @@ export function TodayClient() {
     }
     try {
       await navigator.clipboard.writeText(
-        reportMarkdown(todayReport, gymName, settings.app_url ?? null),
+        reportMarkdown(todayReport, gymName, settings.app_url ?? null, currency),
       );
       toast.success("Daily summary copied");
     } catch {
@@ -385,7 +386,7 @@ export function TodayClient() {
                         {m.name}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {owed ? `${money(owed.amount)} · ${owed.method ?? ""}` : ""}
+                        {owed ? `${money(owed.amount, currency)} · ${owed.method ?? ""}` : ""}
                         {owed?.trx_id ? ` · TrxID ${owed.trx_id}` : ""}
                       </div>
                     </div>

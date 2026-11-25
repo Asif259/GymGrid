@@ -8,8 +8,10 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
 import type {
   AttendanceStreak,
   DietPlanData,
+  Gym,
   GymSettings,
   Member,
+  PublicGym,
   WorkoutPlanData,
 } from "@/types/gym";
 
@@ -18,13 +20,14 @@ export type MemberTab = "home" | "pay" | "plans" | "receipts" | "visits";
 
 interface MemberAppPersistedState {
   _pendingCheckin: string | null;
+  _pendingCheckinGymId: string | null;
   _pendingTab: MemberTab | null;
 }
 
 interface MemberAppState extends MemberAppPersistedState {
   status: MemberAppStatus;
   user: User | null;
-  settings: Partial<GymSettings>;
+  settings: GymSettings;
   member: Member | null;
   workout: WorkoutPlanData | null;
   diet: DietPlanData | null;
@@ -34,22 +37,22 @@ interface MemberAppState extends MemberAppPersistedState {
   tab: MemberTab;
   checkinBanner: { ok: boolean; text: string } | null;
 
-  loadMemberData: () => Promise<void>;
+  loadMemberData: (preferredGymId?: string | null) => Promise<void>;
   signOut: () => Promise<void>;
   setTab: (tab: MemberTab) => void;
   setCheckinBanner: (banner: { ok: boolean; text: string } | null) => void;
   setUser: (user: User | null) => void;
   setStatus: (status: MemberAppStatus) => void;
-  setGymName: (name: string) => void;
-  setPendingCheckin: (token: string | null) => void;
+  setGymBranding: (gym: PublicGym | GymSettings) => void;
+  setPendingCheckin: (token: string | null, gymId?: string | null) => void;
   setPendingTab: (tab: MemberTab | null) => void;
 }
 
 const defaultGymName = getSupabaseEnv().gymName;
 
 /**
- * Zustand store for the Member PWA portal (`/member`), persisting pending
- * QR check-in tokens and deep-linked tab targets across magic-link auth redirects.
+ * Zustand store for the Member PWA portal (`/member`) and `/checkin`, persisting
+ * pending QR check-in tokens/gym scope and deep-linked tab targets across magic-link redirects.
  */
 export const useMemberAppStore = create<MemberAppState>()(
   devtools(
@@ -68,25 +71,14 @@ export const useMemberAppStore = create<MemberAppState>()(
         checkinBanner: null,
 
         _pendingCheckin: null,
+        _pendingCheckinGymId: null,
         _pendingTab: null,
 
-        loadMemberData: async () => {
+        loadMemberData: async (preferredGymId = null) => {
           const supabase = createClient();
-          const [settingsRes, claimRes] = await Promise.all([
-            supabase
-              .from("gym_settings")
-              .select("name, currency, bkash_number, nagad_number, app_url")
-              .maybeSingle(),
-            supabase.rpc("claim_member"),
-          ]);
-
-          if (settingsRes.data) {
-            set(
-              { settings: settingsRes.data as Partial<GymSettings> },
-              false,
-              "memberApp/settings",
-            );
-          }
+          const claimRes = await supabase.rpc("claim_member", {
+            p_gym_id: preferredGymId,
+          });
 
           const memberId = claimRes.data as string | null;
           if (claimRes.error || !memberId) {
@@ -95,11 +87,16 @@ export const useMemberAppStore = create<MemberAppState>()(
           }
 
           const pendingToken = get()._pendingCheckin;
+          const pendingGymId = get()._pendingCheckinGymId ?? preferredGymId;
           if (pendingToken) {
-            set({ _pendingCheckin: null }, false, "memberApp/consumeCheckin");
+            set(
+              { _pendingCheckin: null, _pendingCheckinGymId: null },
+              false,
+              "memberApp/consumeCheckin",
+            );
             const { data: chkData, error: chkErr } = await supabase.rpc(
               "check_in",
-              { token: pendingToken },
+              { token: pendingToken, p_gym_id: pendingGymId },
             );
             if (chkErr) {
               set(
@@ -129,17 +126,23 @@ export const useMemberAppStore = create<MemberAppState>()(
             "id, amount, status, method, trx_id, receipt_no, receipt_path, paid_on, period_start, period_end, created_at";
           const colsBase =
             "id, amount, status, method, trx_id, receipt_no, paid_on, period_start, period_end, created_at";
+          const gymSelect =
+            "gyms(id, name, slug, logo_url, currency, bkash_number, nagad_number, app_url, phone, address)";
 
           let memberRes = await supabase
             .from("members")
-            .select(`*, plans(name, months, price), payments(${colsWithPath})`)
+            .select(
+              `*, plans(name, months, price), payments(${colsWithPath}), ${gymSelect}`,
+            )
             .eq("id", memberId)
             .single();
 
           if (memberRes.error && /receipt_path/.test(memberRes.error.message)) {
             memberRes = await supabase
               .from("members")
-              .select(`*, plans(name, months, price), payments(${colsBase})`)
+              .select(
+                `*, plans(name, months, price), payments(${colsBase}), ${gymSelect}`,
+              )
               .eq("id", memberId)
               .single();
           }
@@ -165,19 +168,22 @@ export const useMemberAppStore = create<MemberAppState>()(
               .eq("member_id", memberId)
               .order("day", { ascending: false })
               .limit(60),
-            supabase.rpc("my_streak"),
+            supabase.rpc("my_streak", { p_member_id: memberId }),
           ]);
 
           const loadedMember = memberRes.data as Member | null;
           let trainerName = "";
-          if (loadedMember?.trainer_id) {
+          if (loadedMember?.trainer_id && loadedMember.gym_id) {
             const trRes = await supabase
-              .from("staff")
+              .from("gym_staff")
               .select("display_name")
               .eq("user_id", loadedMember.trainer_id)
+              .eq("gym_id", loadedMember.gym_id)
               .maybeSingle();
             trainerName = trRes.data?.display_name ?? "";
           }
+
+          const gymSettings = (loadedMember?.gyms as Partial<Gym> | null) ?? get().settings;
 
           const savedTab = get()._pendingTab;
           const nextTab =
@@ -188,6 +194,7 @@ export const useMemberAppStore = create<MemberAppState>()(
 
           set(
             {
+              settings: gymSettings,
               member: loadedMember,
               workout:
                 (wRes.data?.[0]?.plan as WorkoutPlanData | undefined) ?? null,
@@ -233,14 +240,20 @@ export const useMemberAppStore = create<MemberAppState>()(
           set({ checkinBanner }, false, "memberApp/setCheckinBanner"),
         setUser: (user) => set({ user }, false, "memberApp/setUser"),
         setStatus: (status) => set({ status }, false, "memberApp/setStatus"),
-        setGymName: (name) =>
+        setGymBranding: (gym) =>
           set(
-            (state) => ({ settings: { ...state.settings, name } }),
+            (state) => ({
+              settings: { ...state.settings, ...gym },
+            }),
             false,
-            "memberApp/setGymName",
+            "memberApp/setGymBranding",
           ),
-        setPendingCheckin: (_pendingCheckin) =>
-          set({ _pendingCheckin }, false, "memberApp/setPendingCheckin"),
+        setPendingCheckin: (_pendingCheckin, _pendingCheckinGymId = null) =>
+          set(
+            { _pendingCheckin, _pendingCheckinGymId },
+            false,
+            "memberApp/setPendingCheckin",
+          ),
         setPendingTab: (_pendingTab) =>
           set({ _pendingTab }, false, "memberApp/setPendingTab"),
       }),
@@ -249,6 +262,7 @@ export const useMemberAppStore = create<MemberAppState>()(
         storage: createJSONStorage(() => window.localStorage),
         partialize: (state) => ({
           _pendingCheckin: state._pendingCheckin,
+          _pendingCheckinGymId: state._pendingCheckinGymId,
           _pendingTab: state._pendingTab,
         }),
       },

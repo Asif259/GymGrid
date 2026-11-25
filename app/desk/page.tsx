@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useDeskStore } from "@/lib/stores/desk-store";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 export default function DeskPage() {
   const status = useDeskStore((s) => s.status);
   const gymName = useDeskStore((s) => s.gymName);
+  const gymLogoUrl = useDeskStore((s) => s.gymLogoUrl);
   const userEmail = useDeskStore((s) => s.userEmail);
   const entries = useDeskStore((s) => s.entries);
   const liveOk = useDeskStore((s) => s.liveOk);
@@ -28,10 +30,24 @@ export default function DeskPage() {
   const latest = entries[0] ?? null;
   const latestState = latest?.member ? deskState(latest.member, today) : null;
 
+  const initials =
+    gymName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase())
+      .join("") || "G";
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 p-4 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
+          <Avatar className="size-8 shrink-0">
+            {gymLogoUrl ? <AvatarImage src={gymLogoUrl} alt={gymName} /> : null}
+            <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
           <h1 className="text-xl font-medium text-foreground">
             {gymName} · Live Desk
           </h1>

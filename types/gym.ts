@@ -1,10 +1,42 @@
 export type MemberStatus = 'active' | 'due' | 'expired' | 'frozen';
 export type PaymentStatus = 'pending' | 'paid';
-export type StaffRole = 'owner' | 'trainer';
+export type StaffRole = 'owner' | 'trainer' | 'staff';
 export type PlanKind = 'workout' | 'diet';
+export type SaasStatus = 'trial' | 'active' | 'suspended';
+
+export interface Gym {
+  id: string;
+  owner_id: string | null;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  phone: string | null;
+  address: string | null;
+  currency: string;
+  timezone: string;
+  bkash_number: string | null;
+  nagad_number: string | null;
+  app_url: string | null;
+  sheet_id?: string | null;
+  owner_digest_email?: string | null;
+  saas_status: SaasStatus;
+  created_at: string;
+}
+
+export interface PublicGym {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  currency: string;
+  phone?: string | null;
+  address?: string | null;
+  plans?: Plan[];
+}
 
 export interface Plan {
   id: number;
+  gym_id?: string;
   name: string;
   months: number;
   price: number;
@@ -33,6 +65,7 @@ export interface MemberPlanRef {
 
 export interface Member {
   id: string;
+  gym_id?: string;
   name: string;
   phone: string;
   email?: string | null;
@@ -49,9 +82,12 @@ export interface Member {
   diet_pref?: string | null;
   plans?: MemberPlanRef | null;
   payments?: Payment[];
+  gyms?: Partial<Gym> | null;
 }
 
 export interface StaffMember {
+  id?: string;
+  gym_id?: string;
   user_id: string;
   role: StaffRole;
   display_name: string | null;
@@ -90,20 +126,13 @@ export interface DietPlanData {
 
 export interface PlanTemplate {
   id: string;
+  gym_id?: string;
   kind: PlanKind;
   name: string;
   plan: WorkoutPlanData | DietPlanData;
 }
 
-export interface GymSettings {
-  name: string;
-  currency: string;
-  bkash_number?: string | null;
-  nagad_number?: string | null;
-  app_url?: string | null;
-  sheet_id?: string | null;
-  owner_digest_email?: string | null;
-}
+export type GymSettings = Partial<Gym>;
 
 export interface ReportSummary {
   active: number;
