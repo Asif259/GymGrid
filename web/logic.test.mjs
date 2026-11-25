@@ -139,3 +139,17 @@ test('memberAmount, memberExpiryLabel, and sortMembers', () => {
   assert.deepEqual(sortMembers(rows, 'status', 'asc').map((r) => r.id), ['2', '3', '1']);
   assert.deepEqual(sortMembers(rows, 'expiry', 'asc').map((r) => r.id), ['3', '2', '1']);
 });
+
+test('matchesFilter, streakText, deskState', async () => {
+  const L = await import('./logic.js');
+  const m = { status: 'active', expiry_date: '2026-11-27', payments: [{ status: 'pending' }] };
+  assert.equal(L.addDays('2026-11-30', 2), '2026-12-02');
+  assert.equal(L.matchesFilter(m, 'expiring', '2026-11-25'), true);
+  assert.equal(L.matchesFilter({ ...m, status: 'frozen' }, 'expiring', '2026-11-25'), false);
+  assert.equal(L.matchesFilter(m, 'pending', '2026-11-25'), true);
+  assert.equal(L.matchesFilter({ ...m, payments: [] }, 'pending', '2026-11-25'), false);
+  assert.equal(L.matchesFilter(m, 'due', '2026-11-25'), false);
+  assert.match(L.streakText({ current: 3, best: 5, visits_month: 9 }), /3 day streak/);
+  assert.equal(L.deskState(m, '2026-11-25').ok, true);
+  assert.equal(L.deskState({ expiry_date: null }, '2026-11-25').ok, false);
+});

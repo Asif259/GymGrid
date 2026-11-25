@@ -1,7 +1,7 @@
-import { sb, $, el, flash, act, loadSettings, session, sendLoginLink, planView } from './common.js';
+import { sb, $, el, flash, act, loadSettings, session, sendLoginLink, planView, today } from './common.js';
 import { ensureSprite, icon } from './dom.js';
 import {
-  normalizePhone, renewalLink, money, fmtDate, parseWorkout, parseDiet, workoutLines, dietLines, attendancePulse, sortMembers,
+  normalizePhone, renewalLink, money, fmtDate, parseWorkout, parseDiet, workoutLines, dietLines, attendancePulse, sortMembers, matchesFilter, deskState,
 } from './logic.js';
 import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, renderMembersTable, renderTableToolbar } from './views.js';
 
@@ -54,6 +54,7 @@ async function boot() {
   show('app');
   route();
   await load();
+  subscribe();
 }
 
 async function load() {
@@ -65,6 +66,11 @@ async function load() {
     sb.from('staff').select('user_id, role, display_name'),
     sb.from('plan_templates').select('id, kind, name, plan').order('name'),
   ]);
+  // New backend pieces may not be applied yet: tolerate their absence.
+  const auto = state.role === 'owner' ? await sb.rpc('automation_settings') : null;
+  // PGRST202 / 42883: the function is not applied yet. Stay quiet; any other error is real.
+  if (auto?.error && !['PGRST202', '42883'].includes(auto.error.code)) flash(auto.error.message);
+  Object.assign(settings, auto?.data ?? {});
   const err = plans.error || members.error || report.error || staff.error || templates.error;
   if (err) return flash(err.message);
   Object.assign(state, { settings, plans: plans.data, members: members.data, staff: staff.data, templates: templates.data, report: report.data, date: report.data.date });
@@ -87,6 +93,19 @@ async function load() {
   renderMembers();
   renderTemplates();
   if (state.role === 'owner') renderSettings();
+}
+
+let reloadT;
+const reloadSoon = () => { clearTimeout(reloadT); reloadT = setTimeout(load, 500); };
+function subscribe() {
+  if (subscribe.done) return;
+  subscribe.done = true;
+  const ch = sb.channel('admin');
+  for (const table of ['members', 'payments', 'attendance']) ch.on('postgres_changes', { event: '*', schema: 'public', table }, reloadSoon);
+  ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attendance' }, async (p) => {
+    const { data: m } = await sb.from('members').select('name, status, expiry_date').eq('id', p.new.member_id).maybeSingle();
+    if (m && !deskState(m, state.date ?? today()).ok) flash(`${m.name} checked in but is not paid`);
+  }).subscribe();
 }
 
 const handlers = {
@@ -150,8 +169,9 @@ const SORT_OPTIONS = [
 function renderFilters() {
   const counts = { all: state.members.length };
   for (const m of state.members) counts[m.status] = (counts[m.status] ?? 0) + 1;
+  for (const k of ['expiring', 'pending']) counts[k] = state.members.filter((m) => matchesFilter(m, k, state.date)).length;
   renderTableToolbar($('members-toolbar'), {
-    filters: ['all', 'active', 'due', 'expired', 'frozen'].map((k) => ({ key: k, label: cap(k), count: counts[k] ?? 0 })),
+    filters: ['all', 'active', 'due', 'expired', 'frozen', 'expiring', 'pending'].map((k) => ({ key: k, label: cap(k), count: counts[k] ?? 0 })),
     activeFilter: state.filter,
     onFilter: (f) => { state.filter = f; renderFilters(); renderMembers(); },
     sort: state.sort,
@@ -164,11 +184,15 @@ function renderFilters() {
   });
 }
 
-function renderMembers() {
+function filteredMembers() {
   const q = state.search.toLowerCase();
-  const filtered = state.members
-    .filter((m) => state.filter === 'all' || m.status === state.filter)
+  return state.members
+    .filter((m) => matchesFilter(m, state.filter, state.date))
     .filter((m) => !q || m.name.toLowerCase().includes(q) || m.phone.includes(q));
+}
+
+function renderMembers() {
+  const filtered = filteredMembers();
   const sorted = sortMembers(filtered, state.sort.key, state.sort.dir);
   renderMembersTable($('member-rows'), sorted, {
     cur,
@@ -180,6 +204,8 @@ function renderMembers() {
 }
 
 function renderTemplates() {
+  $('bulk-template').replaceChildren(el('option', { value: '', textContent: 'Pick a plan template' }),
+    state.templates.map((t) => el('option', { value: t.id, textContent: `${t.name} (${t.kind})` })));
   $('template-count').textContent = String(state.templates.length);
   $('template-list').replaceChildren(...(state.templates.length
     ? state.templates.map((t) => el('li', { className: 'item' },
@@ -187,6 +213,26 @@ function renderTemplates() {
         el('span', { className: 'pill s-active', textContent: t.kind })))
     : [el('li', { className: 'empty', textContent: 'No templates yet — save one above, then assign it from member details' })]));
 }
+
+$('bulk-assign').onclick = (e) => {
+  const id = $('bulk-template').value;
+  const ids = filteredMembers().map((m) => m.id);
+  if (!id) return flash('Pick a template first');
+  if (!ids.length) return flash('No members in this list');
+  if (!confirm(`Assign this template to ${ids.length} member${ids.length === 1 ? '' : 's'} in the current list?`)) return;
+  act(e.target, () => sb.rpc('assign_plan', { template_id: id, member_ids: ids }), `Plan assigned to ${ids.length} member${ids.length === 1 ? '' : 's'}`, load);
+};
+
+const signupUrl = (t) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}join.html#signup=${t}`;
+async function showSignupLink() {
+  const { data, error } = await sb.rpc('signup_link_token');
+  if (error) return flash(error.message);
+  $('signup-link').value = data ? signupUrl(data) : '';
+}
+$('rotate-signup').onclick = (e) => {
+  if (!confirm('Make a new signup link? The old link stops working.')) return;
+  act(e.target, () => sb.rpc('rotate_signup_token'), 'New signup link created', showSignupLink);
+};
 
 const staffName = (s) => s.display_name || `${s.role} ${s.user_id.slice(0, 4)}`;
 
@@ -245,7 +291,8 @@ function planSection(m, kind, current, toLines, parse) {
 
 function renderSettings() {
   const f = $('settings-form');
-  for (const k of ['name', 'bkash_number', 'nagad_number', 'app_url']) f.elements[k].value = state.settings[k] ?? '';
+  for (const k of ['name', 'bkash_number', 'nagad_number', 'app_url', 'sheet_id', 'owner_digest_email']) f.elements[k].value = state.settings[k] ?? '';
+  showSignupLink();
   $('staff-list').replaceChildren(...state.staff.map((s) => {
     const input = el('input', { value: s.display_name ?? '', placeholder: 'Name shown to members', 'aria-label': `Name for ${s.role}` });
     const save = el('button', { textContent: 'Save' });
@@ -261,6 +308,7 @@ $('settings-form').onsubmit = (e) => {
   const digits = (k) => v(k)?.replace(/\D/g, '') || null;
   act(e.target.querySelector('button.primary'), () => sb.from('gym_settings').update({
     name: v('name'), bkash_number: digits('bkash_number'), nagad_number: digits('nagad_number'), app_url: v('app_url')?.replace(/\/$/, '') ?? null,
+    sheet_id: v('sheet_id'), owner_digest_email: v('owner_digest_email')?.toLowerCase() ?? null,
   }).eq('id', true), 'Settings saved', load);
 };
 
@@ -287,6 +335,24 @@ $('login-form').onsubmit = async (e) => {
 
 $('logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 $('md-close').onclick = () => $('member-dialog').close();
+$('copy-signup').onclick = async () => {
+  const url = $('signup-link').value;
+  if (!url) return;
+  try { await navigator.clipboard.writeText(url); flash('Signup link copied', true); }
+  catch { flash(`Copy failed — link is ${url}`); }
+};
+
+// Light-dismiss fallback for browsers without <dialog closedby="any"> (e.g. Safari).
+if (!('closedBy' in HTMLDialogElement.prototype)) {
+  const dlg = $('member-dialog');
+  dlg.addEventListener('click', (event) => {
+    if (event.target !== dlg) return;
+    const rect = dlg.getBoundingClientRect();
+    const inside = rect.top <= event.clientY && event.clientY <= rect.top + rect.height
+      && rect.left <= event.clientX && event.clientX <= rect.left + rect.width;
+    if (!inside) dlg.close();
+  });
+}
 
 $('join-form').onsubmit = async (e) => {
   e.preventDefault();

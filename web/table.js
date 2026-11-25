@@ -4,41 +4,100 @@
 // with tap-to-expand details so hidden columns are never deleted.
 import { el } from './dom.js';
 
-let closeOpenMenu = null;
+let uidSeq = 0;
+const nextId = (prefix) => `${prefix}-${++uidSeq}`;
 
-if (typeof document !== 'undefined') {
-  document.addEventListener('click', (e) => {
-    if (closeOpenMenu && !e.target.closest('.dt-action-wrap')) closeOpenMenu();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && closeOpenMenu) closeOpenMenu();
-  });
-}
-
-function makeActionNode(a, inMenu = false) {
+function makeActionNode(a, menuEl, inMenu = false) {
   const cls = inMenu ? 'dt-menu-item' : (a.primary ? 'primary dt-primary-btn' : 'dt-action-btn');
   if (a.href) {
-    return el('a', {
+    const link = el('a', {
       className: `${inMenu ? 'dt-menu-item' : 'btn'}${a.wa ? ' wa' : ''}`,
       href: a.href,
       target: a.target ?? '_blank',
       rel: 'noopener',
-      role: inMenu ? 'menuitem' : undefined,
       textContent: a.label,
     });
+    if (inMenu && menuEl) {
+      link.addEventListener('click', () => {
+        if (menuEl.matches(':popover-open')) menuEl.hidePopover();
+      });
+    }
+    return link;
   }
   const btn = el('button', {
     type: 'button',
     className: cls,
-    role: inMenu ? 'menuitem' : undefined,
     textContent: a.label,
   });
   btn.onclick = (e) => {
     e.stopPropagation();
-    if (closeOpenMenu) closeOpenMenu();
+    if (inMenu && menuEl?.matches(':popover-open')) menuEl.hidePopover();
     a.onClick(btn);
   };
   return btn;
+}
+
+function wirePopupMenu(trigger, popoverEl, groupEl) {
+  const supportsInvoker = 'commandForElement' in HTMLButtonElement.prototype;
+  const supportsAnchor = typeof CSS !== 'undefined' && CSS.supports?.('position-area: block-end');
+  const supportsFocusgroup = 'focusGroup' in HTMLElement.prototype;
+
+  if (supportsInvoker) {
+    trigger.setAttribute('commandfor', popoverEl.id);
+    trigger.setAttribute('command', 'toggle-popover');
+  } else {
+    trigger.setAttribute('popovertarget', popoverEl.id);
+  }
+
+  let enterOnOpen = false;
+  let pointerPressed = false;
+  trigger.addEventListener('pointerdown', () => { pointerPressed = true; });
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      enterOnOpen = true;
+      if (!popoverEl.matches(':popover-open')) trigger.click();
+      else groupEl.querySelector('button, a')?.focus({ preventScroll: true });
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      pointerPressed = false;
+      enterOnOpen = true;
+    }
+  });
+
+  if (!supportsFocusgroup) {
+    groupEl.setAttribute('role', 'menu');
+    for (const item of groupEl.querySelectorAll('button, a')) item.setAttribute('role', 'menuitem');
+    groupEl.addEventListener('keydown', (e) => {
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+      const items = [...groupEl.querySelectorAll('button, a')].filter((n) => !n.disabled);
+      const cur = items.indexOf(document.activeElement);
+      if (!items.length) return;
+      const idx = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 :
+        (cur + (e.key === 'ArrowUp' ? -1 : 1) + items.length) % items.length;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      items[idx].focus({ preventScroll: true });
+    });
+  }
+
+  popoverEl.addEventListener('toggle', (e) => {
+    const open = e.newState === 'open';
+    trigger.setAttribute('aria-expanded', String(open));
+    if (open && !supportsAnchor) {
+      const r = trigger.getBoundingClientRect();
+      const mw = popoverEl.offsetWidth || 184;
+      const mh = popoverEl.offsetHeight || 180;
+      const left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8));
+      const top = r.bottom + 4 + mh > window.innerHeight ? Math.max(8, r.top - mh - 4) : r.bottom + 4;
+      popoverEl.style.left = `${left}px`;
+      popoverEl.style.top = `${top}px`;
+    }
+    if (open) {
+      if (enterOnOpen && !pointerPressed) groupEl.querySelector('button, a')?.focus({ preventScroll: true });
+      enterOnOpen = false;
+      pointerPressed = false;
+    }
+  });
 }
 
 export function renderDataTable(container, config) {
@@ -51,6 +110,7 @@ export function renderDataTable(container, config) {
     sort = { key: '', dir: 'asc' },
     onSortChange,
     emptyText = 'No records found',
+    caption = 'Data table',
     rowLabel = () => 'record',
   } = config;
 
@@ -59,7 +119,8 @@ export function renderDataTable(container, config) {
     return;
   }
 
-  const colCount = columns.length + 1; // +1 for action column
+  const captionId = nextId('dt-cap');
+  const colCount = columns.length + 1;
 
   const headCells = columns.map((col) => {
     const thProps = {
@@ -69,13 +130,12 @@ export function renderDataTable(container, config) {
     if (col.sortable && onSortChange) {
       const active = sort.key === col.key;
       const nextDir = active && sort.dir === 'asc' ? 'desc' : 'asc';
-      const arrow = active ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : '';
-      thProps['aria-sort'] = active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none';
+      if (active) thProps['aria-sort'] = sort.dir === 'asc' ? 'ascending' : 'descending';
+      const dirArrow = active ? (sort.dir === 'asc' ? '↑' : '↓') : '';
       const btn = el('button', {
         type: 'button',
         className: `dt-sort-btn${active ? ' is-active' : ''}`,
-        textContent: `${col.label}${arrow}`,
-      });
+      }, col.label, dirArrow && el('span', { className: 'dt-sort-ind', 'aria-hidden': 'true', textContent: ` ${dirArrow}` }));
       btn.onclick = () => onSortChange(col.key, nextDir);
       return el('th', thProps, btn);
     }
@@ -110,7 +170,6 @@ export function renderDataTable(container, config) {
       };
     }
 
-    // Desktop cells classified by role
     for (const col of columns) {
       const td = el('td', {
         className: `dt-cell${col.desktopOnly ? ' dt-desktop-only' : ''}${col.align === 'end' ? ' is-end' : ''}`,
@@ -131,27 +190,23 @@ export function renderDataTable(container, config) {
       tr.append(td);
     }
 
-    // Compact mobile Line-2 cell (State near Identity + Labeled detail)
     const mobileMeta = el('td', { className: 'dt-mobile-meta' });
     if (mobileSummary) mobileMeta.append(mobileSummary(row));
     tr.append(mobileMeta);
 
-    // Actions cell: consistent aligned slot (desktop: 1 primary CTA + kebab; compact: kebab with all actions)
     const actionWrap = el('div', { className: 'dt-action-wrap' });
-    if (primary) actionWrap.append(makeActionNode({ ...primary, primary: true }, false));
+    if (primary) actionWrap.append(makeActionNode({ ...primary, primary: true }, null, false));
 
     const menuItems = [];
     if (primary) menuItems.push({ ...primary, compactOnly: true });
     menuItems.push(...menu);
-    if (expandRow) {
-      menuItems.push({
-        label: 'Row details',
-        onClick: () => toggleExpand(),
-      });
-    }
+    if (expandRow) menuItems.push({ label: 'Row details', onClick: () => toggleExpand() });
 
     if (menuItems.length) {
+      const triggerId = nextId('dt-act');
+      const menuId = nextId('dt-menu');
       const kebab = el('button', {
+        id: triggerId,
         type: 'button',
         className: 'dt-kebab',
         ariaLabel: `Open actions for ${labelName}`,
@@ -159,28 +214,18 @@ export function renderDataTable(container, config) {
         ariaExpanded: 'false',
         textContent: '⋮',
       });
-      const menuEl = el('div', { className: 'dt-menu', role: 'menu', hidden: true },
-        menuItems.map((m) => {
-          const node = makeActionNode(m, true);
-          if (m.compactOnly) node.classList.add('dt-compact-only');
-          return node;
-        }));
-
-      const closeThis = () => {
-        menuEl.hidden = true;
-        kebab.setAttribute('aria-expanded', 'false');
-        if (closeOpenMenu === closeThis) closeOpenMenu = null;
-      };
-
-      kebab.onclick = (e) => {
-        e.stopPropagation();
-        const willOpen = menuEl.hidden;
-        if (closeOpenMenu && closeOpenMenu !== closeThis) closeOpenMenu();
-        menuEl.hidden = !willOpen;
-        kebab.setAttribute('aria-expanded', String(willOpen));
-        closeOpenMenu = willOpen ? closeThis : null;
-      };
-
+      const menuEl = el('div', { id: menuId, className: 'dt-menu' });
+      menuEl.setAttribute('popover', 'auto');
+      const groupEl = el('div', {});
+      groupEl.setAttribute('focusgroup', 'menu nomemory');
+      groupEl.setAttribute('aria-labelledby', triggerId);
+      groupEl.append(...menuItems.map((m) => {
+        const node = makeActionNode(m, menuEl, true);
+        if (m.compactOnly) node.classList.add('dt-compact-only');
+        return node;
+      }));
+      menuEl.append(groupEl);
+      wirePopupMenu(kebab, menuEl, groupEl);
       actionWrap.append(kebab, menuEl);
     }
 
@@ -194,10 +239,15 @@ export function renderDataTable(container, config) {
   }
 
   const table = el('table', { className: 'dt-table' },
+    el('caption', { id: captionId, className: 'sr-only', textContent: caption }),
     el('thead', {}, el('tr', {}, headCells)),
     tbody);
 
-  container.replaceChildren(el('div', { className: 'dt-container' }, el('div', { className: 'dt-wrap' }, table)));
+  const wrap = el('div', { className: 'dt-wrap', tabIndex: 0, role: 'region' });
+  wrap.setAttribute('aria-labelledby', captionId);
+  wrap.append(table);
+
+  container.replaceChildren(el('div', { className: 'dt-container' }, wrap));
 }
 
 // Reusable responsive table toolbar: preserves Search, Filters (with mobile sheet/drawer), and Sort.
@@ -252,7 +302,6 @@ export function renderTableToolbar(container, {
     onSort(k, d);
   };
 
-  // Mobile filter sheet button (shows active filter indicator)
   const activeFilterObj = filters.find((f) => f.key === activeFilter);
   const mobileFilterBtn = el('button', {
     type: 'button',

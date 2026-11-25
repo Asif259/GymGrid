@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f0f4f9">
+  <title>Front desk</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="narrow">
+  <header class="topbar">
+    <h1 id="title">Front desk</h1>
+    <div class="who"><span id="who"></span></div>
+  </header>
+  <div id="flash" class="msg" hidden role="status"></div>
+  <section id="denied" class="card" hidden><p>Staff only. Sign in on the admin page first.</p></section>
+  <div id="live" hidden>
+    <section id="card" class="card card-stack" aria-live="polite"><p class="muted">Waiting for the next check-in…</p></section>
+    <section class="card"><div class="card-head"><h2>Last 10 check-ins</h2></div><ul class="remind" id="recent"></ul></section>
+  </div>
+</main>
+<script type="module" src="desk.js"></script>
+</body>
+</html>

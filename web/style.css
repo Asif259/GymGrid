@@ -787,9 +787,36 @@ main.narrow {
 }
 
 /* ---------- Reusable Responsive DataTable & Toolbar ---------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .card-table {
   padding: 0;
   overflow: visible;
+}
+
+.dt-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-5);
+  border-block-end: 1px solid var(--hairline);
+  background: rgb(240 244 249 / 0.45);
+}
+
+.dt-bulk-bar select {
+  width: auto;
+  min-width: 220px;
+  flex: 1 1 220px;
+  max-width: 340px;
 }
 
 .card-table .card-head,
@@ -929,10 +956,17 @@ main.narrow {
   padding-inline-end: var(--space-5);
 }
 
+.dt-th:has(> .dt-sort-btn) {
+  padding-block: 6px;
+}
+
 .dt-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   min-height: 28px;
-  padding: 2px 6px;
-  margin-inline-start: -6px;
+  padding: 4px 8px;
+  margin-inline-start: -8px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -1097,24 +1131,55 @@ tbody .dt-row:first-child {
   color: var(--ink);
 }
 
-.dt-menu {
-  position: absolute;
-  inset-inline-end: 0;
-  top: calc(100% + 4px);
-  z-index: 12;
-  min-width: 184px;
+.dt-menu[popover] {
+  margin: 0;
+  inset: auto;
+  min-width: 192px;
   padding: var(--space-1);
   background: var(--surface);
   border: 1px solid var(--hairline-strong);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-float);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   text-align: start;
 }
 
+.dt-menu[popover]:popover-open > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@supports (position-area: block-end) {
+  .dt-menu[popover] {
+    position-area: block-end span-inline-start;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+}
+
+@supports not (position-area: block-end) {
+  .dt-menu[popover] {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dt-menu[popover] {
+    opacity: 0;
+    transition: opacity, display, overlay;
+    transition-duration: 120ms;
+    transition-behavior: allow-discrete;
+  }
+  .dt-menu[popover]:popover-open {
+    opacity: 1;
+    @starting-style { opacity: 0; }
+  }
+}
+
 .dt-menu-item {
+  display: flex;
+  align-items: center;
   width: 100%;
   min-height: 36px;
   padding-block: 6px;
@@ -1125,8 +1190,16 @@ tbody .dt-row:first-child {
   color: var(--ink);
   font-size: var(--text-ui);
   font-weight: 400;
+  text-decoration: none;
   justify-content: flex-start;
   text-align: start;
+}
+
+.row > input:not([type="checkbox"]):not(.field-trx),
+.row > select:not(.field-auto) {
+  flex: 1 1 180px;
+  min-width: 0;
+  width: auto;
 }
 
 .dt-menu-item:hover {

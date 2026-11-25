@@ -1,7 +1,7 @@
 // Fictional sample data for design-preview.html. Not real members.
 export const REPORT = {
   date: '2026-11-25',
-  summary: { active: 62, due: 5, expired: 9, frozen: 2, pending_payments: 3, pending_amount: 7000, attendance_today: 23, revenue_today: 4500, revenue_month: 67500 },
+  summary: { active: 62, due: 5, expired: 9, frozen: 2, pending_payments: 3, pending_amount: 7000, attendance_today: 23, revenue_today: 4500, revenue_month: 67500, revenue_total: 245000 },
   unpaid_checkins: [
     { name: 'Rafiq Hasan', phone: '8801700000001', expiry_date: '2026-11-19', time: '09:42' },
     { name: 'Nusrat Jahan', phone: '8801700000002', expiry_date: null, time: '10:05' },

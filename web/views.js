@@ -14,7 +14,7 @@ export function renderPlates(box, s, cur) {
   const attendanceToday = s.attendance_today ?? 0;
   const activePct = s.active ? `${Math.round((attendanceToday / s.active) * 100)}% of active` : 'No active members';
   box.replaceChildren(
-    metric('hero', 'Revenue today', cur(s.revenue_today), `${cur(s.revenue_month)} collected this month`),
+    metric('hero', 'Revenue today', cur(s.revenue_today), `${cur(s.revenue_month)} this month · ${cur(s.revenue_total ?? 0)} all time`),
     metric('', 'Checked in today', attendanceToday, activePct),
     metric('', 'Active members', s.active, `${s.due ?? 0} due within 2 days`),
     metric(s.pending_payments > 0 ? 'owed' : '', 'Pending payments', s.pending_payments, s.pending_payments > 0 ? `${cur(s.pending_amount)} to verify` : 'All verified'),

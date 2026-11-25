@@ -10,7 +10,7 @@ const q = async (sql, params) => (await db.query(sql, params)).rows;
 const fails = async (sql) => { try { await db.exec(sql); return null; } catch (e) { return e.message; } };
 
 await db.exec(`
-  create role authenticated nologin; create role anon nologin;
+  create role authenticated nologin; create role anon nologin; create role service_role nologin bypassrls;
   create schema auth;
   create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz default now());
   -- Same lookup order as Supabase's auth.uid(): legacy claim.sub, then the claims JSON.
@@ -203,9 +203,179 @@ await as(CLAIMER2, async () => {
 const [linked] = await q(`select auth_user_id from members where id = '${E}'`);
 check('claimed member stays linked to first account', linked.auth_user_id === CLAIMER, linked);
 
+// ---------- Phase B: outbox, self-signup, group plans, streaks, KPIs ----------
+const ev = async (kind) => (await q(`select count(*)::int n from automation_events where kind = $1`, [kind]).catch(() => [{ n: -1 }]))[0].n;
+{
+  const m0 = await ev('member.created'), p0 = await ev('payment.paid');
+  await fails(`insert into members (id, name, phone, plan_id) values ('00000000-0000-0000-0000-0000000000b1', 'Outbox One', '15550000201', 1);
+    insert into payments (member_id, amount) values ('00000000-0000-0000-0000-0000000000b1', 1500);
+    update payments set status = 'paid' where member_id = '00000000-0000-0000-0000-0000000000b1';`);
+  check('outbox: one event per member insert', m0 >= 0 && (await ev('member.created')) === m0 + 1, { m0 });
+  check('outbox: one event per payment marked paid', p0 >= 0 && (await ev('payment.paid')) === p0 + 1, { p0 });
+  await as(STAFF, async () => {
+    const [n] = await q(`select count(*)::int n from automation_events`).catch(() => [{ n: 0 }]);
+    check('outbox: staff can read events', n.n > 0, n);
+  });
+  await as(MEMBER, async () => {
+    const [n] = await q(`select count(*)::int n from automation_events`).catch(() => [{ n: 0 }]);
+    check('outbox: member sees no events', n.n === 0, n);
+  });
+}
+const SIGN = '77777777-7777-7777-7777-777777777777', UNCONF = '88888888-8888-8888-8888-888888888888';
+await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${SIGN}', 'sign@example.test', now()), ('${UNCONF}', 'unconf@example.test', null)`);
+const [tok] = await q(`select signup_token t from gym_settings`).catch(() => [{}]);
+const reg = (t, phone) => `select self_register('${t}', 'New Person', '${phone}', 1, 'strength', 30, 'male', 175, 70, null, null) id`;
+await as(MEMBER, async () => check('signup_link_token is staff-only', await fails(`select signup_link_token()`), 'member'));
+await as(STAFF, async () => {
+  const [t] = await q(`select signup_link_token() t`).catch(() => [{}]);
+  check('staff reads signup token', tok.t && t.t === tok.t, t);
+  check('trainer cannot rotate signup token', await fails(`select rotate_signup_token()`), 'rotate');
+});
+await as(UNCONF, async () => check('self_register: unconfirmed email rejected', await fails(reg(tok.t, '15550000301')), 'unconfirmed'));
+let newId;
+await as(SIGN, async () => {
+  check('self_register: bad token rejected', await fails(reg('nope', '15550000302')), 'bad token');
+  check('self_register: duplicate phone rejected', await fails(reg(tok.t, '15550000001')), 'dup phone');
+  check('self_register: bad phone rejected', await fails(reg(tok.t, '+880 17')), 'bad phone');
+  const [r] = await q(reg(tok.t, '15550000303')).catch((e) => [{ id: e.message }]);
+  newId = r.id;
+  const [m] = await q(`select id, status, auth_user_id, email from members`);
+  check('self_register: links caller, status due, returns id', m && m.id === newId && m.status === 'due' && m.auth_user_id === SIGN, { r, m });
+  check('self_register: second call rejected', await fails(reg(tok.t, '15550000304')), 'second');
+});
+const [tpl] = await q(`select id from plan_templates where name = 'Beginner 3-day'`);
+await as(MEMBER, async () => check('assign_plan is staff-only', await fails(`select assign_plan('${tpl.id}', array['${A}']::uuid[])`), 'member'));
+await as(STAFF, async () => {
+  const r = await fails(`select assign_plan('${tpl.id}', array['${B}', '${E}']::uuid[])`);
+  check('staff assign_plan ok', !r, r);
+});
+const [ap] = await q(`select count(*)::int n from workout_plans w join plan_templates t on t.plan = w.plan
+  where t.id = $1 and w.verified and w.member_id in ($2, $3)`, [tpl.id, B, E]);
+check('assign_plan copies verified plan to each member', ap.n === 2, ap);
+
+// Streak: yesterday back 3 days (current = 3), and a 5-day run before a gap (best = 5).
+await fails(`insert into attendance (member_id, day) select '${newId}', current_date - g from generate_series(1, 3) g;
+  insert into attendance (member_id, day) select '${newId}', current_date - g from generate_series(6, 10) g;`);
+await as(SIGN, async () => {
+  const [{ s }] = await q(`select my_streak() s`).catch(() => [{ s: {} }]);
+  const [raw] = await q(`select count(*)::int n from attendance where member_id = $1 and day >= date_trunc('month', current_date)::date`, [newId]).catch(() => [{ n: -1 }]);
+  check('my_streak: current 3, best 5, visits this month = raw', s.current === 3 && s.best === 5 && s.visits_month === raw.n, { s, raw });
+});
+await as(OWNER, async () => {
+  const [{ r }] = await q(`select daily_report() r`);
+  const [raw] = await q(`select (select coalesce(sum(amount), 0)::int from payments where status = 'paid') rev,
+    (select count(*)::int from attendance where day = current_date - 1) att`);
+  check('daily_report: revenue_total and attendance_yesterday = raw SQL',
+    Number(r.summary.revenue_total) === raw.rev && r.summary.attendance_yesterday === raw.att, { s: r.summary, raw });
+  const [{ d }] = await q(`select owner_digest() d`).catch(() => [{ d: {} }]);
+  const [rd] = await q(`select (select count(*)::int from members where status = 'active') active,
+    (select count(*)::int from members where status = 'expired') expired,
+    (select count(*)::int from attendance where day = current_date - 1) att,
+    (select count(*)::int from payments where status = 'pending') pc,
+    (select coalesce(sum(amount), 0)::int from payments where status = 'pending') pa,
+    (select count(*)::int from members where expiry_date = current_date + 2 and status <> 'frozen') expiring`);
+  check('owner_digest numbers = raw SQL', d.active === rd.active && d.expired === rd.expired && d.attendance_yesterday === rd.att
+    && d.pending_count === rd.pc && Number(d.pending_amount) === rd.pa && (d.expiring ?? []).length === rd.expiring, { d, rd });
+});
+check('reminder_log unique (member, day)', await fails(`insert into reminder_log (member_id, day) values ('${A}', current_date), ('${A}', current_date)`), 'dup');
+const [rt] = await q(`select count(*)::int n from information_schema.columns where table_name = 'payments' and column_name = 'receipt_path'`);
+check('payments.receipt_path exists', rt.n === 1, rt);
+
 await db.exec(`set role anon`);
 check('RLS: anon has no access (no grants)', await fails(`select * from members`), 'select as anon');
 await db.exec(`reset role`);
+
+
+// ---------- Hardening (migration 20): claim, payment-created noise, member columns, owner-only settings, signup details ----------
+{
+  const AUTO_MEMBER = '00000000-0000-0000-0000-0000000000b1';
+  const before = await ev('payment.created');
+  await fails(`insert into payments (member_id, amount) values ('${AUTO_MEMBER}', 1500)`);
+  check('outbox: a pending payment queues no event', before >= 0 && (await ev('payment.created')) === before, { before });
+
+  // Atomic claim: events move pending -> processing exactly once.
+  const [c1] = await q(`select count(*)::int n from claim_automation_events(100)`).catch(() => [{ n: -1 }]);
+  const [c2] = await q(`select count(*)::int n from claim_automation_events(100)`).catch(() => [{ n: -1 }]);
+  const [left] = await q(`select count(*)::int n from automation_events where status = 'pending'`).catch(() => [{ n: -1 }]);
+  check('claim_automation_events: first call claims, second claims none', c1.n > 0 && c2.n === 0 && left.n === 0, { c1, c2, left });
+  await fails(`update automation_events set claimed_at = now() - interval '11 minutes' where status = 'processing'`);
+  const [c3] = await q(`select count(*)::int n from claim_automation_events(100)`).catch(() => [{ n: -1 }]);
+  check('claim_automation_events: stale claims are retaken', c3.n > 0, c3);
+  // Attempt cap: a claim stuck past 10 minutes counts an attempt; the 5th ends it as failed.
+  await db.exec(`update automation_events set claimed_at = now() - interval '11 minutes', attempts = 4 where id = (select id from automation_events where status = 'processing' order by id limit 1)`);
+  await q(`select count(*) from claim_automation_events(100)`).catch(() => null);
+  const [capped] = await q(`select count(*)::int n from automation_events where status = 'failed' and last_error = 'timed out too many times'`).catch(() => [{ n: -1 }]);
+  check('claim_automation_events: a repeatedly stuck event ends as failed', capped.n === 1, capped);
+  const [reclaimed] = await q(`select count(*)::int n from automation_events where status = 'processing' and attempts = 1`).catch(() => [{ n: -1 }]);
+  check('claim_automation_events: a reclaimed event counts an attempt', reclaimed.n >= 1, reclaimed);
+  await as(MEMBER, async () => {
+    check('claim_automation_events: not callable by members', await fails(`select * from claim_automation_events(1)`), 'member call');
+  });
+
+  await as(MEMBER, async () => {
+    await fails(`insert into payments (member_id, amount, method, trx_id, receipt_path, receipt_emailed_at, created_at)
+      values ('${A}', 1, 'bkash', 'HARDEN001', 'x/y.pdf', now(), now() - interval '30 days')`);
+    const [r] = await q(`select receipt_path, receipt_emailed_at, created_at > now() - interval '1 minute' fresh from payments where trx_id = 'HARDEN001'`).catch(() => [null]);
+    check('member payment: receipt_path, receipt_emailed_at and created_at are forced', r && !r.receipt_path && !r.receipt_emailed_at && r.fresh, r);
+  });
+
+  await as(STAFF, async () => {
+    check('automation_settings: trainer cannot read (owner only)', await fails(`select automation_settings()`), 'trainer');
+  });
+  await as(OWNER, async () => {
+    const [o] = await q(`select automation_settings() r`).catch(() => [{ r: null }]);
+    check('automation_settings: owner can read', o.r && 'sheet_id' in o.r, o);
+  });
+
+  const [{ t }] = await q(`select (current_setting('timezone') = 'Asia/Dhaka') t`);
+  const [gt] = await q(`select gym_today() = (now() at time zone 'Asia/Dhaka')::date ok`).catch(() => [{ ok: false }]);
+  check('gym_today() is the Dhaka date', gt.ok, { tz: t });
+
+  // self_register: generic conflict message, name and length rules.
+  const REG = '99999999-9999-9999-9999-999999999999';
+  await db.exec(`insert into auth.users (id, email, email_confirmed_at) values ('${REG}', 'reg9@example.test', now())`);
+  await as(REG, async () => {
+    const tok = (await q(`select signup_token t from gym_settings`).catch(() => [{ t: null }]))[0].t;
+    await db.exec(`reset role`); const [tk] = await q(`select signup_token t from gym_settings`); await db.exec(`set role authenticated`);
+    const e1 = await fails(`select self_register('${tk.t}', '  ', '15550000301', 1)`);
+    check('self_register: blank name rejected', !!e1, e1);
+    const e2 = await fails(`select self_register('${tk.t}', 'Dup Phone', '15550000001', 1)`);
+    check('self_register: phone conflict gives the generic message', e2 && !/phone/i.test(e2) && /front desk/i.test(e2), e2);
+    const e3 = await fails(`select self_register('${tk.t}', 'Long Text', '15550000302', 1, null, null, null, null, null, '${'x'.repeat(400)}')`);
+    check('self_register: over-long free text rejected', !!e3, e3);
+  }, 'reg9@example.test');
+}
+
+// ---------- Service role grants (migration 22): automation function reads/writes only what index.ts uses ----------
+await db.exec(`set role service_role`);
+try {
+  const gsRead = await fails(`select name, currency, app_url, sheet_id, owner_digest_email from gym_settings limit 1`);
+  check('service_role: can read gym_settings', !gsRead, gsRead);
+  const stRead = await fails(`select user_id from staff where role = 'owner'`);
+  check('service_role: can read staff', !stRead, stRead);
+  const odCall = await fails(`select owner_digest()`);
+  check('service_role: can execute owner_digest()', !odCall, odCall);
+  const tblReads = await fails(`
+    select id from members limit 1;
+    select id from plans limit 1;
+    select id from attendance limit 1;
+    select id from plan_templates limit 1;
+    select id from payments limit 1;
+    select id from automation_events limit 1;
+    select member_id from reminder_log limit 1;
+  `);
+  check('service_role: can read automation tables', !tblReads, tblReads);
+  const payUpd = await fails(`update payments set receipt_path = receipt_path where false`);
+  const evUpd = await fails(`update automation_events set status = status where false`);
+  const remWrite = await fails(`
+    insert into reminder_log (member_id, day) values ('${A}', current_date + 30) on conflict (member_id, day) do nothing;
+    delete from reminder_log where member_id = '${A}' and day = current_date + 30;
+  `);
+  check('service_role: can update payments/automation_events and insert/delete reminder_log', !payUpd && !evUpd && !remWrite, { payUpd, evUpd, remWrite });
+  check('service_role: cannot write gym_settings', !!(await fails(`update gym_settings set name = name where false`)), 'gs write');
+} finally {
+  await db.exec(`reset role`);
+}
 
 let pass = true;
 for (const r of results) { pass &&= r.ok; console.log(`${r.ok ? 'PASS' : 'FAIL'} - ${r.name}${r.ok ? '' : ' :: ' + JSON.stringify(r.evidence)}`); }

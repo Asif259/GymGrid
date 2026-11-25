@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f0f4f9">
   <title>Gym Admin</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -76,6 +78,10 @@
             <h2>Members</h2>
           </div>
           <div class="dt-toolbar-wrap" id="members-toolbar"></div>
+          <div class="dt-bulk-bar" id="bulk-row">
+            <select id="bulk-template" aria-label="Plan template for visible members"></select>
+            <button type="button" id="bulk-assign">Assign to shown</button>
+          </div>
           <div id="member-rows"></div>
         </section>
       </div>
@@ -88,9 +94,9 @@
           </div>
           <form id="join-form" class="form-stack">
             <div class="grid">
-              <label>Name *<input name="name" required></label>
-              <label>Phone with country code *<input name="phone" required inputmode="tel" placeholder="8801XXXXXXXXX"></label>
-              <label>Email for the members app<input name="email" type="email" autocomplete="off"></label>
+              <label>Name *<input name="name" required autocomplete="name"></label>
+              <label>Phone with country code *<input name="phone" required inputmode="tel" autocomplete="tel" placeholder="8801XXXXXXXXX"></label>
+              <label>Email for the members app<input name="email" type="email" autocomplete="email"></label>
               <label>Plan *<select name="plan_id" required id="plan-select"></select></label>
               <label>Goal<select name="goal"><option value="">Not set</option><option>fat loss</option><option>muscle</option><option>fitness</option></select></label>
               <label>Age<input name="age" type="number" min="10" max="100" inputmode="numeric"></label>
@@ -156,9 +162,19 @@
               <label>bKash number members pay to<input name="bkash_number" inputmode="numeric" placeholder="017XXXXXXXX"></label>
               <label>Nagad number<input name="nagad_number" inputmode="numeric" placeholder="017XXXXXXXX"></label>
               <label>App web address<input name="app_url" type="url" placeholder="https://your-gym.netlify.app"></label>
+              <label>Google Sheet ID<input name="sheet_id" autocomplete="off"></label>
+              <label>Owner digest email<input name="owner_digest_email" type="email"></label>
+              <label>Member signup link
+                <div class="row">
+                  <input id="signup-link" readonly>
+                  <button type="button" id="copy-signup">Copy</button>
+                </div>
+              </label>
             </div>
             <div class="row">
               <button class="primary">Save settings</button>
+              <button type="button" id="rotate-signup">Make a new signup link</button>
+              <a class="btn" href="desk.html" target="_blank">Open live desk screen</a>
               <a class="btn" href="desk-qr.html" target="_blank">Open check-in QR</a>
               <button type="button" id="rotate-qr">Make a new QR</button>
             </div>
@@ -174,7 +190,7 @@
       </div>
     </div>
 
-    <dialog id="member-dialog" aria-labelledby="md-title">
+    <dialog id="member-dialog" closedby="any" aria-labelledby="md-title">
       <div class="dialog-head">
         <h2 id="md-title"></h2>
         <button id="md-close" type="button" class="quiet">Close</button>

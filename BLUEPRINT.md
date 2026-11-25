@@ -178,3 +178,23 @@ Rule: a worker's output is "done" only after its verifier returns PASS.
 - Members need an email to use the members app; phone-only members are checked in by staff.
 - Daily report runs only while the owner's Mac is on. Move to Supabase pg_cron + email if that fails.
 - Claude API key lives only in Supabase secrets, never in the web app.
+
+## 8. Backend automation (2026-11-25)
+Decisions: no payment gateway (UPI is not available in Bangladesh; "reconciliation" fires when staff confirm a payment),
+WhatsApp stays tap-to-send, automatic messages go by email (nodemailer over SMTP), Sheets backup through a shared service account.
+
+| Feature | Where |
+|---|---|
+| Outbox events (member created/updated, payment paid) | `automation_events`, triggers (migration 14, 20) |
+| Receipt PDF stored privately + emailed once | Edge Function `automation` `/dispatch`, bucket `receipts` (15), `payments.receipt_emailed_at` (20) |
+| Self-registration by link | `self_register()` + `signup_link_token()` (16, 20), `web/join.html` |
+| Plan to many members | `assign_plan()` (17), bulk action in `web/app.js` |
+| Streaks, revenue_total, yesterday's attendance, digest numbers | `my_streak()`, `daily_report()`, `owner_digest()` (17, 20) |
+| Live dashboard + desk screen | Realtime publication (18), `web/desk.html`, `web/app.js` |
+| 2-day expiry reminders by email | `/reminders`, cron `0 3 * * *` UTC + retries (19) |
+| 8:00 Dhaka owner digest by email + wa.me link | `/digest`, cron `0 2 * * *` UTC (19) |
+| Google Sheets backup | `/dispatch` Sheets upsert (needs `gym_settings.sheet_id` + service account) |
+
+Status: migrations 14-18, 20, 21 and the function are live on the hosted project. NOT live: migration 19 (cron) and every secret
+(SMTP, Google, AUTOMATION_SECRET, Vault entries). Nothing has sent a real email or touched a real Sheet yet.
+Not built: payment gateway/webhook, WhatsApp auto-send, UPI, per-trainer revenue hiding.

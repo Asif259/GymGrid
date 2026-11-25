@@ -1,5 +1,5 @@
 import { sb, $, el, flash, act, loadSettings, session, sendLoginLink, planView, today } from './common.js';
-import { money, workoutLines, dietLines, daysLeft, pendingPayment } from './logic.js';
+import { money, workoutLines, dietLines, daysLeft, pendingPayment, streakText } from './logic.js';
 
 const TABS = [['home', 'Home'], ['pay', 'Pay'], ['plans', 'My plans'], ['receipts', 'Payments'], ['visits', 'Visits']];
 let state = { user: null, member: null, settings: {} };
@@ -77,13 +77,17 @@ async function checkIn(token) {
 }
 
 async function load(memberId) {
-  const [m, w, d, att] = await Promise.all([
-    sb.from('members').select('*, plans(name, months, price), payments(id, amount, status, method, trx_id, receipt_no, paid_on, period_end, created_at)').eq('id', memberId).single(),
+  const memberQuery = (cols) => sb.from('members').select(`*, plans(name, months, price), payments(${cols})`).eq('id', memberId).single();
+  const baseCols = 'id, amount, status, method, trx_id, receipt_no, paid_on, period_end, created_at';
+  const [m0, w, d, att] = await Promise.all([
+    memberQuery(`${baseCols}, receipt_path`),
     // Explicit member/verified filters: RLS already limits members, but staff testing their own membership see more.
     sb.from('workout_plans').select('plan').eq('member_id', memberId).eq('verified', true).order('created_at', { ascending: false }).limit(1),
     sb.from('diet_plans').select('plan').eq('member_id', memberId).eq('verified', true).order('created_at', { ascending: false }).limit(1),
     sb.from('attendance').select('day, checked_in_at').eq('member_id', memberId).order('day', { ascending: false }).limit(60),
   ]);
+  // Before the receipts migration is applied the column does not exist: retry without it so the page still works.
+  const m = m0.error && /receipt_path/.test(m0.error.message ?? '') ? await memberQuery(baseCols) : m0;
   const err = m.error || w.error || d.error || att.error;
   if (err) return flash(err.message);
   state.member = m.data;
@@ -95,6 +99,15 @@ async function load(memberId) {
   renderPlans(trainer, w.data[0]?.plan, d.data[0]?.plan);
   renderReceipts(m.data.payments);
   renderVisits(att.data);
+  const st = await sb.rpc('my_streak');
+  $('h-streak').hidden = !!st.error || !st.data;
+  if (!st.error && st.data) $('h-streak').textContent = streakText(st.data);
+}
+
+async function downloadReceipt(path) {
+  const { data, error } = await sb.storage.from('receipts').createSignedUrl(path, 60);
+  if (error) return flash(error.message);
+  window.open(data.signedUrl, '_blank', 'noopener');
 }
 
 const cur = (n) => money(n, state.settings.currency);
@@ -149,7 +162,8 @@ function renderReceipts(payments) {
   $('rc-list').replaceChildren(...(rows.length ? rows.map((p) => el('li', {},
     el('span', {}, el('div', { textContent: `${cur(p.amount)} · ${p.method ?? 'cash'}` }),
       el('div', { className: 'muted', textContent: p.status === 'paid' ? `Paid ${p.paid_on} · valid to ${p.period_end}` : `Waiting for confirmation${p.trx_id ? ` · TrxID ${p.trx_id}` : ''}` })),
-    p.receipt_no ? el('a', { className: 'btn', href: `receipt.html?id=${p.id}`, textContent: 'Receipt' }) : el('span', { className: 'pill s-due', textContent: 'pending' })))
+    p.receipt_no ? el('div', { className: 'row' }, el('a', { className: 'btn', href: `receipt.html?id=${p.id}`, textContent: 'Receipt' }),
+      p.receipt_path && Object.assign(el('button', { type: 'button', textContent: 'Download PDF receipt' }), { onclick: () => downloadReceipt(p.receipt_path) })) : el('span', { className: 'pill s-due', textContent: 'pending' })))
     : [el('li', { className: 'muted', textContent: 'No payments yet.' })]));
 }
 

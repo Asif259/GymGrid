@@ -171,6 +171,8 @@ export function memberExpiryLabel(m) {
   return m.status === 'expired' ? `Ended ${fmtDate(m.expiry_date)}` : `Until ${fmtDate(m.expiry_date)}`;
 }
 
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
 export function sortMembers(rows = [], key = 'name', dir = 'asc') {
   const factor = dir === 'desc' ? -1 : 1;
   return [...rows].sort((a, b) => {
@@ -186,8 +188,33 @@ export function sortMembers(rows = [], key = 'name', dir = 'asc') {
       const be = b.expiry_date ?? '';
       cmp = ae.localeCompare(be);
     } else {
-      cmp = (a.name ?? '').localeCompare(b.name ?? '');
+      cmp = collator.compare(a.name ?? '', b.name ?? '');
     }
-    return cmp !== 0 ? cmp * factor : (a.name ?? '').localeCompare(b.name ?? '');
+    return cmp !== 0 ? cmp * factor : collator.compare(a.name ?? '', b.name ?? '');
   });
+}
+
+export function addDays(iso, n) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+// Members-list filter: status keys plus 'expiring' (ends in exactly 2 days, not frozen) and 'pending' (a payment awaits confirmation).
+export function matchesFilter(m, filter, todayIso) {
+  if (filter === 'all') return true;
+  if (filter === 'expiring') return m.status !== 'frozen' && m.expiry_date === addDays(todayIso, 2);
+  if (filter === 'pending') return (m.payments ?? []).some((p) => p.status === 'pending');
+  return m.status === filter;
+}
+
+export function streakText(s) {
+  if (!s) return '';
+  return `${s.current} day streak · best ${s.best} · ${s.visits_month} visits this month`;
+}
+
+// Desk card state for a check-in row: paid when the membership is valid today.
+export function deskState(m, todayIso) {
+  const ok = !!m.expiry_date && m.expiry_date >= todayIso && m.status !== 'frozen';
+  return { ok, text: ok ? `Valid until ${m.expiry_date}` : 'NOT PAID / EXPIRED' };
 }
