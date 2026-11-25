@@ -1,0 +1,17 @@
+{
+  "name": "Gym App",
+  "short_name": "Gym",
+  "start_url": "/member",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f0f4f9",
+  "theme_color": "#0b57d0",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
