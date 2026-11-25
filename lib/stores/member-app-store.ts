@@ -11,12 +11,20 @@ import type {
   Gym,
   GymSettings,
   Member,
+  Plan,
   PublicGym,
   WorkoutPlanData,
 } from "@/types/gym";
+import { hhmmDhaka } from "@/lib/logic";
+import {
+  type MemberTab,
+  VALID_MEMBER_TABS,
+  parseMemberTab,
+} from "@/lib/member-helpers";
+
+export { type MemberTab, VALID_MEMBER_TABS, parseMemberTab };
 
 export type MemberAppStatus = "loading" | "signed_out" | "no_member" | "ready";
-export type MemberTab = "home" | "pay" | "plans" | "receipts" | "visits";
 
 interface MemberAppPersistedState {
   _pendingCheckin: string | null;
@@ -32,12 +40,16 @@ interface MemberAppState extends MemberAppPersistedState {
   workout: WorkoutPlanData | null;
   diet: DietPlanData | null;
   visits: { day: string; checked_in_at: string }[];
+  gymPlans: Plan[];
   trainerName: string;
   streak: AttendanceStreak | null;
+  lastSync: string;
+  refreshing: boolean;
   tab: MemberTab;
   checkinBanner: { ok: boolean; text: string } | null;
 
   loadMemberData: (preferredGymId?: string | null) => Promise<void>;
+  refreshMemberData: () => Promise<void>;
   signOut: () => Promise<void>;
   setTab: (tab: MemberTab) => void;
   setCheckinBanner: (banner: { ok: boolean; text: string } | null) => void;
@@ -65,8 +77,11 @@ export const useMemberAppStore = create<MemberAppState>()(
         workout: null,
         diet: null,
         visits: [],
+        gymPlans: [],
         trainerName: "",
         streak: null,
+        lastSync: "",
+        refreshing: false,
         tab: "home",
         checkinBanner: null,
 
@@ -172,23 +187,38 @@ export const useMemberAppStore = create<MemberAppState>()(
           ]);
 
           const loadedMember = memberRes.data as Member | null;
-          let trainerName = "";
-          if (loadedMember?.trainer_id && loadedMember.gym_id) {
-            const trRes = await supabase
-              .from("gym_staff")
-              .select("display_name")
-              .eq("user_id", loadedMember.trainer_id)
-              .eq("gym_id", loadedMember.gym_id)
-              .maybeSingle();
-            trainerName = trRes.data?.display_name ?? "";
-          }
+          const [trainerName, gymPlans] = await Promise.all([
+            (async () => {
+              if (!loadedMember?.trainer_id || !loadedMember.gym_id) return "";
+              const trRes = await supabase
+                .from("gym_staff")
+                .select("display_name")
+                .eq("user_id", loadedMember.trainer_id)
+                .eq("gym_id", loadedMember.gym_id)
+                .maybeSingle();
+              return trRes.data?.display_name ?? "";
+            })(),
+            (async (): Promise<Plan[]> => {
+              if (!loadedMember?.gym_id) return [];
+              try {
+                const plansRes = await supabase
+                  .from("plans")
+                  .select("id, gym_id, name, months, price")
+                  .eq("gym_id", loadedMember.gym_id)
+                  .order("months");
+                if (plansRes.error || !plansRes.data) return [];
+                return plansRes.data as Plan[];
+              } catch {
+                return [];
+              }
+            })(),
+          ]);
 
           const gymSettings = (loadedMember?.gyms as Partial<Gym> | null) ?? get().settings;
 
           const savedTab = get()._pendingTab;
           const nextTab =
-            savedTab &&
-            ["home", "pay", "plans", "receipts", "visits"].includes(savedTab)
+            savedTab && VALID_MEMBER_TABS.includes(savedTab)
               ? savedTab
               : get().tab;
 
@@ -202,11 +232,13 @@ export const useMemberAppStore = create<MemberAppState>()(
               visits:
                 (vRes.data as { day: string; checked_in_at: string }[] | null) ??
                 [],
+              gymPlans,
               streak:
                 !streakRes.error && streakRes.data
                   ? (streakRes.data as AttendanceStreak)
                   : null,
               trainerName,
+              lastSync: hhmmDhaka(new Date().toISOString()),
               tab: nextTab,
               _pendingTab: null,
               status: "ready",
@@ -214,6 +246,16 @@ export const useMemberAppStore = create<MemberAppState>()(
             false,
             "memberApp/ready",
           );
+        },
+
+        refreshMemberData: async () => {
+          if (get().refreshing) return;
+          set({ refreshing: true }, false, "memberApp/refreshStart");
+          try {
+            await get().loadMemberData(get().member?.gym_id ?? null);
+          } finally {
+            set({ refreshing: false }, false, "memberApp/refreshDone");
+          }
         },
 
         signOut: async () => {
@@ -226,8 +268,12 @@ export const useMemberAppStore = create<MemberAppState>()(
               workout: null,
               diet: null,
               visits: [],
+              gymPlans: [],
               trainerName: "",
               streak: null,
+              lastSync: "",
+              checkinBanner: null,
+              tab: "home",
               status: "signed_out",
             },
             false,
