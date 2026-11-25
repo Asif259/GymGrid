@@ -5,7 +5,9 @@ import Link from "next/link";
 import { Copy, Monitor, QrCode, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useAdmin } from "@/components/AdminContext";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useGymStore } from "@/lib/stores/gym-store";
+import { useMembersStore } from "@/lib/stores/members-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +31,10 @@ interface SettingsDraft {
 
 export default function SettingsPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { role, settings, staff, reloadAll } = useAdmin();
+  const role = useAuthStore((s) => s.role);
+  const settings = useGymStore((s) => s.settings);
+  const staff = useGymStore((s) => s.staff);
+  const reloadAll = useMembersStore((s) => s.reloadAll);
 
   const [draft, setDraft] = useState<SettingsDraft>({});
   const [staffDrafts, setStaffDrafts] = useState<Record<string, string>>({});

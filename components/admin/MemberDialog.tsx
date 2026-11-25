@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useAdmin } from "@/components/AdminContext";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useGymStore } from "@/lib/stores/gym-store";
+import { useMembersStore } from "@/lib/stores/members-store";
 import { PlanView } from "@/components/PlanView";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +66,12 @@ function MemberDialogContent({
   onClose: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
-  const { user, staff, templates, gymName, settings, reloadAll } = useAdmin();
+  const user = useAuthStore((s) => s.user);
+  const staff = useGymStore((s) => s.staff);
+  const templates = useGymStore((s) => s.templates);
+  const gymName = useGymStore((s) => s.gymName);
+  const settings = useGymStore((s) => s.settings);
+  const reloadAll = useMembersStore((s) => s.reloadAll);
 
   const [email, setEmail] = useState(member.email ?? "");
   const [trainerId, setTrainerId] = useState(member.trainer_id ?? "");

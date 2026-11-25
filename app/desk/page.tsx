@@ -1,14 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
-import type {
-  REALTIME_SUBSCRIBE_STATES,
-  RealtimePostgresInsertPayload,
-} from "@supabase/supabase-js";
 import { AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { getSupabaseEnv } from "@/lib/supabase/env";
+import { useDeskStore } from "@/lib/stores/desk-store";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,117 +11,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { deskState, dhakaToday, hhmmDhaka } from "@/lib/logic";
 import { cn } from "@/lib/utils";
-import type { Member } from "@/types/gym";
-
-interface DeskEntry {
-  member_id: string;
-  checked_in_at: string;
-  member: Pick<Member, "name" | "status" | "expiry_date"> | null;
-}
 
 export default function DeskPage() {
-  const supabase = useMemo(() => createClient(), []);
-  const { gymName: defaultGymName } = useMemo(() => getSupabaseEnv(), []);
-
-  const [gymName, setGymName] = useState(defaultGymName);
-  const [userEmail, setUserEmail] = useState("");
-  const [status, setStatus] = useState<"loading" | "denied" | "ready">("loading");
-  const [entries, setEntries] = useState<DeskEntry[]>([]);
-  const [liveOk, setLiveOk] = useState(false);
-
-  const loadMemberSummary = useCallback(
-    async (memberId: string) => {
-      const { data } = await supabase
-        .from("members")
-        .select("name, status, expiry_date")
-        .eq("id", memberId)
-        .maybeSingle();
-      return (data as Pick<Member, "name" | "status" | "expiry_date"> | null) ?? null;
-    },
-    [supabase],
-  );
+  const status = useDeskStore((s) => s.status);
+  const gymName = useDeskStore((s) => s.gymName);
+  const userEmail = useDeskStore((s) => s.userEmail);
+  const entries = useDeskStore((s) => s.entries);
+  const liveOk = useDeskStore((s) => s.liveOk);
+  const init = useDeskStore((s) => s.init);
 
   useEffect(() => {
-    let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    async function init() {
-      const [{ data: settings }, { data: auth }] = await Promise.all([
-        supabase.from("gym_settings").select("name").maybeSingle(),
-        supabase.auth.getUser(),
-      ]);
-      if (cancelled) return;
-      if (settings?.name) setGymName(settings.name);
-
-      const user = auth.user;
-      if (!user) {
-        setStatus("denied");
-        return;
-      }
-      setUserEmail(user.email ?? "");
-
-      const { data: staffRow } = await supabase
-        .from("staff")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (cancelled) return;
-      if (!staffRow) {
-        setStatus("denied");
-        return;
-      }
-
-      const { data: rows } = await supabase
-        .from("attendance")
-        .select("member_id, checked_in_at")
-        .order("checked_in_at", { ascending: false })
-        .limit(10);
-
-      const resolved = await Promise.all(
-        ((rows as { member_id: string; checked_in_at: string }[] | null) ?? []).map(
-          async (r) => ({
-            ...r,
-            member: await loadMemberSummary(r.member_id),
-          }),
-        ),
-      );
-      if (cancelled) return;
-      setEntries(resolved);
-      setStatus("ready");
-
-      channel = supabase
-        .channel("desk-attendance")
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "attendance",
-          },
-          (
-            payload: RealtimePostgresInsertPayload<{
-              member_id: string;
-              checked_in_at: string;
-            }>,
-          ) => {
-            const row = payload.new;
-            void loadMemberSummary(row.member_id).then((member) => {
-              setEntries((prev) => [{ ...row, member }, ...prev].slice(0, 10));
-            });
-          },
-        )
-        .subscribe((subStatus: REALTIME_SUBSCRIBE_STATES) => {
-          setLiveOk(subStatus === "SUBSCRIBED");
-        });
-    }
-
-    void init();
-    return () => {
-      cancelled = true;
-      if (channel) void supabase.removeChannel(channel);
-    };
-  }, [supabase, loadMemberSummary]);
+    return init();
+  }, [init]);
 
   const today = dhakaToday();
   const latest = entries[0] ?? null;

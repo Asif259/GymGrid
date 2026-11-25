@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useAdmin } from "@/components/AdminContext";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useGymStore } from "@/lib/stores/gym-store";
+import { useMembersStore } from "@/lib/stores/members-store";
 import { SearchInput } from "@/components/SearchInput";
 import { StatCards, type StatItem } from "@/components/StatCards";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -55,7 +57,13 @@ const PULSE_CHART_CONFIG: ChartConfig = {
  */
 export function TodayClient() {
   const supabase = useMemo(() => createClient(), []);
-  const { user, members, todayReport, pulse, gymName, settings, reloadAll } = useAdmin();
+  const user = useAuthStore((s) => s.user);
+  const gymName = useGymStore((s) => s.gymName);
+  const settings = useGymStore((s) => s.settings);
+  const members = useMembersStore((s) => s.members);
+  const todayReport = useMembersStore((s) => s.todayReport);
+  const pulse = useMembersStore((s) => s.pulse);
+  const reloadAll = useMembersStore((s) => s.reloadAll);
 
   const [checkinQuery, setCheckinQuery] = useState("");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);

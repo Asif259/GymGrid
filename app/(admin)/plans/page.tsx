@@ -4,7 +4,9 @@ import { useMemo, useState, type FormEvent } from "react";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useAdmin } from "@/components/AdminContext";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useGymStore } from "@/lib/stores/gym-store";
+import { useMembersStore } from "@/lib/stores/members-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +31,9 @@ import type { PlanKind } from "@/types/gym";
 
 export default function PlansPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { user, templates, reloadAll } = useAdmin();
+  const user = useAuthStore((s) => s.user);
+  const templates = useGymStore((s) => s.templates);
+  const reloadAll = useMembersStore((s) => s.reloadAll);
 
   const [kind, setKind] = useState<PlanKind>("workout");
   const [name, setName] = useState("");

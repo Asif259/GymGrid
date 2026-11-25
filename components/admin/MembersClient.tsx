@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { Users } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useAdmin } from "@/components/AdminContext";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useGymStore } from "@/lib/stores/gym-store";
+import { useMembersStore } from "@/lib/stores/members-store";
 import { DataTable } from "@/components/DataTable";
 import { MemberDialog } from "@/components/admin/MemberDialog";
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,10 @@ import type { Member, MemberFilter } from "@/types/gym";
  */
 export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter }) {
   const supabase = useMemo(() => createClient(), []);
-  const { user, members, templates, reloadAll } = useAdmin();
+  const user = useAuthStore((s) => s.user);
+  const templates = useGymStore((s) => s.templates);
+  const members = useMembersStore((s) => s.members);
+  const reloadAll = useMembersStore((s) => s.reloadAll);
 
   const [filter, setFilter] = useState<MemberFilter>(initialFilter ?? "all");
   const [query, setQuery] = useState("");

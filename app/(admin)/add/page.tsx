@@ -4,7 +4,9 @@ import { useMemo, useState, type FormEvent } from "react";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { useAdmin } from "@/components/AdminContext";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useGymStore } from "@/lib/stores/gym-store";
+import { useMembersStore } from "@/lib/stores/members-store";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,7 +29,9 @@ import { money, normalizePhone } from "@/lib/logic";
 
 export default function AddMemberPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { user, plans, reloadAll } = useAdmin();
+  const user = useAuthStore((s) => s.user);
+  const plans = useGymStore((s) => s.plans);
+  const reloadAll = useMembersStore((s) => s.reloadAll);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

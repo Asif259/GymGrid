@@ -12,7 +12,9 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useAdmin } from "@/components/AdminContext";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useGymStore } from "@/lib/stores/gym-store";
+import { useMembersStore } from "@/lib/stores/members-store";
 import { LoginCard } from "@/components/LoginCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -72,7 +74,13 @@ const VIEW_LABELS: Record<string, string> = {
  */
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { status, user, role, gymName, members, lastSync, signOut } = useAdmin();
+  const status = useAuthStore((s) => s.status);
+  const user = useAuthStore((s) => s.user);
+  const role = useAuthStore((s) => s.role);
+  const signOut = useAuthStore((s) => s.signOut);
+  const gymName = useGymStore((s) => s.gymName);
+  const membersCount = useMembersStore((s) => s.members.length);
+  const lastSync = useMembersStore((s) => s.lastSync);
 
   const todayFormatted = fmtDate(new Date().toISOString().slice(0, 10));
   const pageTitle = VIEW_LABELS[pathname] ?? "Overview";
@@ -218,7 +226,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         </Link>
                       </SidebarMenuButton>
                       {item.href === "/members" ? (
-                        <SidebarMenuBadge>{members.length}</SidebarMenuBadge>
+                        <SidebarMenuBadge>{membersCount}</SidebarMenuBadge>
                       ) : null}
                     </SidebarMenuItem>
                   );

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
-import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -20,6 +20,10 @@ import {
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import {
+  useMemberAppStore,
+  type MemberTab,
+} from "@/lib/stores/member-app-store";
 import { LoginCard } from "@/components/LoginCard";
 import { PlanView } from "@/components/PlanView";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -51,175 +55,49 @@ import {
   streakText,
 } from "@/lib/logic";
 import { cn } from "@/lib/utils";
-import type {
-  AttendanceStreak,
-  DietPlanData,
-  GymSettings,
-  Member,
-  Payment,
-  WorkoutPlanData,
-} from "@/types/gym";
-
-type MemberTab = "home" | "pay" | "plans" | "receipts" | "visits";
-
-const CHECKIN_KEY = "pendingCheckin";
-const TAB_KEY = "openTab";
+import type { Payment } from "@/types/gym";
 
 export default function MemberAppPage() {
   const supabase = useMemo(() => createClient(), []);
   const { gymName: defaultGymName } = useMemo(() => getSupabaseEnv(), []);
 
-  const [status, setStatus] = useState<
-    "loading" | "signed_out" | "no_member" | "ready"
-  >("loading");
-  const [user, setUser] = useState<User | null>(null);
-  const [settings, setSettings] = useState<Partial<GymSettings>>({
-    name: defaultGymName,
-    currency: "৳",
-  });
-  const [member, setMember] = useState<Member | null>(null);
-  const [workout, setWorkout] = useState<WorkoutPlanData | null>(null);
-  const [diet, setDiet] = useState<DietPlanData | null>(null);
-  const [visits, setVisits] = useState<{ day: string; checked_in_at: string }[]>([]);
-  const [trainerName, setTrainerName] = useState<string>("");
-  const [streak, setStreak] = useState<AttendanceStreak | null>(null);
+  const status = useMemberAppStore((s) => s.status);
+  const user = useMemberAppStore((s) => s.user);
+  const settings = useMemberAppStore((s) => s.settings);
+  const member = useMemberAppStore((s) => s.member);
+  const workout = useMemberAppStore((s) => s.workout);
+  const diet = useMemberAppStore((s) => s.diet);
+  const visits = useMemberAppStore((s) => s.visits);
+  const trainerName = useMemberAppStore((s) => s.trainerName);
+  const streak = useMemberAppStore((s) => s.streak);
+  const tab = useMemberAppStore((s) => s.tab);
+  const checkinBanner = useMemberAppStore((s) => s.checkinBanner);
 
-  const [tab, setTab] = useState<MemberTab>("home");
-  const [checkinBanner, setCheckinBanner] = useState<{
-    ok: boolean;
-    text: string;
-  } | null>(null);
+  const loadMemberData = useMemberAppStore((s) => s.loadMemberData);
+  const signOut = useMemberAppStore((s) => s.signOut);
+  const setTab = useMemberAppStore((s) => s.setTab);
+  const setUser = useMemberAppStore((s) => s.setUser);
+  const setStatus = useMemberAppStore((s) => s.setStatus);
+  const setGymName = useMemberAppStore((s) => s.setGymName);
+  const setPendingCheckin = useMemberAppStore((s) => s.setPendingCheckin);
+  const setPendingTab = useMemberAppStore((s) => s.setPendingTab);
+
   const [payMethod, setPayMethod] = useState<"bkash" | "nagad">("bkash");
   const [trxId, setTrxId] = useState("");
   const [submittingTrx, setSubmittingTrx] = useState(false);
-
-  const loadMemberData = useCallback(async () => {
-    const [settingsRes, claimRes] = await Promise.all([
-      supabase
-        .from("gym_settings")
-        .select("name, currency, bkash_number, nagad_number, app_url")
-        .maybeSingle(),
-      supabase.rpc("claim_member"),
-    ]);
-
-    if (settingsRes.data) {
-      setSettings(settingsRes.data as Partial<GymSettings>);
-    }
-
-    const memberId = claimRes.data as string | null;
-    if (claimRes.error || !memberId) {
-      setStatus("no_member");
-      return;
-    }
-
-    const pendingToken = window.localStorage.getItem(CHECKIN_KEY);
-    if (pendingToken) {
-      window.localStorage.removeItem(CHECKIN_KEY);
-      const { data: chkData, error: chkErr } = await supabase.rpc("check_in", {
-        token: pendingToken,
-      });
-      if (chkErr) {
-        setCheckinBanner({ ok: false, text: chkErr.message });
-      } else {
-        const res = chkData as { paid_up?: boolean; message?: string } | null;
-        setCheckinBanner({
-          ok: res?.paid_up !== false,
-          text: res?.message ?? "Checked in!",
-        });
-      }
-    }
-
-    const colsWithPath =
-      "id, amount, status, method, trx_id, receipt_no, receipt_path, paid_on, period_start, period_end, created_at";
-    const colsBase =
-      "id, amount, status, method, trx_id, receipt_no, paid_on, period_start, period_end, created_at";
-
-    let memberRes = await supabase
-      .from("members")
-      .select(`*, plans(name, months, price), payments(${colsWithPath})`)
-      .eq("id", memberId)
-      .single();
-
-    if (memberRes.error && /receipt_path/.test(memberRes.error.message)) {
-      memberRes = await supabase
-        .from("members")
-        .select(`*, plans(name, months, price), payments(${colsBase})`)
-        .eq("id", memberId)
-        .single();
-    }
-
-    const [wRes, dRes, vRes, streakRes] = await Promise.all([
-      supabase
-        .from("workout_plans")
-        .select("plan")
-        .eq("member_id", memberId)
-        .eq("verified", true)
-        .order("created_at", { ascending: false })
-        .limit(1),
-      supabase
-        .from("diet_plans")
-        .select("plan")
-        .eq("member_id", memberId)
-        .eq("verified", true)
-        .order("created_at", { ascending: false })
-        .limit(1),
-      supabase
-        .from("attendance")
-        .select("day, checked_in_at")
-        .eq("member_id", memberId)
-        .order("day", { ascending: false })
-        .limit(60),
-      supabase.rpc("my_streak"),
-    ]);
-
-    const loadedMember = memberRes.data as Member | null;
-    setMember(loadedMember);
-    setWorkout((wRes.data?.[0]?.plan as WorkoutPlanData | undefined) ?? null);
-    setDiet((dRes.data?.[0]?.plan as DietPlanData | undefined) ?? null);
-    setVisits(
-      (vRes.data as { day: string; checked_in_at: string }[] | null) ?? [],
-    );
-    if (!streakRes.error && streakRes.data) {
-      setStreak(streakRes.data as AttendanceStreak);
-    } else {
-      setStreak(null);
-    }
-
-    if (loadedMember?.trainer_id) {
-      const trRes = await supabase
-        .from("staff")
-        .select("display_name")
-        .eq("user_id", loadedMember.trainer_id)
-        .maybeSingle();
-      setTrainerName(trRes.data?.display_name ?? "");
-    } else {
-      setTrainerName("");
-    }
-
-    const savedTab = window.localStorage.getItem(TAB_KEY) as MemberTab | null;
-    if (
-      savedTab &&
-      ["home", "pay", "plans", "receipts", "visits"].includes(savedTab)
-    ) {
-      window.localStorage.removeItem(TAB_KEY);
-      setTab(savedTab);
-    }
-
-    setStatus("ready");
-  }, [supabase]);
 
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.startsWith("#checkin=")) {
       const tok = decodeURIComponent(hash.slice("#checkin=".length));
-      if (tok) window.localStorage.setItem(CHECKIN_KEY, tok);
+      if (tok) setPendingCheckin(tok);
       window.history.replaceState(
         null,
         "",
         window.location.pathname + window.location.search,
       );
     } else if (hash === "#pay") {
-      window.localStorage.setItem(TAB_KEY, "pay");
+      setPendingTab("pay");
       window.history.replaceState(
         null,
         "",
@@ -235,9 +113,12 @@ export default function MemberAppPage() {
       if (cancelled) return;
       setUser(authUser);
       if (!authUser) {
-        const sRes = await supabase.from("gym_settings").select("name").maybeSingle();
+        const sRes = await supabase
+          .from("gym_settings")
+          .select("name")
+          .maybeSingle();
         if (!cancelled && sRes.data?.name) {
-          setSettings((prev) => ({ ...prev, name: sRes.data!.name }));
+          setGymName(sRes.data.name);
         }
         setStatus("signed_out");
         return;
@@ -263,14 +144,15 @@ export default function MemberAppPage() {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [supabase, loadMemberData]);
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    setUser(null);
-    setMember(null);
-    setStatus("signed_out");
-  }
+  }, [
+    supabase,
+    loadMemberData,
+    setGymName,
+    setPendingCheckin,
+    setPendingTab,
+    setStatus,
+    setUser,
+  ]);
 
   async function copyNumber(num: string, label: string) {
     try {
