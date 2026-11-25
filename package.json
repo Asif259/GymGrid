@@ -1,0 +1,13 @@
+{
+  "name": "gym",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "verify:db": "node supabase/tests/verify-db.mjs .",
+    "test": "node --test web/*.test.mjs",
+    "web": "npx --yes serve@14.2.4 web -l 3000"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.2.17"
+  }
+}

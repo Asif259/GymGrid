@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Check-in QR</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <style>
+    #qr img { width: min(80vw, 420px); height: auto; image-rendering: pixelated; }
+    .poster { text-align: center; }
+  </style>
+</head>
+<body>
+<main class="narrow">
+  <div id="flash" class="msg" hidden role="status"></div>
+  <section class="card poster" id="poster" hidden>
+    <h1 id="gym"></h1>
+    <p class="big">Scan to check in</p>
+    <div id="qr"></div>
+    <p class="muted">Open your phone camera, scan, and sign in to the members app once.</p>
+    <p class="muted no-print"><code id="qr-url"></code></p>
+    <button class="primary no-print" type="button" onclick="print()">Print</button>
+  </section>
+</main>
+<script type="module">
+  import { sb, $, el, flash, loadSettings, session } from './common.js';
+
+  // The QR holds the members-app address plus the secret desk token, so only people at the desk can check in.
+  if (!(await session())) flash('Staff only: sign in on the admin page first.');
+  else {
+    const [settings, { data: token, error }] = await Promise.all([loadSettings(), sb.rpc('checkin_qr_token')]);
+    if (error) flash(error.message);
+    else if (!settings.app_url) flash('Set the app web address in Gym settings first (admin page), then reload.');
+    else {
+      const url = `${settings.app_url.replace(/\/$/, '')}/member.html#checkin=${token}`;
+      const qr = qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      $('qr').replaceChildren(el('img', { src: qr.createDataURL(10, 4), alt: 'Check-in QR code' }));
+      $('qr-url').textContent = url;
+      $('gym').textContent = settings.name;
+      $('poster').hidden = false;
+    }
+  }
+</script>
+</body>
+</html>

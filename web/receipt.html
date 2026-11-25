@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment Receipt</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="narrow">
+  <header><h1 id="gym">Receipt</h1></header>
+  <div id="flash" class="msg" hidden role="status"></div>
+  <section class="card" id="receipt" hidden>
+    <p class="muted">Payment receipt</p>
+    <p class="big" id="r-no"></p>
+    <table class="members"><tbody id="r-rows"></tbody></table>
+    <div class="row no-print" style="margin-top:16px">
+      <button class="primary" type="button" onclick="print()">Print / save PDF</button>
+      <a class="btn" id="r-wa" target="_blank" rel="noopener">Send on WhatsApp</a>
+    </div>
+  </section>
+</main>
+<script type="module">
+  import { sb, $, el, flash, loadSettings, session } from './common.js';
+  import { money, receiptLink } from './logic.js';
+
+  const id = new URLSearchParams(location.search).get('id');
+  if (!(await session())) {
+    flash('Sign in first (admin page or members app), then open this receipt again.');
+  } else {
+    const [settings, { data: p, error }] = await Promise.all([
+      loadSettings(),
+      sb.from('payments').select('*, members(name, phone, plans(name))').eq('id', id).maybeSingle(),
+    ]);
+    if (error || !p) flash(error?.message ?? 'Receipt not found, or not yours.');
+    else if (p.status !== 'paid') flash('This payment is not confirmed yet. The receipt appears once the gym verifies it.');
+    else {
+      $('gym').textContent = settings.name;
+      document.title = `Receipt ${p.receipt_no}`;
+      $('r-no').textContent = p.receipt_no;
+      const rows = [['Member', `${p.members.name} (+${p.members.phone})`], ['Plan', p.members.plans?.name ?? '—'],
+        ['Amount', money(p.amount, settings.currency)], ['Method', p.method ?? 'cash'], ['TrxID', p.trx_id],
+        ['Paid on', p.paid_on], ['Valid from', p.period_start], ['Valid to', p.period_end]];
+      $('r-rows').replaceChildren(...rows.filter(([, v]) => v).map(([k, v]) => el('tr', {}, el('th', { textContent: k }), el('td', { textContent: v }))));
+      $('r-wa').href = receiptLink(p, p.members, settings.name, settings.currency);
+      $('receipt').hidden = false;
+    }
+  }
+</script>
+</body>
+</html>

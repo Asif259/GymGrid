@@ -1,0 +1,77 @@
+/* Welcome page: copy + one 12s walkthrough (member checks in, staff verifies bKash). Plain CSS, no JS timeline.
+   Default styles show the END state (poster / reduced motion); keyframes replay it from the start. */
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
+.top .brand { font: 400 20px/1.2 var(--display); color: var(--green); }
+.top nav { display: flex; gap: 8px; }
+.hero { display: grid; gap: 40px; align-items: center; padding: 24px 0 72px; }
+@media (min-width: 960px) { .hero { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); padding-top: 56px; } }
+.hero h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.1; color: var(--green); text-wrap: balance; }
+.hero p { font-size: 18px; line-height: 1.5; color: var(--ink-2); max-width: 46ch; margin: 16px 0 28px; }
+.hero .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero .cta .btn { min-height: 52px; padding: 10px 22px; font-size: 17px; }
+
+/* the stage is drawn at 600x430 and scaled to fit by a few lines of script */
+.fit { position: relative; width: 100%; overflow: hidden; border-radius: 14px; }
+.stage { position: relative; width: 600px; height: 430px; transform-origin: top left; overflow: hidden; border-radius: 14px; background: #e9e0cd; animation: dip 12s linear infinite; }
+.desk { position: absolute; left: 24px; top: 28px; width: 576px; height: 330px; background: var(--cream); border: 2px solid var(--ink); border-right: 0; border-radius: 10px 0 0 10px; box-shadow: 0 12px 28px rgb(27 27 27 / .18); overflow: hidden; }
+.desk .bar { font-family: var(--display); font-weight: 400; font-synthesis: none; height: 44px; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-weight: 800; font-size: 15px; }
+.desk .bar span { font-weight: 600; font-size: 12px; color: #cfe3d6; }
+.desk .pl { display: flex; gap: 10px; padding: 14px 16px 0; }
+.mini { flex: 1; height: 72px; background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; padding: 8px 10px; position: relative; overflow: hidden; }
+.mini small { display: block; font-size: 11px; font-weight: 700; color: var(--ink-2); }
+.mini b { display: block; font: 400 24px/1.15 var(--display); font-weight: 800; font-synthesis: none; }
+.mini.owed b { color: var(--red); }
+.roll { height: 29px; overflow: hidden; }
+.roll i { display: block; font: 400 24px/29px var(--display); font-weight: 800; font-synthesis: none; transform: translateY(-29px); animation: roll 12s infinite; }
+.dcard { margin: 14px 16px 0; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.dcard .h4 { margin: 0 0 6px; font: 400 15px/1.2 var(--display); }
+.drow { display: flex; justify-content: space-between; align-items: center; min-height: 56px; border-top: 1px solid var(--line); }
+.drow .who { font-weight: 700; font-size: 15px; }
+.subs { position: relative; height: 18px; font-size: 13px; color: var(--ink-2); }
+.subs span { position: absolute; left: 0; top: 0; white-space: nowrap; }
+.s-a { opacity: 0; animation: showA 12s infinite; }
+.s-b { opacity: 1; animation: showB 12s infinite; }
+.vbtn { position: relative; width: 132px; height: 44px; border-radius: 8px; border: 2px solid var(--green); font-weight: 700; font-size: 15px; background: var(--ok-bg); color: var(--green); animation: vbtn 12s infinite; }
+.vbtn span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.v-a { opacity: 0; animation: showA 12s infinite; }
+.v-b { opacity: 1; animation: showB 12s infinite; }
+
+.phone { position: absolute; left: 44px; top: 268px; width: 214px; height: 320px; background: #111; border-radius: 34px; padding: 8px; box-shadow: 0 10px 30px rgb(27 27 27 / .3); }
+.screen { position: relative; width: 100%; height: 100%; background: var(--cream); border-radius: 27px; overflow: hidden; }
+.screen .sb { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-size: 12px; font-weight: 700; }
+.screen .ph { padding: 4px 16px; font: 400 18px/1.2 var(--display); color: var(--green); }
+.pane { position: absolute; left: 14px; right: 14px; top: 64px; height: 90px; border-radius: 10px; padding: 10px 12px; }
+.scan { background: var(--paper); border: 2px dashed var(--line-2); text-align: center; opacity: 0; animation: showScan 12s infinite; }
+.scan b { display: block; margin-top: 6px; font-size: 14px; }
+.scan .qr { width: 44px; height: 44px; margin: 0 auto; border: 3px solid var(--ink); border-radius: 4px; background: conic-gradient(var(--ink) 25%, #fff 0 50%, var(--ink) 0 75%, #fff 0) 0 0 / 16px 16px; }
+.ok { background: var(--ok-bg); border: 2px solid var(--green); opacity: 1; animation: showResult 12s infinite; }
+.ok b { display: block; font: 400 17px/1.25 var(--display); color: var(--green-2); }
+.ok span { font-size: 13px; color: var(--green-2); }
+
+.cursor { position: absolute; z-index: 5; left: 0; top: 0; width: 26px; height: 26px; pointer-events: none; opacity: 0; animation: cursor 12s infinite; }
+.cursor svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgb(0 0 0 / .35)); animation: press 12s infinite; transform-origin: 3px 3px; }
+
+@keyframes dip { 0% { opacity: 0; } 3% { opacity: 1; } 96% { opacity: 1; } 99.4% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes showScan { 0%, 12% { opacity: 1; } 15%, 99.3% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes showResult { 0%, 12% { opacity: 0; } 15%, 99.3% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes showA { 0%, 52% { opacity: 1; } 55%, 99.3% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes showB { 0%, 52% { opacity: 0; } 55%, 99.3% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes vbtn { 0%, 52% { background: var(--green); color: #fff; } 55%, 99.3% { background: var(--ok-bg); color: var(--green); } 100% { background: var(--green); color: #fff; } }
+@keyframes roll { 0%, 55% { transform: translateY(0); } 59%, 99.3% { transform: translateY(-29px); } 100% { transform: translateY(0); } }
+@keyframes cursor {
+  0% { opacity: 0; transform: translate(110px, 420px); }
+  6% { opacity: 1; transform: translate(150px, 372px); }
+  34% { opacity: 1; transform: translate(150px, 372px); }
+  48% { opacity: 1; transform: translate(510px, 232px); }
+  62% { opacity: 1; transform: translate(510px, 232px); }
+  70% { opacity: 0; transform: translate(540px, 260px); }
+  100% { opacity: 0; transform: translate(110px, 420px); }
+}
+@keyframes press { 0%, 9%, 14%, 52%, 57%, 100% { transform: scale(1); } 11%, 54.5% { transform: scale(.82); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage, .roll i, .s-a, .s-b, .vbtn, .v-a, .v-b, .scan, .ok, .cursor, .cursor svg { animation: none !important; }
+  .cursor { opacity: 0; }
+}
+.foot { padding: 0 0 48px; color: var(--ink-2); font-size: 14px; }

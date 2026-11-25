@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f5132">
+  <meta name="description" content="Check in with a QR, pay by bKash or Nagad, and keep your plans and receipts on your phone.">
+  <title>Gym App: check in, pay, train</title>
+  <link rel="preload" href="fonts/alfa-slab-one-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="brand">Our Gym</span>
+    <nav aria-label="Sign in">
+      <a class="btn" href="index.html">Staff</a>
+      <a class="btn primary" href="member.html">Member sign in</a>
+    </nav>
+  </div>
+
+  <main class="hero" style="max-width:none;padding-left:0;padding-right:0">
+    <div>
+      <h1>Your gym's register, on every phone</h1>
+      <p>Scan the QR at the front desk to check in. Pay by bKash or Nagad and the desk confirms it in a tap. Your plan, receipts and visits stay in one place.</p>
+      <div class="cta">
+        <a class="btn primary" href="member.html">Member sign in</a>
+        <a class="btn" href="index.html">Staff sign in</a>
+      </div>
+    </div>
+
+    <div class="fit" id="fit" role="img" aria-label="A member scans the desk QR and is checked in, then the front desk verifies a bKash payment and the pending count drops from three to two.">
+      <div class="stage" id="stage">
+        <div class="desk">
+          <div class="bar">Today <span>sample data</span></div>
+          <div class="pl">
+            <div class="mini"><small>In today</small><b>24</b></div>
+            <div class="mini"><small>Revenue today</small><b>৳6,000</b></div>
+            <div class="mini owed"><small>Pending payments</small><div class="roll"><i>3<br>2</i></div></div>
+          </div>
+          <div class="dcard">
+            <div class="h4">Payments to confirm</div>
+            <div class="drow">
+              <div>
+                <div class="who">Tanvir Ahmed</div>
+                <div class="subs"><span class="s-a">bkash · TrxID 9JK4L2M8NP</span><span class="s-b">Receipt R-2026-000043</span></div>
+              </div>
+              <div class="vbtn"><span class="v-a">Verify ৳1,500</span><span class="v-b">Verified</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phone">
+          <div class="screen">
+            <div class="sb"><span>9:41</span><span>Our Gym</span></div>
+            <div class="ph">Check in</div>
+            <div class="pane scan"><div class="qr"></div><b>Scan the desk QR</b></div>
+            <div class="pane ok"><b>Welcome, Tanvir</b><span>Membership valid until 24 Dec.</span></div>
+          </div>
+        </div>
+
+        <div class="cursor" aria-hidden="true">
+          <svg viewBox="0 0 26 26"><path d="M3 2l17 8.2-7.2 2.2L9.6 20z" fill="#1b1b1b" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+  // Scale the 600x430 stage to its column; the wrapper takes the scaled height so nothing overlaps.
+  const fit = document.getElementById('fit'), stage = document.getElementById('stage');
+  const resize = () => { const s = Math.min(1, fit.clientWidth / 600); stage.style.transform = `scale(${s})`; fit.style.height = `${430 * s}px`; };
+  new ResizeObserver(resize).observe(fit); resize();
+</script>
+</body>
+</html>

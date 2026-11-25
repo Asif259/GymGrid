@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T00:00:00Z",
+  "title": "Design System: Gym Admin (Rickshaw Enamel)",
+  "extensions": {
+    "colorMeta": {
+      "rail-green": { "role": "primary", "displayName": "Rail Green", "canonical": "#0f5132", "tonalRamp": ["#05140d", "#0b3d26", "#0f5132", "#1d6a47", "#4a8f6c", "#86b79e", "#c1dccd", "#e3f1e8"] },
+      "vermilion": { "role": "secondary", "displayName": "Vermilion", "canonical": "#d7261e", "tonalRamp": ["#3a0805", "#6e0f0b", "#8f1812", "#d7261e", "#e8574f", "#f08f89", "#f7c4c1", "#fbe9e7"] },
+      "ochre": { "role": "tertiary", "displayName": "Ochre", "canonical": "#f2b705", "tonalRamp": ["#2b1d00", "#5a3b00", "#7a4f00", "#b37a00", "#f2b705", "#f6cb4d", "#fadf8f", "#fdf1cc"] },
+      "focus-blue": { "role": "tertiary", "displayName": "Focus Blue", "canonical": "#1c4fa0", "tonalRamp": ["#06142b", "#0d2a58", "#1c4fa0", "#3f71c0", "#6d94d1", "#a0b9e1", "#cfdbf0", "#eef2fa"] },
+      "cream-ground": { "role": "neutral", "displayName": "Cream Ground", "canonical": "#f6f1e7", "tonalRamp": ["#1b1b1b", "#4f4b42", "#6b665a", "#8d8472", "#c9bda6", "#ddd3c0", "#f6f1e7", "#fffdf8"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page title h1 in Alfa Slab One, green. One weight, font-synthesis none." },
+      "plate-numeral": { "displayName": "Plate numeral", "purpose": "The count or amount on an enamel plate." },
+      "section-title": { "displayName": "Section title", "purpose": "Card h2 headings." },
+      "body": { "displayName": "Body", "purpose": "system-ui for all rows, forms and copy; tabular numerals." },
+      "label": { "displayName": "Label", "purpose": "Plate captions, notes, form labels." },
+      "button": { "displayName": "Button", "purpose": "All buttons and button-style links." }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 1px 2px rgb(27 27 27 / .10), 0 4px 12px rgb(27 27 27 / .06)", "purpose": "Resting cards." },
+      { "name": "plate", "value": "0 2px 0 rgb(27 27 27 / .12), 0 6px 14px rgb(27 27 27 / .08)", "purpose": "Enamel plates." },
+      { "name": "button-hover", "value": "0 3px 8px rgb(27 27 27 / .12)", "purpose": "Button hover, with 1px lift." },
+      { "name": "phone-rail", "value": "0 -2px 12px rgb(0 0 0 / .18)", "purpose": "Bottom tab rail on phone only." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(.2, .8, .2, 1)", "purpose": "Plate paint-in (.35s, 50ms stagger) and button lift (.12s). All motion off under prefers-reduced-motion." },
+      { "name": "state-fade", "value": "150ms", "purpose": "Background, color, border transitions on controls and rail." }
+    ],
+    "breakpoints": [
+      { "name": "desk", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Solid green main action (Verify, Mark paid).",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Verify ৳1,500</button>",
+      "css": ".ds-btn{font:inherit;font-weight:700;font-size:15px;min-height:44px;padding:8px 14px;border-radius:8px;border:2px solid #0f5132;background:transparent;color:#0f5132;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,transform .12s cubic-bezier(.2,.8,.2,1),box-shadow .15s}.ds-btn-primary{background:#0f5132;color:#fff}.ds-btn-primary:hover{background:#1d6a47;border-color:#1d6a47;transform:translateY(-1px);box-shadow:0 3px 8px rgb(27 27 27/.12)}.ds-btn:focus-visible{outline:3px solid #1c4fa0;outline-offset:2px;border-radius:4px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined green default button.",
+      "html": "<button class=\"ds-btn\">Receipt</button>",
+      "css": ".ds-btn{font:inherit;font-weight:700;font-size:15px;min-height:44px;padding:8px 14px;border-radius:8px;border:2px solid #0f5132;background:transparent;color:#0f5132;cursor:pointer;white-space:nowrap;transition:background .15s,transform .12s}.ds-btn:hover{background:#e3f1e8;transform:translateY(-1px);box-shadow:0 3px 8px rgb(27 27 27/.12)}.ds-btn:focus-visible{outline:3px solid #1c4fa0;outline-offset:2px;border-radius:4px}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Outlined vermilion for destructive actions.",
+      "html": "<button class=\"ds-btn-danger\">Remove</button>",
+      "css": ".ds-btn-danger{font:inherit;font-weight:700;font-size:15px;min-height:44px;padding:8px 14px;border-radius:8px;border:2px solid #d7261e;background:transparent;color:#d7261e;cursor:pointer}.ds-btn-danger:focus-visible{outline:3px solid #1c4fa0;outline-offset:2px;border-radius:4px}"
+    },
+    {
+      "name": "Enamel Plate",
+      "kind": "card",
+      "refersTo": "plate",
+      "description": "Signature count plate: ink border, inset keyline, slab numeral.",
+      "html": "<div class=\"ds-plate\"><span>Pending</span><b>3</b><small>to verify</small></div>",
+      "css": ".ds-plate{position:relative;background:#fffdf8;border:2px solid #1b1b1b;border-radius:6px;padding:12px 14px;min-height:104px;width:150px;display:grid;grid-template-rows:auto 1fr auto;align-items:center;box-shadow:0 2px 0 rgb(27 27 27/.12),0 6px 14px rgb(27 27 27/.08);color:#1b1b1b}.ds-plate::before{content:\"\";position:absolute;inset:4px;border:1px solid #1b1b1b;opacity:.22;border-radius:3px;pointer-events:none}.ds-plate b{font:400 32px/1.1 'Alfa Slab One',Georgia,serif;font-synthesis:none}.ds-plate span{font-size:13px;font-weight:700;color:#4f4b42}.ds-plate small{font-size:13px;font-weight:600;color:#4f4b42}"
+    },
+    {
+      "name": "Owed Plate",
+      "kind": "card",
+      "refersTo": "plate",
+      "description": "Plate whose numeral is vermilion because money is owed.",
+      "html": "<div class=\"ds-plate ds-owed\"><span>Owed</span><b>৳4,200</b><small>3 members</small></div>",
+      "css": ".ds-plate{position:relative;background:#fffdf8;border:2px solid #1b1b1b;border-radius:6px;padding:12px 14px;min-height:104px;width:150px;display:grid;grid-template-rows:auto 1fr auto;align-items:center;box-shadow:0 2px 0 rgb(27 27 27/.12),0 6px 14px rgb(27 27 27/.08)}.ds-plate::before{content:\"\";position:absolute;inset:4px;border:1px solid #1b1b1b;opacity:.22;border-radius:3px}.ds-plate b{font:400 32px/1.1 'Alfa Slab One',Georgia,serif;font-synthesis:none}.ds-plate span,.ds-plate small{font-size:13px;font-weight:700;color:#4f4b42}.ds-owed b{color:#d7261e}"
+    },
+    {
+      "name": "Alert Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Card with 2px vermilion border for 'Came in without paying'.",
+      "html": "<section class=\"ds-card\"><h2>Came in without paying <span>· 2</span></h2><p>Rahim · owes ৳1,500</p></section>",
+      "css": ".ds-card{background:#fffdf8;border:2px solid #d7261e;border-radius:8px;padding:16px;box-shadow:0 1px 2px rgb(27 27 27/.10),0 4px 12px rgb(27 27 27/.06);color:#1b1b1b;font-family:system-ui,sans-serif}.ds-card h2{font:400 17px/1.25 'Alfa Slab One',Georgia,serif;font-synthesis:none;margin:0 0 12px;color:#d7261e}.ds-card h2 span{color:#4f4b42}.ds-card p{margin:0}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "44px field, 2px border, green border and ochre halo on focus.",
+      "html": "<label class=\"ds-label\">Phone<input class=\"ds-input\" placeholder=\"01XXXXXXXXX\"></label>",
+      "css": ".ds-label{display:block;font-size:14px;font-weight:600;color:#4f4b42;font-family:system-ui,sans-serif}.ds-input{font:inherit;width:100%;min-height:44px;margin-top:4px;padding:8px 12px;border:2px solid #c9bda6;border-radius:8px;background:#fff;color:#1b1b1b;transition:border-color .15s}.ds-input:hover{border-color:#4f4b42}.ds-input:focus{border-color:#0f5132;outline:3px solid rgb(242 183 5/.55);outline-offset:0}.ds-input::placeholder{color:#6b665a}"
+    },
+    {
+      "name": "Status Pills",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Outlined uppercase status: active, due, expired, frozen.",
+      "html": "<span class=\"ds-pill\" style=\"color:#0f5132\">active</span> <span class=\"ds-pill\" style=\"color:#7a4f00\">due</span> <span class=\"ds-pill\" style=\"color:#d7261e\">expired</span> <span class=\"ds-pill\" style=\"color:#1c4fa0\">frozen</span>",
+      "css": ".ds-pill{display:inline-block;font:800 12px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;border:1.5px solid currentColor}"
+    },
+    {
+      "name": "Rail Nav Item",
+      "kind": "nav",
+      "refersTo": "rail",
+      "description": "Desk rail row; active item gets white tint and ochre icon.",
+      "html": "<nav class=\"ds-rail\"><a class=\"ds-rail-a\" href=\"#\"><svg viewBox=\"0 0 24 24\"><path d=\"M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg>Today</a><a class=\"ds-rail-a\" aria-current=\"page\" href=\"#\"><svg viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/></svg>Members</a></nav>",
+      "css": ".ds-rail{display:flex;flex-direction:column;gap:4px;width:216px;padding:20px 12px;background:#0f5132;font-family:system-ui,sans-serif}.ds-rail-a{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;color:#d4e6db;text-decoration:none;font-size:15px;font-weight:600;transition:background .15s,color .15s}.ds-rail-a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}.ds-rail-a:hover{background:#1d6a47;color:#fff}.ds-rail-a[aria-current=page]{color:#fff;background:rgb(255 255 255/.14)}.ds-rail-a[aria-current=page] svg{stroke:#f2b705}.ds-rail-a:focus-visible{outline:3px solid #f2b705;outline-offset:-3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Painted Tin Sign",
+    "overview": "The admin app reads as the shop's own enamel signboard, not a SaaS panel. A deep green shell frames a cream ground; every count sits on a painted plate with a heavy ink border and a thin inset keyline; one hot colour, vermilion, is spent on money owed and nothing else. Everything settled stays quiet green or ink. The world lives in palette, plates and type. There is no ornament, illustration or pattern.\n\nDensity is working-desk density: 56px list rows, 44px touch targets, one tap per action. Phone and desk are equal targets. On phone a green top bar and a bottom tab rail carry the shell; at 900px and up the rail becomes a fixed 216px left column.",
+    "keyCharacteristics": [
+      "Green shell, cream ground, paper-white plates and cards.",
+      "Slab display face only for titles, the brand, and plate numerals; everything else is the system font.",
+      "Vermilion means money owed or expired, never decoration.",
+      "Ochre marks selection and the active nav icon; the keyboard focus ring is blue for contrast.",
+      "Tabular numerals everywhere.",
+      "Light mode only."
+    ],
+    "rules": [
+      { "name": "The Money-Owed Rule", "body": "Vermilion appears only where someone owes money or a membership has lapsed. If a thing is merely important, it is not vermilion.", "section": "colors" },
+      { "name": "The Focus-Is-Blue Rule", "body": "Ochre decorates focus-adjacent state (active nav, selection, header rule); the actual focus ring is blue #1c4fa0. Do not swap them.", "section": "colors" },
+      { "name": "The Plates-Only Rule", "body": "The slab face is for titles, the brand, and plate numerals. Names, rows, buttons, labels and form text stay on the system font.", "section": "typography" },
+      { "name": "The Taka Fallback Rule", "body": "The Taka sign (U+09F3) is not in the Latin subset and falls back to the system font. It is accepted behaviour, so do not rely on the slab face to render it.", "section": "typography" },
+      { "name": "The Mounted-Plate Rule", "body": "A plate is an ink border, an inset 1px keyline at 22% opacity and a ground shadow. Do not add gradients or glossy effects.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do put every count on a plate, and keep the slab face to titles, the brand and plate numerals.",
+      "Do use vermilion only for money owed, EXPIRED and never-paid states, and failures.",
+      "Do keep the blue focus ring on all interactive elements; use ochre for selection, active nav and the phone header rule.",
+      "Do keep targets at 44px minimum and list rows at 56px.",
+      "Do set font-synthesis: none wherever Alfa Slab One is used."
+    ],
+    "donts": [
+      "Don't use a grey sidebar, white KPI cards, or SaaS dashboard chrome.",
+      "Don't add flowers, peacocks, patterns or other ornament; the world is palette, plates and type.",
+      "Don't fill surfaces or buttons with ochre.",
+      "Don't use bold on the display face, or use it for body copy, row names or buttons.",
+      "Don't use vermilion for emphasis that is not about debt or a lapsed membership."
+    ]
+  }
+}
