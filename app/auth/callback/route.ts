@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Completes Supabase PKCE email magic-link authentication and redirects
- * to the caller's target path.
+ * to the caller's target path, respecting `x-forwarded-host` behind Vercel.
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -11,13 +11,19 @@ export async function GET(request: Request) {
   const rawNext = searchParams.get("next") ?? "/";
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocalEnv = process.env.NODE_ENV === "development";
+  const baseUrl =
+    !isLocalEnv && forwardedHost ? `https://${forwardedHost}` : origin;
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${baseUrl}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}${next}?auth_error=1`);
+  const sep = next.includes("?") ? "&" : "?";
+  return NextResponse.redirect(`${baseUrl}${next}${sep}auth_error=1`);
 }
