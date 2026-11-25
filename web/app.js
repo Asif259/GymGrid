@@ -1,16 +1,17 @@
 import { sb, $, el, flash, act, loadSettings, session, sendLoginLink, planView } from './common.js';
 import { ensureSprite, icon } from './dom.js';
 import {
-  normalizePhone, renewalLink, money, fmtDate, parseWorkout, parseDiet, workoutLines, dietLines,
+  normalizePhone, renewalLink, money, fmtDate, parseWorkout, parseDiet, workoutLines, dietLines, attendancePulse,
 } from './logic.js';
-import { renderPlates, unpaidCard, confirmCard, remindCard, memberRow } from './views.js';
+import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, memberRow } from './views.js';
 
 const VIEWS = [['today', 'Today', 'today'], ['members', 'Members', 'members'], ['add', 'Add', 'add'], ['plans', 'Plans', 'plans'], ['settings', 'Settings', 'settings']];
 let state = { user: null, role: null, members: [], plans: [], staff: [], templates: [], settings: {}, date: null,
-  checkedIn: new Set(), filter: 'all', search: '', report: null };
+  checkedIn: new Set(), pulse: [], filter: 'all', search: '', report: null };
 const cur = (n) => money(n, state.settings.currency);
 const wa = (m, plan) => renewalLink(plan === undefined ? m : { ...m, plans: plan ? { name: plan } : undefined }, state.settings.name, state.date, state.settings.app_url);
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' });
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
 function show(section) {
   for (const id of ['login', 'not-staff', 'app']) $(id).hidden = id !== section;
@@ -21,8 +22,10 @@ function show(section) {
 
 function buildRail() {
   const items = VIEWS.filter(([k]) => k !== 'settings' || state.role === 'owner');
-  $('rail').replaceChildren($('brand'), $('date'), ...items.map(([k, label, ic]) =>
-    el('a', { href: `#${k}`, id: `nav-${k}` }, icon(ic), el('span', { textContent: label }))));
+  const head = $('rail').querySelector('.rail-head');
+  const label = $('rail').querySelector('.rail-section');
+  $('rail').replaceChildren(head, label, ...items.map(([k, text, ic]) =>
+    el('a', { href: `#${k}`, id: `nav-${k}` }, icon(ic), el('span', { textContent: text }))));
 }
 
 function route() {
@@ -65,8 +68,14 @@ async function load() {
   const err = plans.error || members.error || report.error || staff.error || templates.error;
   if (err) return flash(err.message);
   Object.assign(state, { settings, plans: plans.data, members: members.data, staff: staff.data, templates: templates.data, report: report.data, date: report.data.date });
-  const att = await sb.from('attendance').select('member_id').eq('day', state.date);
-  state.checkedIn = new Set((att.data ?? []).map((a) => a.member_id));
+
+  const start = new Date(`${state.date}T00:00:00Z`);
+  start.setUTCDate(start.getUTCDate() - 6);
+  const startIso = start.toISOString().slice(0, 10);
+  const att = await sb.from('attendance').select('member_id, day').gte('day', startIso).lte('day', state.date);
+  const attRows = att.data ?? [];
+  state.checkedIn = new Set(attRows.filter((a) => a.day === state.date).map((a) => a.member_id));
+  state.pulse = attendancePulse(attRows, state.date);
 
   $('t-gym').textContent = settings.name;
   $('brand').textContent = settings.name;
@@ -98,6 +107,7 @@ const handlers = {
 function renderToday() {
   const r = state.report;
   renderPlates($('plates'), r.summary, cur);
+  renderPulse($('pulse'), state.pulse);
   const unpaid = (r.unpaid_checkins ?? []).map((m) => ({ ...m, time: hhmm(m.checked_in_at) }));
   const toConfirm = state.members.flatMap((m) => m.payments.filter((p) => p.status === 'pending').sort((a, b) => a.created_at.localeCompare(b.created_at)).map((p) => ({ member: m, payment: p })));
   $('col-action').replaceChildren(unpaidCard(unpaid, wa), confirmCard(toConfirm, cur, handlers));
@@ -111,12 +121,15 @@ function renderQuickCheckin() {
   const q = $('q-checkin').value.trim().toLowerCase();
   const rows = !q ? [] : state.members.filter((m) => !state.checkedIn.has(m.id) && (m.name.toLowerCase().includes(q) || m.phone.includes(q))).slice(0, 5);
   $('q-results').replaceChildren(...(q && !rows.length
-    ? [el('li', { className: 'empty', textContent: 'No match, or already checked in today.' })]
+    ? [el('li', { className: 'empty', textContent: 'No match, or already checked in today' })]
     : rows.map((m) => {
         const b = el('button', { className: 'primary', textContent: 'Check in' });
         b.onclick = () => act(b, () => sb.from('attendance').insert({ member_id: m.id, method: 'staff', recorded_by: state.user.id }), `${m.name} checked in`, async () => { $('q-checkin').value = ''; await load(); });
         return el('li', { className: 'item' },
-          el('span', {}, el('span', { className: 'who-name', textContent: m.name }), el('span', { className: `sub${m.status === 'expired' || m.status === 'due' ? ' owed' : ''}`, textContent: `${m.status} · ${m.expiry_date ? `until ${fmtDate(m.expiry_date)}` : 'never paid'}` })), b);
+          el('div', { className: 'item-info' },
+            el('span', { className: 'who-name', textContent: m.name }),
+            el('span', { className: `sub${m.status === 'expired' || m.status === 'due' ? ' owed' : ''}`, textContent: `${cap(m.status)} · ${m.expiry_date ? `until ${fmtDate(m.expiry_date)}` : 'never paid'}` })),
+          el('div', { className: 'go' }, b));
       })));
 }
 $('q-checkin').oninput = renderQuickCheckin;
@@ -130,7 +143,7 @@ function renderFilters() {
   const counts = { all: state.members.length };
   for (const m of state.members) counts[m.status] = (counts[m.status] ?? 0) + 1;
   $('filters').replaceChildren(...['all', 'active', 'due', 'expired', 'frozen'].map((f) => {
-    const b = el('button', { type: 'button', textContent: `${f} (${counts[f] ?? 0})` });
+    const b = el('button', { type: 'button', textContent: `${cap(f)} (${counts[f] ?? 0})` });
     b.setAttribute('aria-pressed', String(state.filter === f));
     b.onclick = () => { state.filter = f; renderFilters(); renderMembers(); };
     return b;
@@ -143,14 +156,16 @@ function renderMembers() {
     .filter((m) => state.filter === 'all' || m.status === state.filter)
     .filter((m) => !q || m.name.toLowerCase().includes(q) || m.phone.includes(q))
     .map((m) => memberRow(m, { cur, wa, checkedIn: state.checkedIn.has(m.id) }, handlers));
-  $('member-rows').replaceChildren(...(rows.length ? rows : [el('p', { className: 'empty', textContent: 'No members match.' })]));
+  $('member-rows').replaceChildren(...(rows.length ? rows : [el('p', { className: 'empty', textContent: 'No members match' })]));
 }
 
 function renderTemplates() {
-  $('template-count').textContent = `· ${state.templates.length}`;
+  $('template-count').textContent = String(state.templates.length);
   $('template-list').replaceChildren(...(state.templates.length
-    ? state.templates.map((t) => el('li', { className: 'item' }, el('span', {}, el('span', { className: 'who-name', textContent: t.name }), el('span', { className: 'sub', textContent: t.kind })), el('span', { className: 'pill s-active', textContent: t.kind })))
-    : [el('li', { className: 'empty', textContent: 'No templates yet. Save one above, then assign it from a member\'s details.' })]));
+    ? state.templates.map((t) => el('li', { className: 'item' },
+        el('div', { className: 'item-info' }, el('span', { className: 'who-name', textContent: t.name }), el('span', { className: 'sub', textContent: cap(t.kind) })),
+        el('span', { className: 'pill s-active', textContent: t.kind })))
+    : [el('li', { className: 'empty', textContent: 'No templates yet — save one above, then assign it from member details' })]));
 }
 
 const staffName = (s) => s.display_name || `${s.role} ${s.user_id.slice(0, 4)}`;
@@ -165,7 +180,7 @@ async function openMember(m) {
   const email = el('input', { type: 'email', value: m.email ?? '', placeholder: 'member@example.com' });
   const saveEmail = el('button', { textContent: 'Save email' });
   saveEmail.onclick = () => act(saveEmail, () => sb.from('members').update({ email: email.value.trim().toLowerCase() || null }).eq('id', m.id),
-    'Email saved. The member can now sign in to the members app with it.', load);
+    'Email saved — member can now sign in', load);
 
   const trainer = el('select', {}, el('option', { value: '', textContent: 'No trainer' }),
     state.staff.map((s) => el('option', { value: s.user_id, textContent: staffName(s), selected: s.user_id === m.trainer_id })));
@@ -173,10 +188,11 @@ async function openMember(m) {
   saveTrainer.onclick = () => act(saveTrainer, () => sb.from('members').update({ trainer_id: trainer.value || null }).eq('id', m.id), 'Trainer assigned', load);
 
   $('md-body').replaceChildren(
-    el('p', { className: 'muted', textContent: [m.goal, m.age && `${m.age}y`, m.sex, m.height_cm && `${m.height_cm}cm`, m.weight_kg && `${m.weight_kg}kg`,
-      m.injuries && `injuries: ${m.injuries}`, m.diet_pref && `diet: ${m.diet_pref}`].filter(Boolean).join(' · ') || 'No profile details.' }),
-    el('label', {}, 'Email for the members app', el('div', { className: 'row' }, email, saveEmail)),
-    el('label', { style: 'margin-top:8px' }, 'Trainer', el('div', { className: 'row' }, trainer, saveTrainer)),
+    el('p', { className: 'muted', textContent: [m.goal, m.age && `${m.age}y`, m.sex, m.height_cm && `${m.height_cm} cm`, m.weight_kg && `${m.weight_kg} kg`,
+      m.injuries && `injuries: ${m.injuries}`, m.diet_pref && `diet: ${m.diet_pref}`].filter(Boolean).join(' · ') || 'No profile details recorded' }),
+    el('div', { className: 'dialog-section' },
+      el('label', {}, 'Email for the members app', el('div', { className: 'row' }, email, saveEmail)),
+      el('label', {}, 'Trainer', el('div', { className: 'row' }, trainer, saveTrainer))),
     planSection(m, 'workout', w.data?.[0]?.plan, workoutLines, parseWorkout),
     planSection(m, 'diet', d.data?.[0]?.plan, dietLines, parseDiet),
   );
@@ -194,15 +210,17 @@ function planSection(m, kind, current, toLines, parse) {
     let plan;
     try { plan = text.value.trim() ? parse(text.value) : templates.find((t) => t.id === pick.value)?.plan; }
     catch (e) { return flash(e.message); }
-    if (!plan) return flash(`Pick a template or write a ${kind} plan.`);
+    if (!plan) return flash(`Pick a template or write a ${kind} plan`);
     // Staff-written plans are human-checked, so members see them straight away.
-    act(assign, () => sb.from(table).insert({ member_id: m.id, plan, verified: true }), `${kind} plan assigned to ${m.name}`, () => openMember(m));
+    act(assign, () => sb.from(table).insert({ member_id: m.id, plan, verified: true }), `${cap(kind)} plan assigned to ${m.name}`, () => openMember(m));
   };
-  return el('div', { className: 'card', style: 'margin-top:12px' },
-    el('h3', { textContent: `${kind[0].toUpperCase()}${kind.slice(1)} plan` }),
-    current ? planView(toLines(current)) : el('p', { className: 'empty', textContent: 'None assigned.' }),
-    el('div', { className: 'row' }, pick), el('p', { className: 'muted', textContent: 'Or write one for this member:' }), text,
-    el('div', { className: 'row', style: 'margin-top:8px' }, assign));
+  return el('div', { className: 'dialog-section' },
+    el('h3', { textContent: `${cap(kind)} plan` }),
+    current ? planView(toLines(current)) : el('p', { className: 'muted', textContent: 'None assigned' }),
+    el('div', { className: 'row' }, pick),
+    el('p', { className: 'muted', textContent: 'Or write one for this member' }),
+    text,
+    el('div', { className: 'row' }, assign));
 }
 
 function renderSettings() {
@@ -212,7 +230,7 @@ function renderSettings() {
     const input = el('input', { value: s.display_name ?? '', placeholder: 'Name shown to members', 'aria-label': `Name for ${s.role}` });
     const save = el('button', { textContent: 'Save' });
     save.onclick = () => act(save, () => sb.from('staff').update({ display_name: input.value.trim() || null }).eq('user_id', s.user_id), 'Name saved', load);
-    return el('div', { className: 'row', style: 'margin-bottom:8px' }, el('span', { className: 'pill s-active', textContent: s.role }), input, save);
+    return el('div', { className: 'row' }, el('span', { className: 'pill s-active', textContent: s.role }), input, save);
   }));
 }
 
@@ -228,7 +246,7 @@ $('settings-form').onsubmit = (e) => {
 
 $('rotate-qr').onclick = (e) => {
   if (!confirm('Make a new check-in QR? The printed one stops working; print the new one.')) return;
-  act(e.target, () => sb.rpc('rotate_checkin_token'), 'New QR made. Open the check-in QR page and print it.');
+  act(e.target, () => sb.rpc('rotate_checkin_token'), 'New QR created — open the check-in QR page to print it');
 };
 
 $('template-form').onsubmit = (e) => {
@@ -244,7 +262,7 @@ $('template-form').onsubmit = (e) => {
 $('login-form').onsubmit = async (e) => {
   e.preventDefault();
   const { error } = await sendLoginLink($('login-email').value);
-  error ? flash(error.message) : flash('Check your email for the sign-in link.', true);
+  error ? flash(error.message) : flash('Check your email for the sign-in link', true);
 };
 
 $('logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
@@ -255,7 +273,7 @@ $('join-form').onsubmit = async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
   const phone = normalizePhone(f.get('phone'));
-  if (!phone) return flash('Phone must be 8-15 digits with country code, e.g. 8801XXXXXXXXX.');
+  if (!phone) return flash('Phone must be 8–15 digits with country code, e.g. 8801XXXXXXXXX');
 
   const num = (k) => (f.get(k) ? Number(f.get(k)) : null);
   const txt = (k) => f.get(k)?.trim() || null;
@@ -265,12 +283,12 @@ $('join-form').onsubmit = async (e) => {
     injuries: txt('injuries'), diet_pref: txt('diet_pref'),
   };
   const plan = state.plans.find((p) => p.id === member.plan_id);
-  if (!plan) return flash('Pick a plan.');
+  if (!plan) return flash('Pick a plan');
   const btn = e.target.querySelector('button.primary');
   btn.disabled = true;
 
   const { data: created, error } = await sb.from('members').insert(member).select('id').single();
-  if (error) { btn.disabled = false; return flash(error.code === '23505' ? 'A member with this phone or email already exists.' : error.message); }
+  if (error) { btn.disabled = false; return flash(error.code === '23505' ? 'A member with this phone or email already exists' : error.message); }
 
   const { error: payErr } = await sb.from('payments').insert({
     member_id: created.id, amount: plan.price, method: f.get('method'), trx_id: txt('trx_id'),

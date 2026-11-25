@@ -96,7 +96,7 @@ test('pendingPayment picks oldest pending, lastPaid newest paid', () => {
   assert.equal(lastPaid([]), null);
 });
 
-import { fmtDate, standing } from './logic.js';
+import { fmtDate, standing, attendancePulse } from './logic.js';
 test('fmtDate and standing', () => {
   assert.equal(fmtDate('2026-11-27', new Date('2026-11-25')), '27 Nov');
   assert.equal(fmtDate('2027-02-23', new Date('2026-11-25')), '23 Feb 2027');
@@ -106,4 +106,19 @@ test('fmtDate and standing', () => {
   assert.equal(standing({ status: 'due', expiry_date: null }), 'Never paid');
   assert.equal(standing({ status: 'due', expiry_date: '2026-11-27' }), 'Ends soon');
   assert.equal(standing({ status: 'frozen' }), 'Frozen');
+});
+
+test('attendancePulse builds 7-day series ending on today', () => {
+  const series = attendancePulse([
+    { day: '2026-11-25' },
+    { day: '2026-11-25' },
+    { day: '2026-11-23' },
+    { day: '2026-11-10' },
+  ], '2026-11-25');
+  assert.equal(series.length, 7);
+  assert.equal(series[0].day, '2026-11-19');
+  assert.equal(series[4].count, 1);
+  assert.equal(series[6].day, '2026-11-25');
+  assert.equal(series[6].count, 2);
+  assert.equal(series[6].isToday, true);
 });

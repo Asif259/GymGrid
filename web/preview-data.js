@@ -27,3 +27,13 @@ export const MEMBERS = [
   { id: 'm5', name: 'Imran Kabir', phone: '8801700000003', plans: monthly, status: 'active', expiry_date: '2026-12-25', payments: [p(4, 1500, 'cash', null, 'paid')] },
   { id: 'm6', name: 'Farhana Akter', phone: '8801700000004', plans: { name: 'Yearly', months: 12, price: 14000 }, status: 'active', expiry_date: '2027-11-24', payments: [p(5, 14000, 'bkash', 'B3M7X2K9QD', 'paid')] },
 ];
+
+export const PULSE_7D = [
+  { day: '2026-11-19', label: 'Thu', count: 18, isToday: false },
+  { day: '2026-11-20', label: 'Fri', count: 14, isToday: false },
+  { day: '2026-11-21', label: 'Sat', count: 27, isToday: false },
+  { day: '2026-11-22', label: 'Sun', count: 22, isToday: false },
+  { day: '2026-11-23', label: 'Mon', count: 25, isToday: false },
+  { day: '2026-11-24', label: 'Tue', count: 19, isToday: false },
+  { day: '2026-11-25', label: 'Wed', count: 23, isToday: true },
+];

@@ -138,3 +138,20 @@ export function pendingPayment(payments = []) {
 export function lastPaid(payments = []) {
   return payments.filter((p) => p.status === 'paid').sort((a, b) => (b.paid_on ?? '').localeCompare(a.paid_on ?? '') || b.created_at.localeCompare(a.created_at))[0] ?? null;
 }
+
+// Last 7 calendar days ending on todayIso ('YYYY-MM-DD') with check-in counts.
+export function attendancePulse(rows = [], todayIso) {
+  const counts = new Map();
+  for (const r of rows) {
+    if (r?.day) counts.set(r.day, (counts.get(r.day) ?? 0) + 1);
+  }
+  const base = new Date(`${todayIso}T00:00:00Z`);
+  const out = [];
+  for (let offset = -6; offset <= 0; offset++) {
+    const d = new Date(base.getTime() + offset * 86400000);
+    const day = d.toISOString().slice(0, 10);
+    const label = d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
+    out.push({ day, label, count: counts.get(day) ?? 0, isToday: day === todayIso });
+  }
+  return out;
+}

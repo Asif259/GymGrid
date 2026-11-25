@@ -456,6 +456,10 @@ main.narrow {
   margin-block-end: var(--space-4);
 }
 
+.card > .muted + .form-stack {
+  margin-block-start: var(--space-4);
+}
+
 .card-head h2 {
   display: flex;
   align-items: baseline;

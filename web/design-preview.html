@@ -2,55 +2,88 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#fafafa">
   <title>Design preview (sample data)</title>
-  <link rel="preload" href="fonts/alfa-slab-one-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="shell has-rail">
   <nav class="rail" id="rail" aria-label="Sections">
-    <div class="brand">Our Gym</div>
-    <div class="date">Tue 25 Nov</div>
+    <div class="rail-head">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>Our Gym</span></div>
+      <div class="date">Tue 25 Nov</div>
+    </div>
+    <div class="rail-section">Operations</div>
   </nav>
   <main>
-    <header><h1><span id="t-gym">Our Gym</span><span id="t-view">Today</span></h1><span class="hdate">Tue 25 Nov</span><div class="who"><span>sample data, nothing is saved</span></div></header>
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1><span id="t-gym">Our Gym</span><span id="t-view">Today</span></h1>
+        <span class="hdate">Tue 25 Nov</span>
+      </div>
+      <div class="who"><span>Sample data — nothing is saved</span></div>
+    </header>
     <div class="view" data-view="today">
-      <div class="plates" id="plates"></div>
-      <section class="card checkin">
-        <h2>Check someone in</h2>
-        <div class="search"><svg aria-hidden="true"><use href="#i-search"/></svg>
-          <input type="search" placeholder="Type a name or phone" aria-label="Find a member to check in"></div>
-      </section>
-      <div class="cols"><div id="col-action"></div><div id="col-remind"></div></div>
+      <div class="metrics" id="plates" aria-label="Today at a glance"></div>
+      <div class="today-band">
+        <section class="card pulse-card" id="pulse"></section>
+        <section class="card checkin">
+          <div class="card-head">
+            <h2>Check someone in</h2>
+          </div>
+          <div class="search">
+            <svg aria-hidden="true"><use href="#i-search"/></svg>
+            <input type="search" placeholder="Search name or phone" aria-label="Find a member to check in">
+          </div>
+        </section>
+      </div>
+      <div class="cols">
+        <div class="col-stack" id="col-action"></div>
+        <div class="col-stack" id="col-remind"></div>
+      </div>
     </div>
     <div class="view" data-view="members" hidden>
-      <section class="card"><h2 class="only-phone">Members</h2><div class="filters" id="filters"></div><div id="member-rows"></div></section>
+      <section class="card members-region">
+        <div class="card-head only-phone">
+          <h2>Members</h2>
+        </div>
+        <div class="toolbar">
+          <div class="filters" id="filters"></div>
+          <div class="search">
+            <svg aria-hidden="true"><use href="#i-search"/></svg>
+            <input type="search" placeholder="Search name or phone" aria-label="Search members">
+          </div>
+        </div>
+        <div id="member-rows"></div>
+      </section>
     </div>
   </main>
 </div>
 <script type="module">
   import { el, ensureSprite, icon } from './dom.js';
   import { money, renewalLink, fmtDate } from './logic.js';
-  import { renderPlates, unpaidCard, confirmCard, remindCard, memberRow } from './views.js';
-  import { REPORT, MEMBERS } from './preview-data.js';
+  import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, memberRow } from './views.js';
+  import { REPORT, MEMBERS, PULSE_7D } from './preview-data.js';
 
   ensureSprite();
   const $ = (id) => document.getElementById(id);
   const cur = (n) => money(n, '৳');
   const wa = (m, plan) => renewalLink(plan === undefined ? m : { ...m, plans: plan ? { name: plan } : undefined }, 'Our Gym', REPORT.date, 'https://our-gym.example');
-  const note = (b, m, p) => { b.textContent = 'Saved (preview)'; b.disabled = true; };
+  const note = (b) => { b.textContent = 'Saved (preview)'; b.disabled = true; };
   const h = { onVerify: note, onRenew: note, onCheckin: note, onDetails: () => {} };
+  const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
   renderPlates($('plates'), REPORT.summary, cur);
+  renderPulse($('pulse'), PULSE_7D);
   const toConfirm = MEMBERS.flatMap((m) => m.payments.filter((p) => p.status === 'pending').map((p) => ({ member: m, payment: p })));
   $('col-action').replaceChildren(unpaidCard(REPORT.unpaid_checkins, wa), confirmCard(toConfirm, cur, h));
   $('col-remind').replaceChildren(
     remindCard('Ends in 2 days', REPORT.expiring, (m) => `${m.plan} · ends ${fmtDate(m.expiry_date)}`, wa),
     remindCard('Expired in last 30 days', REPORT.expired_recent, (m) => `Ended ${fmtDate(m.expiry_date)}`, wa));
   $('filters').replaceChildren(...['all', 'active', 'due', 'expired', 'frozen'].map((f, i) => {
-    const b = el('button', { type: 'button', textContent: `${f} (${f === 'all' ? MEMBERS.length : MEMBERS.filter((m) => m.status === f).length})` });
+    const b = el('button', { type: 'button', textContent: `${cap(f)} (${f === 'all' ? MEMBERS.length : MEMBERS.filter((m) => m.status === f).length})` });
     b.setAttribute('aria-pressed', String(i === 0));
     return b;
   }));
