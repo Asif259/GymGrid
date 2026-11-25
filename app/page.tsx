@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -41,6 +41,43 @@ const INITIAL_SCANS: DeskScanRow[] = [
     plan: "Monthly plan",
     status: "active",
     time: "07:18 AM",
+  },
+];
+
+const CHAPTERS: {
+  id: StageAct;
+  title: string;
+  body: string;
+  detail: string;
+  icon: typeof QrCode;
+}[] = [
+  {
+    id: "desk",
+    title: "Desk QR guardrail",
+    body: "Print one desk poster. Active members log attendance in a single phone scan, while expired walk-ins trigger a red alert on the reception monitor.",
+    detail: "Live feed at /desk with instant member standing.",
+    icon: QrCode,
+  },
+  {
+    id: "pay",
+    title: "bKash and Nagad queue",
+    body: "Members send money directly to your gym number and enter their TrxID. Staff verify the SMS and issue a receipt with zero gateway deductions.",
+    detail: "Amounts locked to member plan by database rules.",
+    icon: CreditCard,
+  },
+  {
+    id: "member",
+    title: "Member phone portal",
+    body: "A mobile-first dashboard with five focused views: Overview, Plans, Renew and pay, Visits, and Receipts. Zero app store download needed.",
+    detail: "14-day attendance pulse, streaks, and PDF receipts.",
+    icon: Smartphone,
+  },
+  {
+    id: "ai",
+    title: "AI coach and split builder",
+    body: "Upcoming tools for trainers and members to draft custom weekly splits and nutrition notes before assigning them to a member profile.",
+    detail: "Planned feature preview alongside live workout templates.",
+    icon: Sparkles,
   },
 ];
 
@@ -134,8 +171,11 @@ export default function LandingPage() {
   const router = useRouter();
   const [signedInRoute, setSignedInRoute] = useState<string | null>(null);
 
-  // Interactive Stage state
+  // Sticky Diptych & Interactive Stage state
   const [act, setAct] = useState<StageAct>("desk");
+  const chapterRefs = useRef<Partial<Record<StageAct, HTMLButtonElement | null>>>({});
+
+  // Interactive Stage controls
   const [scans, setScans] = useState<DeskScanRow[]>(INITIAL_SCANS);
   const [wallet, setWallet] = useState<WalletChoice>("bKash");
   const [trxId, setTrxId] = useState("BKH94K28LP");
@@ -177,6 +217,29 @@ export default function LandingPage() {
       cancelled = true;
     };
   }, [router]);
+
+  // Sync sticky stage with scrolled chapter on desktop
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("data-act") as StageAct | null;
+            if (id) setAct(id);
+          }
+        }
+      },
+      { rootMargin: "-35% 0px -45% 0px", threshold: 0.1 },
+    );
+
+    for (const key of Object.keys(chapterRefs.current) as StageAct[]) {
+      const el = chapterRefs.current[key];
+      if (el) observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const simulateScan = (kind: "active" | "expired") => {
     const nextRow: DeskScanRow =
@@ -284,287 +347,233 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* SIGNATURE: Interactive Four-Act Product Stage */}
+        {/* SIGNATURE: Sticky Diptych Scroll-Choreographed Product Stage */}
         <section
           id="stage"
           className="border-y border-(--hl-rule) bg-(--hl-paper-2) py-16 md:py-24"
         >
-          <div className="hl-container flex flex-col gap-10">
+          <div className="hl-container flex flex-col gap-12">
             <div className="flex flex-col gap-3">
-              <h2 className="hl-h2">Try the floor and desk workflows.</h2>
+              <h2 className="hl-h2">Scroll through the floor and desk workflows.</h2>
               <p className="hl-lead">
-                Switch between the reception check-in screen, bKash TrxID queue, member phone portal, and upcoming AI split builder.
+                Each chapter updates the live interactive stage beside it, or tap any chapter directly to test it.
               </p>
             </div>
 
-            <div
-              role="tablist"
-              aria-label="Interactive product stage"
-              className="flex flex-wrap gap-2"
-            >
-              {[
-                { id: "desk" as const, label: "Desk QR guardrail", icon: QrCode },
-                { id: "pay" as const, label: "bKash and Nagad queue", icon: CreditCard },
-                { id: "member" as const, label: "Member phone portal", icon: Smartphone },
-                { id: "ai" as const, label: "AI split builder (planned)", icon: Sparkles },
-              ].map((item) => {
-                const Icon = item.icon;
-                const active = act === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setAct(item.id)}
-                    className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors ${
-                      active
-                        ? "border-(--hl-accent-soft) bg-(--hl-accent-soft) text-(--hl-accent-soft-ink)"
-                        : "border-(--hl-rule) bg-(--hl-paper) text-(--hl-ink-2) hover:bg-(--hl-paper-3)"
-                    }`}
-                  >
-                    <Icon className="size-4 shrink-0" aria-hidden="true" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* ACT 1: QR Guardrail */}
-            {act === "desk" ? (
-              <div className="hl-stage-grid rounded-2xl border border-(--hl-rule) bg-(--hl-paper) p-6 md:p-8">
-                <div className="flex flex-col gap-5">
-                  <h3 className="hl-h3">Catch expired walk-ins at the desk.</h3>
-                  <p className="text-base text-(--hl-ink-2)">
-                    Print the desk QR poster once. Active members log their visit in one scan, while expired memberships trigger an immediate alert on the reception monitor.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
+            <div className="hl-sticky-diptych">
+              {/* Scrolling Chapters */}
+              <div className="hl-sticky-chapters">
+                {CHAPTERS.map((chapter) => {
+                  const Icon = chapter.icon;
+                  const active = act === chapter.id;
+                  return (
                     <button
+                      key={chapter.id}
+                      ref={(el) => {
+                        chapterRefs.current[chapter.id] = el;
+                      }}
+                      data-act={chapter.id}
                       type="button"
-                      onClick={() => simulateScan("active")}
-                      className="hl-btn-primary min-h-11 px-4 text-sm"
+                      onClick={() => setAct(chapter.id)}
+                      data-active={active}
+                      className="hl-chapter-card flex flex-col items-start gap-3 text-left"
                     >
-                      Simulate active scan
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => simulateScan("expired")}
-                      className="hl-btn-secondary min-h-11 px-4 text-sm"
-                    >
-                      Simulate expired walk-in
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 rounded-xl border border-(--hl-rule) bg-(--hl-paper-2) p-4">
-                  <div className="flex items-center justify-between border-b border-(--hl-rule) pb-3 text-sm font-medium text-(--hl-ink-2)">
-                    <span>Reception feed (/desk)</span>
-                    <span className="text-(--hl-success)">Live sample</span>
-                  </div>
-                  <ul className="flex flex-col gap-2.5">
-                    {scans.map((row) => (
-                      <li
-                        key={row.id}
-                        className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${
-                          row.status === "expired"
-                            ? "border-(--hl-error) bg-(--hl-error-bg) text-(--hl-ink)"
-                            : "border-(--hl-rule) bg-(--hl-paper)"
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium">{row.name}</div>
-                          <div className="text-xs text-(--hl-muted)">{row.plan}</div>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <div
-                            className={`text-xs font-medium ${
-                              row.status === "expired"
-                                ? "text-(--hl-error)"
-                                : "text-(--hl-success)"
-                            }`}
-                          >
-                            {row.status === "expired" ? "Renewal due" : "Active"}
-                          </div>
-                          <div className="hl-mono text-xs text-(--hl-muted)">{row.time}</div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : null}
-
-            {/* ACT 2: bKash & Nagad TrxID */}
-            {act === "pay" ? (
-              <div className="hl-stage-grid rounded-2xl border border-(--hl-rule) bg-(--hl-paper) p-6 md:p-8">
-                <div className="flex flex-col gap-4">
-                  <h3 className="hl-h3">Confirm bKash and Nagad TrxIDs in one tap.</h3>
-                  <p className="text-base text-(--hl-ink-2)">
-                    Members send money to your gym number and enter the TrxID. Staff verify the SMS and issue a receipt without payment gateway fees.
-                  </p>
-                  <div className="flex gap-2">
-                    {(["bKash", "Nagad"] as const).map((choice) => (
-                      <button
-                        key={choice}
-                        type="button"
-                        onClick={() => setWallet(choice)}
-                        className={`min-h-11 flex-1 rounded-lg border text-sm font-medium transition-colors ${
-                          wallet === choice
-                            ? "border-(--hl-accent-soft) bg-(--hl-accent-soft) text-(--hl-accent-soft-ink)"
-                            : "border-(--hl-rule) bg-(--hl-paper-2) text-(--hl-ink)"
-                        }`}
-                      >
-                        {choice}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="demo-trx" className="text-sm font-medium text-(--hl-ink-2)">
-                      Sample TrxID
-                    </label>
-                    <input
-                      id="demo-trx"
-                      type="text"
-                      value={trxId}
-                      onChange={(e) => setTrxId(e.target.value)}
-                      className="hl-input hl-mono uppercase"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPayState("pending")}
-                    className="hl-btn-primary min-h-11 text-sm"
-                  >
-                    Submit sample TrxID
-                  </button>
-                </div>
-
-                <div className="flex flex-col justify-between gap-4 rounded-xl border border-(--hl-rule) bg-(--hl-paper-2) p-5">
-                  <div className="flex items-center justify-between border-b border-(--hl-rule) pb-3 text-sm">
-                    <span className="font-medium text-(--hl-ink-2)">Owner queue (/admin)</span>
-                    <span className="hl-num font-semibold">
-                      Today sample: ৳{sampleRevenue.toLocaleString()}
-                    </span>
-                  </div>
-
-                  {payState === "idle" ? (
-                    <p className="py-6 text-sm text-(--hl-muted)">
-                      Submit the sample TrxID to preview how it appears in the owner verification queue.
-                    </p>
-                  ) : null}
-
-                  {payState === "pending" ? (
-                    <div className="flex flex-col gap-3 rounded-lg border border-(--hl-warning) bg-(--hl-warning-bg) p-4">
-                      <div className="flex items-center justify-between text-sm font-medium">
-                        <span>Rafiqul Islam</span>
-                        <span className="text-(--hl-warning)">Awaiting check</span>
+                      <div className="flex items-center gap-2.5 text-sm font-medium text-(--hl-accent)">
+                        <Icon className="size-4 shrink-0" aria-hidden="true" />
+                        <span>{chapter.title}</span>
                       </div>
-                      <p className="hl-mono text-xs text-(--hl-ink-2)">
-                        {wallet} | TrxID {trxId} | ৳1,500 sample
-                      </p>
+                      <p className="text-base text-(--hl-ink)">{chapter.body}</p>
+                      <span className="text-sm text-(--hl-muted)">{chapter.detail}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Sticky Interactive Stage Pane */}
+              <div className="hl-sticky-pane rounded-2xl border border-(--hl-rule) bg-(--hl-paper) p-6 md:p-8">
+                {/* ACT 1: QR Guardrail */}
+                {act === "desk" ? (
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="hl-h3">Reception monitor (/desk)</h3>
+                      <span className="text-sm font-medium text-(--hl-success)">Live sample</span>
+                    </div>
+                    <p className="text-sm text-(--hl-ink-2)">
+                      Simulate a front-desk scan to see how active members and expired walk-ins render for staff.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
                       <button
                         type="button"
-                        onClick={() => {
-                          setPayState("approved");
-                          setSampleRevenue((r) => r + 1500);
-                        }}
+                        onClick={() => simulateScan("active")}
+                        className="hl-btn-primary min-h-11 px-4 text-sm"
+                      >
+                        Simulate active scan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => simulateScan("expired")}
+                        className="hl-btn-secondary min-h-11 px-4 text-sm"
+                      >
+                        Simulate expired walk-in
+                      </button>
+                    </div>
+                    <ul className="flex flex-col gap-2.5">
+                      {scans.map((row) => (
+                        <li
+                          key={row.id}
+                          className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${
+                            row.status === "expired"
+                              ? "border-(--hl-error) bg-(--hl-error-bg) text-(--hl-ink)"
+                              : "border-(--hl-rule) bg-(--hl-paper-2)"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">{row.name}</div>
+                            <div className="text-xs text-(--hl-muted)">{row.plan}</div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div
+                              className={`text-xs font-medium ${
+                                row.status === "expired"
+                                  ? "text-(--hl-error)"
+                                  : "text-(--hl-success)"
+                              }`}
+                            >
+                              {row.status === "expired" ? "Renewal due" : "Active"}
+                            </div>
+                            <div className="hl-mono text-xs text-(--hl-muted)">{row.time}</div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {/* ACT 2: bKash & Nagad TrxID */}
+                {act === "pay" ? (
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="hl-h3">bKash and Nagad verification</h3>
+                      <span className="hl-num text-sm font-semibold">
+                        Today sample: ৳{sampleRevenue.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      {(["bKash", "Nagad"] as const).map((choice) => (
+                        <button
+                          key={choice}
+                          type="button"
+                          onClick={() => setWallet(choice)}
+                          className={`min-h-11 flex-1 rounded-lg border text-sm font-medium transition-colors ${
+                            wallet === choice
+                              ? "border-(--hl-accent-soft) bg-(--hl-accent-soft) text-(--hl-accent-soft-ink)"
+                              : "border-(--hl-rule) bg-(--hl-paper-2) text-(--hl-ink)"
+                          }`}
+                        >
+                          {choice}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="demo-trx" className="text-sm font-medium text-(--hl-ink-2)">
+                        Sample TrxID
+                      </label>
+                      <input
+                        id="demo-trx"
+                        type="text"
+                        value={trxId}
+                        onChange={(e) => setTrxId(e.target.value)}
+                        className="hl-input hl-mono uppercase"
+                      />
+                    </div>
+                    {payState === "idle" ? (
+                      <button
+                        type="button"
+                        onClick={() => setPayState("pending")}
                         className="hl-btn-primary min-h-11 text-sm"
                       >
-                        <CheckCircle2 className="size-4" aria-hidden="true" />
-                        <span>Verify and issue receipt</span>
+                        Submit sample TrxID
                       </button>
-                    </div>
-                  ) : null}
-
-                  {payState === "approved" ? (
-                    <div className="flex flex-col gap-2 rounded-lg border border-(--hl-success) bg-(--hl-success-bg) p-4">
-                      <div className="flex items-center gap-2 text-sm font-medium text-(--hl-success)">
-                        <Receipt className="size-4" aria-hidden="true" />
-                        <span>Sample receipt issued</span>
+                    ) : null}
+                    {payState === "pending" ? (
+                      <div className="flex flex-col gap-3 rounded-lg border border-(--hl-warning) bg-(--hl-warning-bg) p-4">
+                        <div className="flex items-center justify-between text-sm font-medium">
+                          <span>Rafiqul Islam</span>
+                          <span className="text-(--hl-warning)">Awaiting check</span>
+                        </div>
+                        <p className="hl-mono text-xs text-(--hl-ink-2)">
+                          {wallet} | TrxID {trxId} | ৳1,500 sample
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPayState("approved");
+                            setSampleRevenue((r) => r + 1500);
+                          }}
+                          className="hl-btn-primary min-h-11 text-sm"
+                        >
+                          <CheckCircle2 className="size-4" aria-hidden="true" />
+                          <span>Verify and issue receipt</span>
+                        </button>
                       </div>
-                      <p className="text-sm text-(--hl-ink-2)">
-                        Membership extended by 30 days and logged in the receipt ledger.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setPayState("idle")}
-                        className="self-start text-sm font-medium underline"
-                      >
-                        Reset sample
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-
-            {/* ACT 3: Member Phone Portal */}
-            {act === "member" ? (
-              <div className="hl-stage-grid rounded-2xl border border-(--hl-rule) bg-(--hl-paper) p-6 md:p-8">
-                <div className="flex flex-col gap-4">
-                  <h3 className="hl-h3">Five focused views for every member phone.</h3>
-                  <p className="text-base text-(--hl-ink-2)">
-                    Members open the app on mobile with a thumb-friendly bottom navigation bar. No app store install required.
-                  </p>
-                  <dl className="grid gap-3 pt-2 text-sm">
-                    <div className="border-t border-(--hl-rule) pt-3">
-                      <dt className="font-medium text-(--hl-ink)">Overview and visits</dt>
-                      <dd className="text-(--hl-ink-2)">
-                        Membership standing, days remaining, 14-day attendance chart, and streak count.
-                      </dd>
-                    </div>
-                    <div className="border-t border-(--hl-rule) pt-3">
-                      <dt className="font-medium text-(--hl-ink)">Plans and trainer</dt>
-                      <dd className="text-(--hl-ink-2)">
-                        Assigned workout routine, diet plan, and gym membership options.
-                      </dd>
-                    </div>
-                    <div className="border-t border-(--hl-rule) pt-3">
-                      <dt className="font-medium text-(--hl-ink)">Renew and receipts</dt>
-                      <dd className="text-(--hl-ink-2)">
-                        bKash or Nagad TrxID submission and downloadable PDF receipts.
-                      </dd>
-                    </div>
-                  </dl>
-                  <div className="pt-2">
-                    <Link href="/member" className="hl-btn-secondary min-h-11 px-4 text-sm">
-                      Open member portal
-                    </Link>
+                    ) : null}
+                    {payState === "approved" ? (
+                      <div className="flex flex-col gap-2 rounded-lg border border-(--hl-success) bg-(--hl-success-bg) p-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-(--hl-success)">
+                          <Receipt className="size-4" aria-hidden="true" />
+                          <span>Sample receipt issued</span>
+                        </div>
+                        <p className="text-sm text-(--hl-ink-2)">
+                          Membership extended by 30 days and logged in the receipt ledger.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setPayState("idle")}
+                          className="self-start text-sm font-medium underline"
+                        >
+                          Reset sample
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
+                ) : null}
 
-                <figure
-                  className="hl-screen-frame mx-auto max-w-80"
-                  data-slot="stage-phone"
-                  data-kind="product"
-                  data-alt="Mobile layout of the GymGrid dashboard showing stacked cards"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/screens/preview-phone.png"
-                    alt="Mobile responsive layout of GymGrid dashboard"
-                    width={390}
-                    height={844}
-                    loading="lazy"
-                  />
-                </figure>
-              </div>
-            ) : null}
-
-            {/* ACT 4: Upcoming AI Coach & Split Builder */}
-            {act === "ai" ? (
-              <div className="hl-stage-grid rounded-2xl border border-(--hl-rule) bg-(--hl-paper) p-6 md:p-8">
-                <div className="flex flex-col gap-4">
-                  <div className="inline-flex self-start rounded-md border border-(--hl-rule) bg-(--hl-paper-2) px-2.5 py-1 text-xs font-medium text-(--hl-ink-2)">
-                    Planned feature preview
+                {/* ACT 3: Member Phone Portal */}
+                {act === "member" ? (
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="hl-h3">Member mobile view (/member)</h3>
+                      <Link href="/member" className="text-sm font-medium text-(--hl-accent) underline">
+                        Open portal
+                      </Link>
+                    </div>
+                    <figure
+                      className="hl-screen-frame mx-auto max-w-72"
+                      data-slot="stage-phone"
+                      data-kind="product"
+                      data-alt="Mobile layout of the GymGrid dashboard showing stacked cards"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/images/screens/preview-phone.png"
+                        alt="Mobile responsive layout of GymGrid dashboard"
+                        width={390}
+                        height={844}
+                        loading="lazy"
+                      />
+                    </figure>
                   </div>
-                  <h3 className="hl-h3">AI coach and custom workout split builder.</h3>
-                  <p className="text-base text-(--hl-ink-2)">
-                    Preview how trainers and members will draft tailored weekly splits before assigning them to a member profile.
-                  </p>
+                ) : null}
 
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-(--hl-ink-2)">Training goal</span>
+                {/* ACT 4: Upcoming AI Coach & Split Builder */}
+                {act === "ai" ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="hl-h3">AI split builder</h3>
+                      <span className="rounded-md border border-(--hl-rule) bg-(--hl-paper-2) px-2.5 py-1 text-xs font-medium text-(--hl-ink-2)">
+                        Planned feature
+                      </span>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       {(["Strength", "Muscle gain", "Fat loss"] as const).map((goal) => (
                         <button
@@ -581,10 +590,6 @@ export default function LandingPage() {
                         </button>
                       ))}
                     </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm font-medium text-(--hl-ink-2)">Days per week</span>
                     <div className="flex gap-2">
                       {([3, 4, 5] as const).map((days) => (
                         <button
@@ -601,29 +606,20 @@ export default function LandingPage() {
                         </button>
                       ))}
                     </div>
+                    <ol className="flex flex-col gap-2 text-sm text-(--hl-ink-2)">
+                      {AI_SPLITS[splitGoal][splitDays].map((line, i) => (
+                        <li
+                          key={i}
+                          className="rounded-lg border border-(--hl-rule) bg-(--hl-paper-2) px-3.5 py-2.5"
+                        >
+                          {line}
+                        </li>
+                      ))}
+                    </ol>
                   </div>
-                </div>
-
-                <div className="flex flex-col gap-3 rounded-xl border border-(--hl-rule) bg-(--hl-paper-2) p-5">
-                  <div className="flex items-center justify-between border-b border-(--hl-rule) pb-3 text-sm">
-                    <span className="font-medium text-(--hl-ink)">
-                      Sample {splitDays}-day {splitGoal.toLowerCase()} split
-                    </span>
-                    <span className="text-xs text-(--hl-muted)">Draft preview</span>
-                  </div>
-                  <ol className="flex flex-col gap-2.5 text-sm text-(--hl-ink-2)">
-                    {AI_SPLITS[splitGoal][splitDays].map((line, i) => (
-                      <li
-                        key={i}
-                        className="rounded-lg border border-(--hl-rule) bg-(--hl-paper) px-3.5 py-2.5"
-                      >
-                        {line}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+                ) : null}
               </div>
-            ) : null}
+            </div>
           </div>
         </section>
 

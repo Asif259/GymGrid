@@ -1,8 +1,7 @@
-/* Hallmark · shape: Workbench · genre: modern-minimal · theme: brand
- * paper: oklch(96.3% 0.009 253) · accent: oklch(49% 0.21 262) · display: Newsreader · body: Inter · hero: Stage · nav: edge-aligned · footer: statement · signature: interactive four-act product stage (QR desk, bKash TrxID, member portal, upcoming AI split builder)
+/* Hallmark · shape: Workbench · genre: editorial · theme: custom
+ * paper: oklch(94.4% 0.008 98) · accent: oklch(29% 0.075 152) · display: Newsreader · body: Inter · hero: Stage · nav: edge-aligned · footer: statement · signature: sticky diptych scrolling chapters driving a live four-act gym stage
  * axes: light/roman-serif/cool · posture: Restrained · contrast: pass · fold: pass · v2.0.0 */
-/* Hallmark · pre-emit critique: P4 H5 E5 S5 R5 V4 · weakest: P, tightened copy into direct counter-level gym operations language with zero buzzwords */
-/* Hallmark · waive 74 · Ice Tonal palette (#f0f4f9 / #0b57d0) locked by DESIGN.md for GymGrid · pre-flight preserved the gym workspace tokens */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, cut extra SaaS pricing clutter so the sticky scroll stage carries the entire operational story */
 
 .hl-page {
   background: var(--hl-paper);
@@ -209,7 +208,7 @@
   overflow: hidden;
   border-radius: var(--radius-card);
   background: var(--hl-paper-2);
-  outline: 1px solid color-mix(in oklab, var(--hl-ink) 10%, transparent);
+  outline: 1px solid color-mix(in oklab, var(--hl-ink) 12%, transparent);
   outline-offset: -1px;
   box-shadow: var(--shadow-card);
   max-width: 100%;
@@ -223,7 +222,7 @@
   object-position: top left;
 }
 
-/* Grid helpers ensuring minmax(0, 1fr) on image-bearing tracks */
+/* Hero & Sticky Diptych Scroll Choreography */
 .hl-hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -231,23 +230,73 @@
   align-items: center;
 }
 
-.hl-stage-grid {
+.hl-sticky-diptych {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: var(--space-xl);
   align-items: start;
 }
 
+.hl-sticky-chapters {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.hl-sticky-pane {
+  position: sticky;
+  top: var(--space-lg);
+  align-self: start;
+  z-index: var(--z-sticky);
+}
+
 .hl-hero-grid > *,
-.hl-stage-grid > * {
+.hl-sticky-diptych > * {
   min-width: 0;
+}
+
+.hl-chapter-card {
+  border: 1px solid var(--hl-rule);
+  border-radius: var(--radius-card);
+  background: var(--hl-paper);
+  padding: var(--space-lg);
+  transition:
+    border-color var(--dur-short) var(--ease-out),
+    background-color var(--dur-short) var(--ease-out);
+}
+
+.hl-chapter-card[data-active="true"] {
+  border-color: var(--hl-accent);
+  background: var(--hl-paper-2);
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 60rem) {
+    .hl-chapter-card {
+      animation: hl-chapter-in linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 55%;
+    }
+    @keyframes hl-chapter-in {
+      from {
+        opacity: 0.35;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  }
 }
 
 @media (max-width: 60rem) {
   .hl-hero-grid,
-  .hl-stage-grid {
+  .hl-sticky-diptych {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-lg);
+  }
+  .hl-sticky-pane {
+    position: static;
   }
 }
 
@@ -255,7 +304,9 @@
   .hl-btn-primary,
   .hl-btn-secondary,
   .hl-nav-link,
-  .hl-input {
+  .hl-input,
+  .hl-chapter-card {
     transition: none;
+    animation: none;
   }
 }
