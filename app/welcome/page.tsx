@@ -38,14 +38,14 @@ export default function WelcomePage() {
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
           <Button asChild>
-            <Link href="/">
+            <Link href="/admin">
               <LayoutDashboard className="size-4" aria-hidden="true" />
               <span>Open Admin Dashboard</span>
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href="/member">
+            <Link href="/">
               <Smartphone className="size-4" aria-hidden="true" />
               <span>Members App</span>
             </Link>

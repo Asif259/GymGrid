@@ -38,7 +38,7 @@ interface NavDef {
 }
 
 const NAV_ITEMS: NavDef[] = [
-  { href: "/", label: "Today", icon: LayoutDashboard, ownerOnly: false },
+  { href: "/admin", label: "Today", icon: LayoutDashboard, ownerOnly: false },
   { href: "/members", label: "Members", icon: Users, ownerOnly: false },
   {
     href: "/add",
@@ -52,7 +52,7 @@ const NAV_ITEMS: NavDef[] = [
 ];
 
 const VIEW_LABELS: Record<string, string> = {
-  "/": "Today overview",
+  "/admin": "Today overview",
   "/members": "Members directory",
   "/add": "New member",
   "/plans": "Workout & diet plans",
@@ -118,7 +118,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <>
                   We will email you a sign-in link. Members can use{" "}
                   <Link
-                    href="/member"
+                    href="/"
                     className="text-primary underline underline-offset-2"
                   >
                     the members app
@@ -126,7 +126,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   .
                 </>
               }
-              nextPath={pathname || "/"}
+              nextPath={pathname || "/admin"}
             />
           ) : null}
 
@@ -144,7 +144,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   <Link href="/onboarding">Set up gym</Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/member">Members app</Link>
+                  <Link href="/">Members app</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -158,7 +158,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   You are signed in, but the owner has not added this account to the
                   staff list. Members use{" "}
                   <Link
-                    href="/member"
+                    href="/"
                     className="text-primary underline underline-offset-2"
                   >
                     the members app
@@ -187,8 +187,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
     mobileLabel: item.mobileLabel,
     icon: item.icon,
     active:
-      item.href === "/"
-        ? pathname === "/"
+      item.href === "/admin"
+        ? pathname === "/admin"
         : pathname.startsWith(item.href),
     href: item.href,
     badge: item.href === "/members" ? membersCount : undefined,

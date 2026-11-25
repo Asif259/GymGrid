@@ -2,11 +2,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
-const ADMIN_PATHS = new Set(["/", "/members", "/add", "/plans", "/settings"]);
+const ADMIN_PATHS = new Set(["/admin", "/members", "/add", "/plans", "/settings"]);
 
 function isAdminRoute(pathname: string): boolean {
   if (ADMIN_PATHS.has(pathname)) return true;
   return (
+    pathname.startsWith("/admin/") ||
     pathname.startsWith("/members/") ||
     pathname.startsWith("/add/") ||
     pathname.startsWith("/plans/") ||
@@ -74,7 +75,7 @@ export async function middleware(request: NextRequest) {
       }
     } else if (hasGym && pathname === "/onboarding") {
       const target = request.nextUrl.clone();
-      target.pathname = "/";
+      target.pathname = "/admin";
       target.search = "";
       return NextResponse.redirect(target);
     }

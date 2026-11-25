@@ -199,7 +199,10 @@ function MemberShellInner({
     if (gymSlugParam) nextParams.set("gym", gymSlugParam);
     if (tab && tab !== "home") nextParams.set("tab", memberTabParam(tab));
     const qs = nextParams.toString();
-    const nextPath = qs ? `/member?${qs}` : "/member";
+    const basePath = typeof window !== "undefined" && window.location.pathname.startsWith("/member")
+      ? "/member"
+      : "/";
+    const nextPath = qs ? `${basePath}?${qs}` : basePath;
     return (
       <div className="mx-auto max-w-xl px-4 py-10">
         <LoginCard

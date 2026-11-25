@@ -70,7 +70,7 @@ export default function DeskPage() {
           ) : null}
           <ThemeToggle />
           <Button variant="outline" size="sm" asChild>
-            <Link href="/">
+            <Link href="/admin">
               <ArrowLeft className="size-4" aria-hidden="true" />
               <span>Admin</span>
             </Link>

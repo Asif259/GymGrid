@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/index.html', destination: '/', permanent: true },
-      { source: '/member.html', destination: '/member', permanent: true },
+      { source: '/member.html', destination: '/', permanent: true },
       { source: '/join.html', destination: '/join', permanent: true },
       { source: '/desk.html', destination: '/desk', permanent: true },
       { source: '/desk-qr.html', destination: '/desk-qr', permanent: true },

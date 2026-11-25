@@ -102,7 +102,7 @@ export default function DesignPreviewPage() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button variant="outline" size="sm" asChild>
-            <Link href="/">
+            <Link href="/admin">
               <ArrowLeft className="size-4" aria-hidden="true" />
               <span>Open Admin</span>
             </Link>

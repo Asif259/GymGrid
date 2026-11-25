@@ -136,8 +136,8 @@ function CheckinInner() {
       .join("") || "G";
 
   const memberHref = gym?.slug
-    ? `/member?gym=${encodeURIComponent(gym.slug)}`
-    : "/member";
+    ? `/?gym=${encodeURIComponent(gym.slug)}`
+    : "/";
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 p-4 sm:p-6">

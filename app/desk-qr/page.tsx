@@ -99,7 +99,7 @@ export default function DeskQrPage() {
             <p className="text-sm font-medium text-destructive">{errorMsg}</p>
             <div>
               <Button variant="outline" asChild>
-                <Link href="/">
+                <Link href="/admin">
                   <ArrowLeft className="size-4" aria-hidden="true" />
                   <span>Go to Admin</span>
                 </Link>

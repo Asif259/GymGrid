@@ -90,7 +90,7 @@ export default function OnboardingPage() {
           .maybeSingle();
 
         if (!cancelled && staffRow?.gym_id) {
-          router.replace("/");
+          router.replace("/admin");
           return;
         }
       }
@@ -429,7 +429,7 @@ export default function OnboardingPage() {
               </p>
               <div>
                 <Button variant="link" size="sm" className="h-auto p-0" asChild>
-                  <Link href="/member">
+                  <Link href="/">
                     <Smartphone className="size-3.5" aria-hidden="true" />
                     <span>Open the member portal instead</span>
                   </Link>
