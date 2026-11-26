@@ -1,21 +1,21 @@
-/* Landing — stone and forest. Newsreader display + Geist body. Scoped to .lp */
+/* Landing — Google Material 3 neutral surfaces + Google Blue primary. Newsreader display + Geist body. Scoped to .lp */
 
 .lp {
-  --lp-bg: #f6f4ef;
-  --lp-surface: #fcfbf8;
-  --lp-ink: #1e1b1a;
-  --lp-muted: #5c635e;
-  --lp-line: #d9dfd9;
-  --lp-forest: #a36361;
-  --lp-on-forest: #fcfbf8;
-  --lp-mint: #bdd1c5;
-  --lp-amber: #eecc8c;
-  --lp-rose: #d3a29d;
+  --lp-bg: #f8f9fa;
+  --lp-surface: #ffffff;
+  --lp-ink: #1f1f1f;
+  --lp-muted: #444746;
+  --lp-line: #dadce0;
+  --lp-forest: #0b57d0;
+  --lp-on-forest: #ffffff;
+  --lp-mint: #d3e3fd;
+  --lp-amber: #f9ab00;
+  --lp-rose: #d93025;
   /* Text-on-tint variants that clear 4.5:1 at small sizes. */
-  --lp-ok-ink: #355848;
-  --lp-amber-ink: #7a5514;
-  --lp-rose-ink: #7e3e3c;
-  --lp-shadow: 163 99 97;
+  --lp-ok-ink: #137333;
+  --lp-amber-ink: #8a4b00;
+  --lp-rose-ink: #b3261e;
+  --lp-shadow: 11 87 208;
   --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --lp-serif: var(--font-editorial), Georgia, serif;
   --lp-sans: var(--font-geist), system-ui, sans-serif;
@@ -27,16 +27,17 @@
 }
 
 .dark .lp {
-  --lp-bg: #151413;
-  --lp-surface: #1e1c1b;
-  --lp-ink: #f2efe9;
-  --lp-muted: #9eaba2;
-  --lp-line: #2e2c2a;
-  --lp-forest: #e8b298;
-  --lp-on-forest: #151413;
-  --lp-ok-ink: #bdd1c5;
-  --lp-amber-ink: #eecc8c;
-  --lp-rose-ink: #d3a29d;
+  --lp-bg: #131314;
+  --lp-surface: #1e1f20;
+  --lp-ink: #e3e3e3;
+  --lp-muted: #c4c7c5;
+  --lp-line: #333537;
+  --lp-forest: #a8c7fa;
+  --lp-on-forest: #062e6f;
+  --lp-mint: #0842a0;
+  --lp-ok-ink: #81c995;
+  --lp-amber-ink: #fdd663;
+  --lp-rose-ink: #f2b8b5;
   --lp-shadow: 0 0 0;
 }
 
@@ -283,7 +284,7 @@ html.lenis, html.lenis body { height: auto; }
   .lp-chip--b { right: -0.5rem; }
 }
 .lp-dot { width: 8px; height: 8px; border-radius: 50%; }
-.lp-dot--active { background: #2f9e64; }
+.lp-dot--active { background: #1e8e3e; }
 .lp-dot--pending { background: var(--lp-amber); }
 @media (min-width: 64rem) {
   .lp-hero { grid-template-columns: 1.2fr 0.8fr; }
@@ -366,9 +367,9 @@ html.lenis, html.lenis body { height: auto; }
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
 }
-.lp-status--active { background: rgb(47 158 100 / 0.15); color: var(--lp-ok-ink) !important; }
-.lp-status--pending { background: rgb(201 138 27 / 0.16); color: var(--lp-amber-ink) !important; }
-.lp-status--due { background: rgb(180 68 58 / 0.14); color: var(--lp-rose-ink) !important; }
+.lp-status--active { background: rgb(30 142 62 / 0.14); color: var(--lp-ok-ink) !important; }
+.lp-status--pending { background: rgb(249 171 0 / 0.18); color: var(--lp-amber-ink) !important; }
+.lp-status--due { background: rgb(217 48 37 / 0.14); color: var(--lp-rose-ink) !important; }
 @media (max-width: 63.99rem) { .lp-story-panel { display: none; } }
 .lp-story-panel { position: relative; padding-left: 1.5rem; }
 .lp-progress {
@@ -413,8 +414,8 @@ html.lenis, html.lenis body { height: auto; }
 
 /* Ticker (dark band) */
 .lp-ticker {
-  background: #102a1d;
-  color: #f4f1e8;
+  background: #0b1d33;
+  color: #f8f9fa;
   overflow: hidden;
   padding-block: 1.1rem;
 }
@@ -426,7 +427,7 @@ html.lenis, html.lenis body { height: auto; }
   font-family: var(--lp-serif);
   font-size: 1.4rem;
 }
-.lp-ticker-track span::before { content: "·"; margin-right: 3rem; color: #7fc8a4; }
+.lp-ticker-track span::before { content: "·"; margin-right: 3rem; color: #8ab4f8; }
 @keyframes lp-marquee { to { transform: translateX(-50%); } }
 
 /* Surfaces */
@@ -468,15 +469,15 @@ html.lenis, html.lenis body { height: auto; }
 
 /* Close + footer */
 .lp-close {
-  background: #102a1d;
-  color: #f4f1e8;
-  --lp-forest: #173d2a;
-  --lp-on-forest: #f4f1e8;
-  --lp-muted: #b9c4bb;
+  background: #0b1d33;
+  color: #f8f9fa;
+  --lp-forest: #0b57d0;
+  --lp-on-forest: #ffffff;
+  --lp-muted: #c4c7c5;
 }
 .lp-close-inner { display: grid; gap: 2rem; justify-items: start; }
 .lp-close .lp-display { max-width: 16ch; }
-.lp-close a:focus-visible { outline-color: #f4f1e8; }
+.lp-close a:focus-visible { outline-color: #a8c7fa; }
 .lp-foot {
   display: flex;
   flex-wrap: wrap;
