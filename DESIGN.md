@@ -1,101 +1,136 @@
 ---
-name: Gym Admin (Ice Tonal Workspace)
-description: Material 3-inspired ice-blue canvas (#F0F4F9), seamless sidebar, pure white floating cards (#FFFFFF), soft sky active nav pills (#C2E7FF / #001D35), and Material 3 Blue (#0B57D0) primary CTAs.
+name: GymGrid (Material 3 Operations Ledger & Member Pass)
+description: Google Material Design 3 neutral surfaces (#F8F9FA / #FFFFFF light, #131314 / #1E1F20 dark), Google Blue primary (#0B57D0 / #A8C7FA), Newsreader + Inter + JetBrains Mono typography, unified KPI ledger strip, and centered shadcn Dialog/AlertDialog primitives across Admin, Member, and Landing views.
 colors:
-  bg: "#f0f4f9"
-  surface: "#ffffff"
-  surface-raised: "#e8eef6"
-  surface-rail: "#f0f4f9"
-  ink: "#1f1f1f"
-  ink-secondary: "#444746"
-  ink-muted: "#444746"
-  hairline: "#e1e3e1"
-  hairline-strong: "#c4c7c5"
-  accent: "#0b57d0"
-  accent-hover: "#0842a0"
-  accent-ink: "#001d35"
-  accent-soft: "#c2e7ff"
-  nav-active-bg: "#c2e7ff"
-  nav-active-ink: "#001d35"
-  positive: "#137333"
-  positive-bg: "#e6f4ea"
-  warning: "#b06000"
-  warning-bg: "#fef7e0"
-  danger: "#c5221f"
-  danger-ink: "#8c1d18"
-  danger-bg: "#fce8e6"
-  frozen: "#444746"
-  frozen-bg: "#eef2f6"
+  light:
+    bg: "#f8f9fa"
+    surface: "#ffffff"
+    surface-container: "#f0f4f9"
+    surface-muted: "#eef2f6"
+    sidebar: "#f0f4f9"
+    sidebar-accent: "#d3e3fd"
+    sidebar-accent-ink: "#041e49"
+    ink: "#1f1f1f"
+    ink-muted: "#444746"
+    border: "#dadce0"
+    primary: "#0b57d0"
+    primary-ink: "#ffffff"
+    accent: "#d3e3fd"
+    accent-ink: "#041e49"
+    destructive: "#b3261e"
+    destructive-ink: "#ffffff"
+    positive: "#137333"
+    positive-bg: "#e6f4ea"
+    warning: "#8a4b00"
+    warning-bg: "#fef7e0"
+    danger: "#b3261e"
+    danger-bg: "#fce8e6"
+    chart: ["#1a73e8", "#1e8e3e", "#f9ab00", "#d93025", "#12b5cb"]
+  dark:
+    bg: "#131314"
+    surface: "#1e1f20"
+    surface-container: "#282a2c"
+    popover: "#242628"
+    sidebar: "#1a1c1e"
+    sidebar-accent: "#282a2c"
+    sidebar-accent-ink: "#d3e3fd"
+    ink: "#e3e3e3"
+    ink-muted: "#c4c7c5"
+    border: "#333537"
+    input-border: "#3c4043"
+    primary: "#a8c7fa"
+    primary-ink: "#062e6f"
+    accent: "#0842a0"
+    accent-ink: "#d3e3fd"
+    destructive: "#f2b8b5"
+    destructive-ink: "#601410"
+    positive: "#81c995"
+    positive-bg: "#163825"
+    warning: "#fdd663"
+    warning-bg: "#3b2a08"
+    danger: "#f2b8b5"
+    danger-bg: "#4a1917"
+    chart: ["#8ab4f8", "#81c995", "#fdd663", "#f28b82", "#78d9ec"]
+  landing:
+    dark-band-bg: "#0b1d33"
+    dark-band-ink: "#f8f9fa"
+    ticker-dot: "#8ab4f8"
+    manifest-theme: "#0b57d0"
 typography:
+  display:
+    fontFamily: "Newsreader, Georgia, serif"
+    weights: [500, 600]
   sans:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans Bengali, sans-serif"
+    fontFamily: "Inter, ui-sans-serif, system-ui, Noto Sans Bengali, sans-serif"
     weights: [400, 500, 600]
+  landingBody:
+    fontFamily: "Geist, system-ui, sans-serif"
   mono:
-    fontFamily: "ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontFamily: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
   scale:
-    meta: { fontSize: "0.75rem", lineHeight: 1.35, weight: 500 }
-    caption: { fontSize: "0.8125rem", lineHeight: 1.4, weight: 400 }
-    ui: { fontSize: "0.875rem", lineHeight: 1.4, weight: 500 }
+    micro: { fontSize: "0.6875rem", lineHeight: 1.2, weight: 500 }
+    caption: { fontSize: "0.75rem", lineHeight: 1.4, weight: 400 }
+    ui: { fontSize: "0.875rem", lineHeight: 1.35, weight: 500 }
     body: { fontSize: "1rem", lineHeight: 1.5, weight: 400 }
-    heading: { fontSize: "1.125rem", lineHeight: 1.3, weight: 600 }
-    title: { fontSize: "1.5rem", lineHeight: 1.2, weight: 600 }
-    figure: { fontSize: "1.75rem", lineHeight: 1.1, weight: 600 }
-    figure-hero: { fontSize: "2rem", lineHeight: 1.05, weight: 600 }
+    section: { fontSize: "1rem", lineHeight: 1.35, weight: 500 }
+    pageTitle: { fontSize: "1.25rem–1.75rem", lineHeight: 1.2, weight: 500, font: "Newsreader" }
+    kpi: { fontSize: "1.5rem–1.875rem", lineHeight: 1.15, weight: 500 }
 rounded:
-  sm: "6px"
-  md: "8px"
-  lg: "12px"
-  xl: "16px"
-  pill: "999px"
+  base: "0.625rem (10px)"
+  badgeChip: "6px (rounded-md)"
+  control: "8px (rounded-lg)"
+  card: "12px–16px (rounded-xl / rounded-2xl)"
+  pill: "9999px (rounded-full)"
 spacing:
-  space-1: "4px"
-  space-2: "8px"
-  space-3: "12px"
-  space-4: "16px"
-  space-5: "20px"
-  space-6: "24px"
-  space-8: "32px"
+  grid: "4px base scale"
+  pagePadding: "16px mobile, 24px desktop (max-w-7xl)"
+  sectionGap: "20px mobile, 24px desktop"
 layout:
-  railWidth: "248px"
-  maxContentWidth: "1440px"
-  rowMinHeight: "52px"
-  mobileControlHeight: "44px"
-  desktopControlHeight: "36px"
+  maxContentWidth: "80rem (max-w-7xl)"
+  stickyHeaderScrollOffset: "4.5rem"
+  mobileTouchTarget: "44px (min-h-11)"
+  desktopControlHeight: "36px–40px"
 ---
 
-# Design System: Gym Admin (Ice Tonal Workspace)
+# Design System: GymGrid (Material 3 Operations Ledger & Member Pass)
 
 ## Overview
 
-**Creative North Star: "Ice Tonal Operations Ledger"**
-
-A light-mode workspace built on a cool ice-blue canvas (`#f0f4f9`) with a seamless sidebar and pure white floating cards (`#ffffff`) separated by subtle `#e1e3e1` borders and soft elevation. Primary actions use Material 3 Blue (`#0b57d0`), active navigation and selected filter pills use Soft Sky (`#c2e7ff` with `#001d35` ink), and semantic red (`#c5221f`) is reserved strictly for money owed, expired memberships, and errors.
+A light- and dark-mode gym management workspace and public landing page grounded in **Google Material Design 3** neutral surfaces (`#f8f9fa` / `#ffffff` in light, `#131314` / `#1e1f20` in dark) and **Google Blue** (`#0b57d0` light, `#a8c7fa` dark) reserved strictly for primary CTAs, live focus states, and today's attendance highlight. All semantic status badges, charts, and landing surfaces share the same WCAG AA token set defined in `app/globals.css` and `app/landing.css` (zero violet/lavender hues).
 
 **Key Characteristics:**
-- Ice-tonal canvas (`#f0f4f9`) and seamless left rail (`#f0f4f9`) framing pure white cards (`#ffffff`) with `#e1e3e1` borders.
-- Soft Sky (`#c2e7ff`) pill with `#001d35` text for the active navigation item and pressed filter tabs.
-- Material 3 Blue (`#0b57d0`) for primary CTAs, the hero revenue numeral, and today's pulse bar.
-- Clean sans-serif (`Inter` / system stack) in weights `400`, `500`, and `600`, paired with tabular monospace for TrxIDs, receipt numbers, phone/copy codes, and chart/meta labels.
-- Light mode only (`color-scheme: light`).
+- **Unified neutrals, quiet chrome:** Tinted Workspace-style sidebar (`#f0f4f9` / `#1a1c1e`) with tonal active nav rows (`bg-sidebar-accent` + primary-tinted icon) instead of loud filled nav pills.
+- **Tonal KPI icon chips:** Metric columns keep colored Material 3 tonal icon wells (`TONAL_ICON_CLASSES` in `components/StatCards.tsx`) with >= 5:1 icon contrast across Blue, Green, Amber, Red, and Slate tones.
+- **Editorial-sans pairing:** `Newsreader` (`--font-editorial`) on dashboard `<h1>` headings and landing display headings paired with `Inter` for operational UI, `Geist` on landing body copy, and `JetBrains Mono` / `Geist Mono` (`tabular-nums`) for member IDs (`MM-xxx`), TrxIDs, receipt numbers, and chart ticks.
+- **Light + dark support:** Both themes defined in `:root` / `.dark` (`app/globals.css` and `app/landing.css`), with `ThemeToggle` in sidebar/header.
 
 ## Layout & Adaptivity
 
-- **Shell:** On desktop (`900px` and up), a `248px` sticky seamless sidebar (`100dvh`) with `40px` pill nav rows (`2px` gap) beside a fluid `minmax(0, 1fr)` content area capped at `1440px` (`24px` block, `32px` inline padding). On mobile (`< 900px`), a sticky blurred `#f0f4f9` top bar and a fixed white bottom tab rail with `env(safe-area-inset-bottom)` (`viewport-fit=cover`) and `scroll-padding-block-start` on `html`.
-- **Today Hierarchy:**
-  - `.metrics`: asymmetric summary strip where `Revenue today` spans full width on phone and `1.55fr` on desktop alongside four compact counts (`Checked in today`, `Active members`, `Pending payments`, `Expired`).
-  - `.today-band`: `1.35fr` 7-day check-in pulse chart paired with `1fr` quick check-in search in natural DOM order.
-  - `.cols`: `1.35fr` primary action queue (`Came in without paying`, `Payments to confirm`) paired with `1fr` reminder lists (`Ends in 2 days`, `Expired in last 30 days`).
-- **Container Queries & Responsive DataTable (`web/table.js`):** Data tables use `.dt-container` (`container-type: inline-size; container-name: datatable`) so the table container owns the breakpoint (`820px`). Above `820px`, tables render as a semantic aligned `<table>` with sortable headers (`Member`, `Status`, `Expiry`, `Amount`), right-aligned tabular figures, and a fixed-footprint action slot (`1` primary button + `⋮` menu). Below `820px`, rows collapse into two visual lines (Line 1: Identity left / Amount right; Line 2: Compact status dot + labeled date left / `44×44px` `⋮` menu right) with tap-to-expand details revealing all hidden fields and actions, plus a mobile `[Filters]` sheet and `Sort` control.
-- **Logical Properties:** Direction-dependent spacing, borders, alignment, and offsets use logical properties (`padding-inline`, `margin-block`, `inset-inline-start`, `text-align: start|end`).
+- **Dashboard Shell (`components/DashboardShell.tsx`):**
+  - **Desktop (`md+`):** Collapsible floating `Sidebar` (`variant="floating"`, `collapsible="icon"`), `h-9` nav rows, and `SidebarInset` containing a `max-w-7xl` content container (`p-6`, `gap-6`).
+  - **Mobile (`< md`):** Sticky blurred top header (`bg-background/95 backdrop-blur-md`) paired with `scroll-padding-top: 4.5rem` on `html`, `pb-[calc(5rem+env(safe-area-inset-bottom))]` clearance, and a fixed bottom tab rail with `44px+` touch targets.
+- **Admin Today Desk (`components/admin/TodayClient.tsx`):**
+  - **KPI Ledger Strip (`components/StatCards.tsx`):** Unified 4-column hairline surface (`rounded-xl border bg-card`, `divide-y` on mobile, `divide-x` on `xl+`) with left-aligned labels, top-right `size-8` tonal icon chips, `1.5rem–1.875rem` tabular figures, and a top-bordered caption + mono delta row.
+  - **Asymmetric Workspace (`lg:grid-cols-12`):** `7`-column elevated `bg-card` **7-day attendance pulse** chart (horizontal dashed `CartesianGrid`, mono ticks, only today's bar highlighted in `--chart-1`) paired with a `5`-column recessed tonal **Check someone in** tray (`bg-secondary/45`).
+  - **Bottom Ledger (`lg:grid-cols-12`):** `7`-column queue (**Trained without paying today** alert card + **Pending approvals**) paired with a `5`-column consolidated **Renewals watchlist** (**Expiring in 2 days** + **Expired recently** separated by a hairline).
+- **Member Overview (`components/member/MemberOverview.tsx`):**
+  - Same 4-column `StatCards` ledger strip below any active check-in / billing / frozen alert card.
+  - Asymmetric `12`-column focal workspace: `5`-column **Member pass** hero card (`border-t-2 border-t-primary`, `member_code`, `StatusBadge`, coach & body/plan summary, Today's training split selector, and primary actions) paired with a `7`-column **7-day attendance pulse**, **Recent visits**, and **Latest receipt** ledger card separated by spacing and hairline dividers.
+- **Members Directory (`components/DataTable.tsx`):** Status `Tabs` filter row, `SearchInput`, sort `Select`, semantic `<table>` with `44px+` touch-friendly action menu (`⋮`), `title` fallback on truncated names, and `Pagination`.
+- **Landing Page (`components/landing/LandingShell.tsx`, `app/landing.css`):** Stone-clean `#f8f9fa` / `#ffffff` ground synced to the Material 3 palette, GSAP/Lenis motion (respecting `prefers-reduced-motion: reduce`), and `#0b1d33` dark navy ticker and closing band.
+- **Logical Properties:** Direction-dependent borders, alignment, and offsets use logical utilities (`border-s`, `ps-*`, `pe-*`, `start-*`, `end-*`, `text-start`). Mixed-direction identifiers (phones, `member_code`, `trx_id`, `receipt_no`, wallet numbers, account email) are wrapped in `<bdi>`.
 
-## Typography
+## Typography & Accessibility
 
-- **Scale (`rem`):** `0.75rem` meta, `0.8125rem` caption, `0.875rem` UI, `1rem` body (`1.5` unitless line-height), `1.125rem` `h2`, `1.5rem` `h1` (`-0.015em` tracking), `1.75rem`–`2rem` tabular KPI figures.
-- **Rules:** Weights stay within `400`–`600`; sentence case everywhere; `text-wrap: balance` on headings; `text-wrap: pretty` on paragraphs/descriptions; `overflow-wrap: break-word` on member names and sublines; `font-variant-numeric: tabular-nums` globally; inputs render at `16px` (`1rem`) below `640px` to prevent iOS Safari zoom and `14px` (`0.875rem`) at `640px` and up; root font smoothing applied once on `:root`.
+- **Scale & Unitless Line-Heights:** `1.15` on KPI figures, `1.2` on `Newsreader` `<h1>` page titles (wrapping with `text-balance`, never clipped with `truncate`) and compact nav labels, `1.35`–`1.45` on UI labels/metadata (`text-pretty`), and `1.5` on prose capped around `max-w-[65ch]`.
+- **Weights & Numerals:** Interface weights stay in `400`–`500` (`600` sparingly), sentence case everywhere (no all-caps tracked eyebrows), global `font-variant-numeric: tabular-nums`, and typographic ellipsis `…` (`…{key_hint}`).
+- **Forms & Inputs (`components/ui/input.tsx`):** Inputs render at `16px` (`text-base`) below `md` to prevent iOS Safari zoom and `14px` (`md:text-sm`) on desktop, with explicit `name`, `inputMode`, `enterKeyHint`, `noValidate`, `aria-invalid`, and `aria-describedby` error association.
 
-## Components & Motion
+## Components, Modals & Alerts
 
-- **Controls:** `8px` radius, `36px` height on desktop (`44px` on mobile touch targets). Primary buttons use solid `#0b57d0` (`#0842a0` hover); secondary buttons use white surface with `#c4c7c5` border; quiet buttons are borderless until hover; active filter/tab buttons use `#c2e7ff` with `#001d35` ink.
-- **Status Tags (`.pill`):** `6px` radius, `12px` sentence-case label with a `6px` semantic dot (`Active` green, `Due` amber, `Expired` red, `Frozen` slate) and `text-box: trim-both cap alphabetic`.
-- **Icons:** Uniform `16px`/`18px` inline SVG sprite at `1.5` stroke weight inheriting text role color.
-- **Motion:** Single easing curve `cubic-bezier(0.22, 1, 0.36, 1)` transitioning only `background-color`, `border-color`, `color`, and `transform` (`scale(0.98)` on press), disabled under `prefers-reduced-motion: reduce`.
+- **Modals (`components/ui/dialog.tsx`, `components/ui/alert-dialog.tsx`):**
+  - All form/detail overlays use centered `Dialog` modals (`AiPlanDialog`, `AiProvidersDialog`, `MemberDialog`), keeping `Sheet` solely for mobile `Sidebar` navigation.
+  - Overdue/frozen manual check-ins (`TodayClient`, `MembersClient`), AI provider deletion (`AiProvidersDialog`), and signup/QR token rotation (`app/(admin)/settings/page.tsx`) use `AlertDialog` confirmations instead of native `window.confirm`.
+- **Alerts (`components/ui/alert.tsx`):** Inline error and prerequisite notices (`AiPlanDialog`, `AiProvidersDialog`, `MemberProfile`, `MemberPay`) use shadcn `<Alert>` (`variant="destructive"` or semantic status surface).
+- **Status Badges (`components/StatusBadge.tsx`):** `StatusBadge` pairs a `6px` semantic dot with accessible light/dark badge tokens (`Active` `#137333`/`#e6f4ea`, `Due` `#8a4b00`/`#fef7e0`, `Expired` `#b3261e`/`#fce8e6`, `Frozen` muted slate).
+- **Motion:** Transitions target explicit properties (`transition-colors`, `transition-[transform,opacity]`) with `motion-reduce:animate-none` and `@media (prefers-reduced-motion: reduce)` fallbacks.
