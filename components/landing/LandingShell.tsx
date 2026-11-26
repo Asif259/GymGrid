@@ -195,6 +195,7 @@ export function LandingShell() {
           <span>GymGrid</span>
         </Link>
         <nav aria-label="Primary" className="lp-nav-links">
+          <a href="#demo">Demo</a>
           <a href="#story">How it works</a>
           <a href="#surfaces">Screens</a>
           <a href="#faq">FAQ</a>
@@ -233,6 +234,20 @@ export function LandingShell() {
               <span className="lp-dot lp-dot--active" /> Checked in · 06:42
             </div>
           </div>
+        </section>
+
+        <section id="demo" className="lp-demo lp-wrap" aria-labelledby="demo-title">
+          <p className="lp-eyebrow" data-reveal>Watch it work</p>
+          <h2 id="demo-title" className="lp-h2" data-words><Words text="From QR scan to renewal in 30 seconds." /></h2>
+          <div className="lp-video" data-reveal>
+            <iframe
+              src="/qr_demo.html"
+              title="Animated demo: a member scans the desk QR, attendance appears on the desk screen, and a bKash renewal is confirmed"
+              loading="lazy"
+              allow="autoplay"
+            />
+          </div>
+          <p className="lp-micro">Hover the video for pause, restart and a scrubber.</p>
         </section>
 
         <section id="story" className="lp-story" aria-labelledby="story-title">

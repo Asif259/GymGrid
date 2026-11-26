@@ -1,0 +1,29 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "geist",
+        "createdAt": "2026-11-26T04:07:43.032Z",
+        "reason": "Demo mirrors landing page body font; set in app/landing.css, not a brand change"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "newsreader",
+        "createdAt": "2026-11-26T04:07:43.049Z",
+        "reason": "Demo mirrors landing page serif display font used in app/landing.css"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "public/qr_demo.html"
+        ],
+        "createdAt": "2026-11-26T04:07:43.065Z",
+        "reason": "Flagged nodes are illustrated phone and tablet bezels in a screen-recorded animation, not text containers"
+      }
+    ]
+  }
+}

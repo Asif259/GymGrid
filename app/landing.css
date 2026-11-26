@@ -1,21 +1,21 @@
 /* Landing — stone and forest. Newsreader display + Geist body. Scoped to .lp */
 
 .lp {
-  --lp-bg: #f2f1ec;
-  --lp-surface: #fbfaf6;
-  --lp-ink: #171a16;
-  --lp-muted: #5f645c;
-  --lp-line: #dcd9cf;
-  --lp-forest: #173d2a;
-  --lp-on-forest: #f4f1e8;
-  --lp-mint: #7fc8a4;
-  --lp-amber: #c98a1b;
-  --lp-rose: #b4443a;
+  --lp-bg: #f6f4ef;
+  --lp-surface: #fcfbf8;
+  --lp-ink: #1e1b1a;
+  --lp-muted: #5c635e;
+  --lp-line: #d9dfd9;
+  --lp-forest: #a36361;
+  --lp-on-forest: #fcfbf8;
+  --lp-mint: #bdd1c5;
+  --lp-amber: #eecc8c;
+  --lp-rose: #d3a29d;
   /* Text-on-tint variants that clear 4.5:1 at small sizes. */
-  --lp-ok-ink: #1d6b43;
-  --lp-amber-ink: #8a5a00;
-  --lp-rose-ink: #9c3229;
-  --lp-shadow: 23 61 42;
+  --lp-ok-ink: #355848;
+  --lp-amber-ink: #7a5514;
+  --lp-rose-ink: #7e3e3c;
+  --lp-shadow: 163 99 97;
   --lp-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --lp-serif: var(--font-editorial), Georgia, serif;
   --lp-sans: var(--font-geist), system-ui, sans-serif;
@@ -27,16 +27,16 @@
 }
 
 .dark .lp {
-  --lp-bg: #0f1210;
-  --lp-surface: #171b18;
-  --lp-ink: #ecebe4;
-  --lp-muted: #9aa096;
-  --lp-line: #2a302b;
-  --lp-forest: #7fc8a4;
-  --lp-on-forest: #0f1210;
-  --lp-ok-ink: #7fd1a6;
-  --lp-amber-ink: #e7b75a;
-  --lp-rose-ink: #f08a80;
+  --lp-bg: #151413;
+  --lp-surface: #1e1c1b;
+  --lp-ink: #f2efe9;
+  --lp-muted: #9eaba2;
+  --lp-line: #2e2c2a;
+  --lp-forest: #e8b298;
+  --lp-on-forest: #151413;
+  --lp-ok-ink: #bdd1c5;
+  --lp-amber-ink: #eecc8c;
+  --lp-rose-ink: #d3a29d;
   --lp-shadow: 0 0 0;
 }
 
@@ -288,6 +288,21 @@ html.lenis, html.lenis body { height: auto; }
 @media (min-width: 64rem) {
   .lp-hero { grid-template-columns: 1.2fr 0.8fr; }
 }
+
+/* Demo video */
+.lp-demo { display: grid; gap: 1rem; padding-block: clamp(3rem, 8vw, 6rem); justify-items: start; }
+.lp-video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: 1rem;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: var(--lp-ink);
+  border: 1px solid var(--lp-line);
+  box-shadow: 0 30px 60px -36px rgb(var(--lp-shadow) / 0.55);
+}
+.lp-video iframe { width: 100%; height: 100%; border: 0; display: block; }
+@media (pointer: coarse) { .lp-demo .lp-micro { display: none; } }
 
 /* Story */
 .lp-story { background: var(--lp-surface); border-block: 1px solid var(--lp-line); }
