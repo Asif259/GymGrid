@@ -1,11 +1,39 @@
-// Pure plan intake validation, calorie calculation, JSON schemas, and deterministic safety checks.
+// Pure plan intake validation, calorie & protein math, PROGRAMS config table, and deterministic safety checks.
 // Used by supabase/functions/generate-plan/index.ts and tested directly with node --test.
 
-export const GOALS = ['fat loss', 'muscle', 'lean', 'fitness'];
+export const GOAL_TYPES = [
+  'muscle_gain',
+  'strength',
+  'fat_loss',
+  'maintain_lean',
+  'general_fitness',
+];
 export const SEXES = ['male', 'female'];
 export const LEVELS = ['beginner', 'intermediate', 'advanced'];
 export const EQUIPMENT = ['full_gym', 'dumbbells', 'bodyweight'];
 export const ACTIVITIES = ['sedentary', 'light', 'moderate', 'active'];
+export const SESSION_MINUTES = [45, 60];
+export const VALID_MUSCLES = [
+  'chest',
+  'back',
+  'shoulders',
+  'biceps',
+  'triceps',
+  'quads',
+  'hamstrings',
+  'glutes',
+  'calves',
+  'core',
+];
+export const MAJOR_MUSCLES = [
+  'chest',
+  'back',
+  'shoulders',
+  'quads',
+  'hamstrings',
+  'glutes',
+];
+export const CARDIO_TYPES = ['walk', 'incline_walk', 'run', 'cycle'];
 
 const ACTIVITY_FACTOR = {
   sedentary: 1.2,
@@ -14,83 +42,119 @@ const ACTIVITY_FACTOR = {
   active: 1.725,
 };
 
-const GOAL_FACTOR = {
-  'fat loss': 0.85,
-  muscle: 1.1,
-  lean: 1.0,
-  fitness: 1.0,
-};
-
-export const WORKOUT_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['days'],
-  properties: {
-    days: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['day', 'focus', 'exercises'],
-        properties: {
-          day: { type: 'string' },
-          focus: { type: 'string' },
-          exercises: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['name', 'sets', 'reps', 'rest_sec', 'notes'],
-              properties: {
-                name: { type: 'string' },
-                sets: { type: 'integer' },
-                reps: { type: 'string' },
-                rest_sec: { type: 'integer' },
-                notes: { type: 'string' },
-              },
-            },
-          },
-        },
-      },
-    },
+// Design choices (not trial results): per-level set ranges, maintain_lean volume,
+// and 40s-per-set duration heuristic. Tune after reviewing real generated plans.
+export const PROGRAMS = {
+  muscle_gain: {
+    label: 'Build muscle (hypertrophy)',
+    weeklySets: { beginner: [8, 10], other: [10, 14] },
+    repsRange: [6, 15],
+    restRange: [60, 180],
+    repsSummary: 'compounds 6-10 reps (rest 120-180s); isolation 10-15 reps (rest 60-90s)',
+    cardioSummary: 'optional: 0-2 easy walks of 20-30 min',
+    minCardioSessions: 0,
+    minCardioMinutes: 0,
+    maxRuns: 0,
+    goalFactor: 1.1,
+    minProteinPerKg: 1.6,
+  },
+  strength: {
+    label: 'Get stronger',
+    weeklySets: { beginner: [6, 8], other: [8, 12] },
+    repsRange: [3, 12],
+    restRange: [60, 240],
+    repsSummary: 'main lifts 3-5 reps (rest 180-240s); 2-3 accessories at 8-12 reps (rest 60-150s)',
+    cardioSummary: '1-2 easy walks of 20-30 min',
+    minCardioSessions: 1,
+    minCardioMinutes: 20,
+    maxRuns: 0,
+    goalFactor: 1.0,
+    minProteinPerKg: 1.6,
+  },
+  fat_loss: {
+    label: 'Lose fat (cutting)',
+    weeklySets: { beginner: [8, 10], other: [10, 12] },
+    repsRange: [6, 15],
+    restRange: [60, 180],
+    repsSummary: 'keep lifting heavy: compounds 6-10 reps (rest 120-180s); isolation 10-15 reps (rest 60-90s)',
+    cardioSummary:
+      '3-5 sessions of 30-45 min walking or incline walking (5-10% incline, conversation pace), building toward 150-300 min/week; at most 2 easy runs (20-30 min) only if run_ok is true, no lower-body injury, and BMI < 30',
+    minCardioSessions: 3,
+    minCardioMinutes: 90,
+    maxRuns: 2,
+    goalFactor: 0.85,
+    maxDeficitKcal: 500,
+    minProteinPerKg: 1.8,
+    maxProteinPerKg: 2.4,
+  },
+  maintain_lean: {
+    label: 'Stay lean',
+    weeklySets: { beginner: [6, 10], other: [8, 10] },
+    repsRange: [6, 15],
+    restRange: [60, 180],
+    repsSummary: 'compounds 6-10 reps (rest 120-180s); isolation 10-15 reps (rest 60-90s)',
+    cardioSummary: '2-3 walks of 30 min',
+    minCardioSessions: 2,
+    minCardioMinutes: 60,
+    maxRuns: 0,
+    goalFactor: 1.0,
+    minProteinPerKg: 1.8,
+    maxProteinPerKg: 2.4,
+  },
+  general_fitness: {
+    label: 'General fitness',
+    weeklySets: { beginner: [6, 10], other: [6, 10] },
+    repsRange: [8, 15],
+    restRange: [60, 120],
+    repsSummary: 'full body: compounds 8-12 reps (rest 90-120s); accessories 10-15 reps (rest 60-90s)',
+    cardioSummary: 'walking to reach at least 150 min/week total activity including lifting',
+    minCardioSessions: 1,
+    minCardioMinutes: 20,
+    maxRuns: 0,
+    goalFactor: 1.0,
+    minProteinPerKg: 1.6,
   },
 };
 
-export const DIET_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['target_kcal', 'protein_g', 'carbs_g', 'fat_g', 'meals'],
-  properties: {
-    target_kcal: { type: 'integer' },
-    protein_g: { type: 'integer' },
-    carbs_g: { type: 'integer' },
-    fat_g: { type: 'integer' },
-    meals: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['name', 'items'],
-        properties: {
-          name: { type: 'string' },
-          items: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['food', 'qty', 'kcal'],
-              properties: {
-                food: { type: 'string' },
-                qty: { type: 'string' },
-                kcal: { type: 'integer' },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-};
+export function normalizeGoalType(raw) {
+  const g = String(raw ?? '').trim().toLowerCase();
+  if (GOAL_TYPES.includes(g)) return g;
+  if (g === 'fat loss' || g === 'cut') return 'fat_loss';
+  if (g === 'muscle' || g === 'bulk') return 'muscle_gain';
+  if (g === 'lean') return 'maintain_lean';
+  if (g === 'fitness') return 'general_fitness';
+  return null;
+}
+
+export function getProgram(profile) {
+  const key = normalizeGoalType(profile?.goal_type ?? profile?.goal) ?? 'general_fitness';
+  return { goalType: key, ...PROGRAMS[key] };
+}
+
+export function weeklySetRange(profile) {
+  const prog = getProgram(profile);
+  return profile?.level === 'beginner' ? prog.weeklySets.beginner : prog.weeklySets.other;
+}
+
+export function estimateWorkoutDurationMin(day) {
+  const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+  let totalSec = 0;
+  for (const ex of exercises) {
+    const sets = Number(ex?.sets) || 0;
+    const rest = Number(ex?.rest_sec ?? 90);
+    // Heuristic: 40s assumed per working set + rest_sec.
+    totalSec += sets * (40 + rest);
+  }
+  return Math.round(totalSec / 60 + 5);
+}
+
+export function computeBmi(profile) {
+  const w = Number(profile?.weight_kg);
+  const h = Number(profile?.height_cm);
+  if (!Number.isFinite(w) || !Number.isFinite(h) || h <= 0) return null;
+  const hm = h / 100;
+  return w / (hm * hm);
+}
 
 function cleanOptionalText(raw, label, maxLen, errors) {
   if (raw === undefined || raw === null) return null;
@@ -151,7 +215,13 @@ export function validateIntake(body) {
     return { data: null, errors: ['Request body must be an object'] };
   }
 
-  const goal = parseEnum(body.goal, 'goal', GOALS, errors);
+  const rawGoalType = body.goal_type ?? body.goal;
+  const goal_type = normalizeGoalType(rawGoalType);
+  if (!goal_type) {
+    errors.push(`goal_type must be one of: ${GOAL_TYPES.join(', ')}`);
+  }
+
+  const goal = cleanOptionalText(body.goal, 'goal', 60, errors);
   const age = parseNumber(body.age, 'age', { min: 10, max: 100, integer: true }, errors);
   const sex = parseEnum(body.sex, 'sex', SEXES, errors);
   const height_cm = parseNumber(body.height_cm, 'height_cm', { min: 100, max: 250, integer: true }, errors);
@@ -161,6 +231,26 @@ export function validateIntake(body) {
   const days_per_week = parseNumber(body.days_per_week, 'days_per_week', { min: 2, max: 6, integer: true }, errors);
   const equipment = parseEnum(body.equipment, 'equipment', EQUIPMENT, errors);
   const activity = parseEnum(body.activity, 'activity', ACTIVITIES, errors);
+
+  let run_ok = false;
+  if (body.run_ok !== undefined && body.run_ok !== null) {
+    if (typeof body.run_ok !== 'boolean') {
+      errors.push('run_ok must be true or false');
+    } else {
+      run_ok = body.run_ok;
+    }
+  }
+
+  let session_minutes = 60;
+  if (body.session_minutes !== undefined && body.session_minutes !== null && body.session_minutes !== '') {
+    const sm = Number(body.session_minutes);
+    if (!SESSION_MINUTES.includes(sm)) {
+      errors.push('session_minutes must be 45 or 60');
+    } else {
+      session_minutes = sm;
+    }
+  }
+
   const injuries = cleanOptionalText(body.injuries, 'injuries', 300, errors);
   const diet_pref = cleanOptionalText(body.diet_pref, 'diet_pref', 300, errors);
   const allergies = cleanOptionalText(body.allergies, 'allergies', 300, errors);
@@ -171,7 +261,10 @@ export function validateIntake(body) {
 
   return {
     data: {
-      goal,
+      goal_type,
+      goal: goal ?? PROGRAMS[goal_type].label,
+      run_ok,
+      session_minutes,
       age,
       sex,
       height_cm,
@@ -190,16 +283,48 @@ export function validateIntake(body) {
 }
 
 /**
- * Mifflin-St Jeor BMR x activity factor x goal adjustment (-15% fat loss, +10% muscle),
- * floored at 1200 kcal (female) / 1500 kcal (male).
+ * Mifflin-St Jeor BMR x activity factor x goal adjustment (+10% muscle_gain, -15% fat_loss
+ * capped at 500 kcal/day deficit), floored at 1200 kcal (female) / 1500 kcal (male).
  */
 export function targetKcal(profile) {
   const sexOffset = profile.sex === 'male' ? 5 : -161;
   const bmr = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * profile.age + sexOffset;
   const activityFactor = ACTIVITY_FACTOR[profile.activity] ?? ACTIVITY_FACTOR.moderate;
-  const goalFactor = GOAL_FACTOR[profile.goal] ?? 1.0;
+  const tdee = Math.round(bmr * activityFactor);
+  const prog = getProgram(profile);
+
+  let target = Math.round(tdee * prog.goalFactor);
+  if (prog.maxDeficitKcal && tdee - target > prog.maxDeficitKcal) {
+    target = tdee - prog.maxDeficitKcal;
+  }
+
   const floor = profile.sex === 'male' ? 1500 : 1200;
-  return Math.max(floor, Math.round(bmr * activityFactor * goalFactor));
+  return Math.max(floor, target);
+}
+
+/**
+ * Minimum daily protein grams from Morton 2018 (1.6 g/kg) and ISSN fat-loss/lean guidance (1.8-2.4 g/kg).
+ */
+export function minProteinGrams(profile, kcal) {
+  const prog = getProgram(profile);
+  const raw = Math.round((Number(profile?.weight_kg) || 60) * prog.minProteinPerKg);
+  if (typeof kcal === 'number' && kcal > 0) {
+    const maxFeasible = Math.floor((kcal * 0.55) / 4);
+    return Math.min(raw, maxFeasible);
+  }
+  return raw;
+}
+
+/**
+ * Target protein range [minGrams, maxGrams | null] derived from PROGRAMS and weight_kg.
+ */
+export function proteinRangeGrams(profile, kcal) {
+  const prog = getProgram(profile);
+  const minG = minProteinGrams(profile, kcal);
+  if (!prog.maxProteinPerKg) return [minG, null];
+  const rawMax = Math.round((Number(profile?.weight_kg) || 60) * prog.maxProteinPerKg);
+  const cappedMax = typeof kcal === 'number' && kcal > 0 ? Math.floor((kcal * 0.55) / 4) : rawMax;
+  return [minG, Math.max(minG, Math.min(rawMax, cappedMax))];
 }
 
 function escapeRegex(s) {
@@ -242,6 +367,46 @@ const INJURY_EXERCISES = {
   neck: ['neck', 'shrug', 'behind-the-neck', 'upright row'],
 };
 
+const LOWER_BODY_INJURY_TERMS = ['knee', 'patella', 'acl', 'meniscus', 'ankle', 'hip', 'back', 'lower back', 'lumbar', 'spine', 'shin', 'achilles', 'foot', 'calf'];
+const UPPER_BODY_INJURY_TERMS = ['shoulder', 'rotator', 'elbow', 'wrist', 'chest', 'pec', 'neck'];
+
+function hasLowerBodyInjury(injuriesText) {
+  if (!injuriesText || typeof injuriesText !== 'string') return false;
+  const lower = injuriesText.toLowerCase();
+  return LOWER_BODY_INJURY_TERMS.some((t) => hasTerm(lower, t));
+}
+
+function injuredMajorMuscles(injuriesText) {
+  const skip = new Set();
+  if (!injuriesText || typeof injuriesText !== 'string') return skip;
+  const lower = injuriesText.toLowerCase();
+  if (LOWER_BODY_INJURY_TERMS.some((t) => hasTerm(lower, t))) {
+    if (hasTerm(lower, 'knee') || hasTerm(lower, 'patella') || hasTerm(lower, 'acl') || hasTerm(lower, 'meniscus')) {
+      skip.add('quads');
+    }
+    if (hasTerm(lower, 'back') || hasTerm(lower, 'lower back') || hasTerm(lower, 'lumbar') || hasTerm(lower, 'spine')) {
+      skip.add('back');
+      skip.add('hamstrings');
+    }
+    if (hasTerm(lower, 'hip') || hasTerm(lower, 'ankle')) {
+      skip.add('quads');
+      skip.add('hamstrings');
+      skip.add('glutes');
+    }
+  }
+  if (UPPER_BODY_INJURY_TERMS.some((t) => hasTerm(lower, t))) {
+    if (hasTerm(lower, 'shoulder') || hasTerm(lower, 'rotator')) {
+      skip.add('shoulders');
+      skip.add('chest');
+    }
+    if (hasTerm(lower, 'elbow') || hasTerm(lower, 'wrist')) {
+      skip.add('chest');
+      skip.add('shoulders');
+    }
+  }
+  return skip;
+}
+
 function blockedExerciseTerms(injuriesText) {
   if (!injuriesText || typeof injuriesText !== 'string') return [];
   const lower = injuriesText.trim().toLowerCase();
@@ -274,8 +439,16 @@ function isOneRepMaxWork(ex) {
   return false;
 }
 
+function parseRepBounds(repsStr) {
+  const m = String(repsStr ?? '').match(/\d+/g);
+  if (!m || m.length === 0) return null;
+  const nums = m.map(Number).filter(Number.isFinite);
+  if (nums.length === 0) return null;
+  return [Math.min(...nums), Math.max(...nums)];
+}
+
 /**
- * Deterministic safety & schema checks for a generated workout plan.
+ * Deterministic safety, volume, duration, RIR, cardio, and injury checks for a workout plan.
  * Returns an array of failure descriptions (empty when valid).
  */
 export function checkWorkout(plan, profile) {
@@ -293,8 +466,14 @@ export function checkWorkout(plan, profile) {
     failures.push('Workout plan must contain at least one day');
   }
 
+  const prog = getProgram(profile);
+  const [minWeeklySets, maxWeeklySets] = weeklySetRange(profile);
   const isBeginner = profile?.level === 'beginner';
   const blocked = blockedExerciseTerms(profile?.injuries);
+  const sessionMin = Number(profile?.session_minutes) || 60;
+  const durationBounds = sessionMin === 45 ? [30, 50] : [40, 65];
+
+  const weeklyMuscleSets = Object.fromEntries(VALID_MUSCLES.map((m) => [m, 0]));
 
   plan.days.forEach((day, dIdx) => {
     const dayLabel = `Day ${dIdx + 1}`;
@@ -312,6 +491,11 @@ export function checkWorkout(plan, profile) {
       failures.push(`${dayLabel} must include at least one exercise`);
       return;
     }
+    if (day.exercises.length > 7) {
+      failures.push(`${dayLabel} has ${day.exercises.length} exercises (max 7)`);
+    }
+
+    let dayWorkingSets = 0;
 
     day.exercises.forEach((ex, eIdx) => {
       const exLabel = `${dayLabel} exercise ${eIdx + 1}`;
@@ -325,12 +509,44 @@ export function checkWorkout(plan, profile) {
       }
       if (!Number.isInteger(ex.sets) || ex.sets < 1 || ex.sets > 12) {
         failures.push(`"${ex.name}" has invalid sets (${ex.sets})`);
+      } else {
+        dayWorkingSets += ex.sets;
       }
       if (typeof ex.reps !== 'string' || !ex.reps.trim()) {
         failures.push(`"${ex.name}" is missing reps`);
+      } else {
+        const bounds = parseRepBounds(ex.reps);
+        const isTimed = /\d+\s*s(?:ec)?/i.test(ex.reps);
+        if (!isTimed && bounds) {
+          if (bounds[0] < prog.repsRange[0] || bounds[1] > prog.repsRange[1]) {
+            failures.push(
+              `"${ex.name}" reps (${ex.reps}) outside ${prog.goalType} range (${prog.repsRange[0]}-${prog.repsRange[1]})`,
+            );
+          }
+        }
       }
-      if (ex.rest_sec !== undefined && (!Number.isInteger(ex.rest_sec) || ex.rest_sec < 0 || ex.rest_sec > 600)) {
-        failures.push(`"${ex.name}" has invalid rest_sec (${ex.rest_sec})`);
+
+      if (!Number.isInteger(ex.rest_sec) || ex.rest_sec < prog.restRange[0] || ex.rest_sec > prog.restRange[1]) {
+        failures.push(
+          `"${ex.name}" rest_sec (${ex.rest_sec}) outside ${prog.goalType} range (${prog.restRange[0]}-${prog.restRange[1]}s)`,
+        );
+      }
+
+      const rirMin = isBeginner ? 2 : 1;
+      if (!Number.isInteger(ex.rir) || ex.rir < rirMin || ex.rir > 3) {
+        failures.push(`"${ex.name}" rir (${ex.rir}) must be ${rirMin}-3`);
+      }
+
+      if (!Array.isArray(ex.muscles) || ex.muscles.length === 0) {
+        failures.push(`"${ex.name}" must list target muscles`);
+      } else {
+        for (const m of ex.muscles) {
+          if (typeof m !== 'string' || !VALID_MUSCLES.includes(m)) {
+            failures.push(`"${ex.name}" has unknown muscle tag "${m}"`);
+          } else if (Number.isInteger(ex.sets)) {
+            weeklyMuscleSets[m] += ex.sets;
+          }
+        }
       }
 
       if (isBeginner) {
@@ -349,7 +565,102 @@ export function checkWorkout(plan, profile) {
         }
       }
     });
+
+    if (dayWorkingSets > 20) {
+      failures.push(`${dayLabel} has ${dayWorkingSets} working sets (max 20)`);
+    }
+
+    const estMin = estimateWorkoutDurationMin(day);
+    if (estMin < durationBounds[0] || estMin > durationBounds[1]) {
+      failures.push(
+        `${dayLabel} estimated duration (${estMin} min) outside ${durationBounds[0]}-${durationBounds[1]} min`,
+      );
+    }
   });
+
+  // Weekly sets per muscle inside the goal range
+  const skipMuscles = injuredMajorMuscles(profile?.injuries);
+  for (const muscle of VALID_MUSCLES) {
+    const sets = weeklyMuscleSets[muscle];
+    if (sets > maxWeeklySets) {
+      failures.push(`Weekly sets for ${muscle} (${sets}) exceed max ${maxWeeklySets} for ${prog.goalType}`);
+    }
+    if (MAJOR_MUSCLES.includes(muscle) && !skipMuscles.has(muscle) && sets < minWeeklySets) {
+      failures.push(`Weekly sets for ${muscle} (${sets}) below min ${minWeeklySets} for ${prog.goalType}`);
+    }
+  }
+
+  // Cardio validation
+  if (!Array.isArray(plan.cardio)) {
+    failures.push('Workout plan must include a cardio array');
+  } else {
+    let totalCardioMin = 0;
+    let runCount = 0;
+    const bmi = computeBmi(profile);
+    const lowerInj = hasLowerBodyInjury(profile?.injuries);
+
+    plan.cardio.forEach((c, idx) => {
+      const cLabel = `Cardio ${idx + 1}`;
+      if (!c || typeof c !== 'object') {
+        failures.push(`${cLabel} must be an object`);
+        return;
+      }
+      if (typeof c.day !== 'string' || !c.day.trim()) {
+        failures.push(`${cLabel} is missing a day`);
+      }
+      if (!CARDIO_TYPES.includes(c.type)) {
+        failures.push(`${cLabel} has invalid type (${c.type})`);
+      }
+      if (!Number.isInteger(c.minutes) || c.minutes < 5 || c.minutes > 120) {
+        failures.push(`${cLabel} has invalid minutes (${c.minutes})`);
+      } else {
+        totalCardioMin += c.minutes;
+      }
+      if (typeof c.intensity !== 'string' || !c.intensity.trim()) {
+        failures.push(`${cLabel} is missing intensity`);
+      }
+
+      if (c.type === 'run') {
+        runCount += 1;
+        if (!profile?.run_ok) {
+          failures.push('Cardio includes running when run_ok is false');
+        }
+        if (lowerInj) {
+          failures.push(`Cardio includes running despite lower-body/back injury (${profile.injuries})`);
+        }
+        if (bmi !== null && bmi >= 30) {
+          failures.push(`Cardio includes running when BMI (${bmi.toFixed(1)}) is >= 30`);
+        }
+        if (prog.maxRuns === 0) {
+          failures.push(`Cardio includes running which is not in ${prog.goalType} cardio plan`);
+        } else if (c.minutes > 30) {
+          failures.push(`Run session (${c.minutes} min) exceeds 30 min max`);
+        }
+      }
+    });
+
+    if (runCount > prog.maxRuns && prog.maxRuns > 0) {
+      failures.push(`Too many run sessions (${runCount}, max ${prog.maxRuns})`);
+    }
+    if (plan.cardio.length < prog.minCardioSessions) {
+      failures.push(
+        `Expected at least ${prog.minCardioSessions} cardio session(s) for ${prog.goalType}, got ${plan.cardio.length}`,
+      );
+    }
+    if (totalCardioMin < prog.minCardioMinutes) {
+      failures.push(
+        `Total cardio minutes (${totalCardioMin}) below ${prog.minCardioMinutes} min for ${prog.goalType}`,
+      );
+    }
+    if (prog.goalType === 'general_fitness') {
+      const liftingMin = plan.days.reduce((sum, d) => sum + estimateWorkoutDurationMin(d), 0);
+      if (liftingMin + totalCardioMin < 150) {
+        failures.push(
+          `Total weekly activity (${liftingMin}m lifting + ${totalCardioMin}m cardio) is below 150 min/week`,
+        );
+      }
+    }
+  }
 
   return failures;
 }
@@ -393,7 +704,6 @@ const FOOD_STOP_WORDS = new Set([
   'allergic', 'to', 'and', 'or', 'free', 'avoid', 'intolerance', 'mild', 'severe',
 ]);
 
-// Strip plant-based dairy/butter analogs before checking animal dairy keywords.
 function normalizeFoodForDairyCheck(foodLower) {
   return foodLower
     .replace(/\b(?:almond|soy|soya|oat|coconut|rice|cashew|hemp)\s+milk\b/g, 'plant beverage')
@@ -467,7 +777,7 @@ function forbiddenFoodRules(profile) {
 }
 
 /**
- * Deterministic safety & schema checks for a generated diet plan.
+ * Deterministic safety, protein, calorie, and allergen checks for a generated diet plan.
  * Returns an array of failure descriptions (empty when valid).
  */
 export function checkDiet(plan, profile, kcal) {
@@ -491,11 +801,17 @@ export function checkDiet(plan, profile, kcal) {
     failures.push(`target_kcal (${plan.target_kcal}) is below minimum safe floor (${floor} kcal)`);
   }
 
+  const effectiveKcal = typeof kcal === 'number' && Number.isFinite(kcal) && kcal > 0 ? kcal : plan.target_kcal;
   if (typeof kcal === 'number' && Number.isFinite(kcal) && kcal > 0 && typeof plan.target_kcal === 'number') {
     const diffTarget = Math.abs(plan.target_kcal - kcal) / kcal;
     if (diffTarget > 0.05) {
       failures.push(`target_kcal (${plan.target_kcal}) must be within ±5% of computed target (${kcal})`);
     }
+  }
+
+  const reqProtein = minProteinGrams(profile, effectiveKcal);
+  if (typeof plan.protein_g === 'number' && plan.protein_g < reqProtein) {
+    failures.push(`protein_g (${plan.protein_g}g) is below minimum target (${reqProtein}g/day)`);
   }
 
   if (!Array.isArray(plan.meals) || plan.meals.length === 0) {
@@ -542,7 +858,11 @@ export function checkDiet(plan, profile, kcal) {
       const rawLower = item.food.toLowerCase();
       const dairyNormalized = normalizeFoodForDairyCheck(rawLower);
       for (const rule of rules) {
-        const isDairyRule = rule.reason.includes('dairy') || rule.reason.includes('milk') || rule.reason.includes('lactose') || rule.reason === 'diet_pref (vegan)';
+        const isDairyRule =
+          rule.reason.includes('dairy') ||
+          rule.reason.includes('milk') ||
+          rule.reason.includes('lactose') ||
+          rule.reason === 'diet_pref (vegan)';
         const haystack = isDairyRule ? dairyNormalized : rawLower;
         if (hasTerm(haystack, rule.term)) {
           failures.push(`Food "${item.food}" violates ${rule.reason}`);

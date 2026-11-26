@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { estimateWorkoutDurationMin, GOAL_TYPE_LABELS } from "@/lib/logic";
 import type { DietPlanData, Member, WorkoutPlanData } from "@/types/gym";
 
 export interface MemberPlansProps {
@@ -63,15 +64,18 @@ export function MemberPlans({
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | "all">("all");
 
   const coachName = trainerName.trim() || "Not assigned";
-  const goal = member.goal?.trim() || "";
+  const goal =
+    (member.goal_type ? GOAL_TYPE_LABELS[member.goal_type] : null) ??
+    (member.goal?.trim() || "");
   const dietPref = member.diet_pref?.trim() || "";
   const allergies = member.allergies?.trim() || "";
   const injuries = member.injuries?.trim() || "";
   const hasContextPills = Boolean(goal || dietPref || allergies || injuries);
 
   const workoutDays = workout?.days ?? [];
+  const cardioItems = workout?.cardio ?? [];
   const meals = diet?.meals ?? [];
-  const hasAnyPlan = workoutDays.length > 0 || meals.length > 0;
+  const hasAnyPlan = workoutDays.length > 0 || cardioItems.length > 0 || meals.length > 0;
   const macroLine = formatDietMacros(diet);
 
   const activeDayFilter =
@@ -124,7 +128,7 @@ export function MemberPlans({
                 className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-left whitespace-normal break-words"
               >
                 <Target aria-hidden="true" />
-                <span className="capitalize">Goal: {goal}</span>
+                <span>Goal: {goal}</span>
               </Badge>
             ) : null}
             {dietPref ? (
@@ -208,85 +212,154 @@ export function MemberPlans({
               </div>
             ) : null}
 
-            {workoutDays.length > 0 ? (
+            {workoutDays.length > 0 || cardioItems.length > 0 ? (
               <div className="flex flex-col gap-3">
-                {visibleDays.map(({ day, idx }) => (
-                  <section
-                    key={`${day.day}-${idx}`}
-                    className="flex flex-col gap-3 rounded-2xl border bg-secondary/40 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <h3 className="text-sm font-semibold text-foreground break-words">
-                          {day.day}
-                        </h3>
-                        {day.focus?.trim() ? (
-                          <p className="text-xs text-muted-foreground break-words">
-                            {day.focus.trim()}
-                          </p>
-                        ) : null}
+                {visibleDays.map(({ day, idx }) => {
+                  const estMin = estimateWorkoutDurationMin(day);
+                  return (
+                    <section
+                      key={`${day.day}-${idx}`}
+                      className="flex flex-col gap-3 rounded-2xl border bg-secondary/40 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <h3 className="text-sm font-semibold text-foreground break-words">
+                            {day.day}
+                          </h3>
+                          {day.focus?.trim() ? (
+                            <p className="text-xs text-muted-foreground break-words">
+                              {day.focus.trim()}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                          {estMin > 0 ? (
+                            <Badge variant="outline" className="font-mono tabular-nums">
+                              ~{estMin} min
+                            </Badge>
+                          ) : null}
+                          <Badge variant="secondary" className="tabular-nums">
+                            {day.exercises.length}{" "}
+                            {day.exercises.length === 1 ? "exercise" : "exercises"}
+                          </Badge>
+                        </div>
                       </div>
+
+                      {day.exercises.length > 0 ? (
+                        <ul className="flex flex-col divide-y">
+                          {day.exercises.map((ex, exIdx) => {
+                            const setsReps = formatSetsAndReps(ex.sets, ex.reps);
+                            const restLabel =
+                              ex.rest_sec != null && ex.rest_sec > 0
+                                ? `${ex.rest_sec}s rest`
+                                : null;
+                            const rirLabel = ex.rir != null ? `RIR ${ex.rir}` : null;
+                            const muscleLabel =
+                              ex.muscles && ex.muscles.length > 0
+                                ? ex.muscles.join(", ")
+                                : null;
+                            const notes = ex.notes?.trim();
+                            return (
+                              <li
+                                key={`${ex.name}-${exIdx}`}
+                                className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <span className="min-w-0 flex-1 text-sm font-medium text-foreground break-words">
+                                    {ex.name}
+                                  </span>
+                                  {setsReps || restLabel || rirLabel ? (
+                                    <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                                      {setsReps ? (
+                                        <Badge
+                                          variant="outline"
+                                          className="font-mono tabular-nums"
+                                        >
+                                          {setsReps}
+                                        </Badge>
+                                      ) : null}
+                                      {restLabel ? (
+                                        <Badge
+                                          variant="secondary"
+                                          className="font-mono tabular-nums"
+                                        >
+                                          {restLabel}
+                                        </Badge>
+                                      ) : null}
+                                      {rirLabel ? (
+                                        <Badge
+                                          variant="secondary"
+                                          className="font-mono tabular-nums"
+                                        >
+                                          {rirLabel}
+                                        </Badge>
+                                      ) : null}
+                                    </div>
+                                  ) : null}
+                                </div>
+                                {muscleLabel ? (
+                                  <p className="text-[11px] font-medium text-muted-foreground capitalize">
+                                    {muscleLabel}
+                                  </p>
+                                ) : null}
+                                {notes ? (
+                                  <p className="text-xs text-muted-foreground break-words">
+                                    {notes}
+                                  </p>
+                                ) : null}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          No exercises listed for this day.
+                        </p>
+                      )}
+                    </section>
+                  );
+                })}
+                {cardioItems.length > 0 ? (
+                  <section className="flex flex-col gap-3 rounded-2xl border bg-secondary/40 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">Cardio</h3>
                       <Badge variant="secondary" className="shrink-0 tabular-nums">
-                        {day.exercises.length}{" "}
-                        {day.exercises.length === 1 ? "exercise" : "exercises"}
+                        {cardioItems.length}{" "}
+                        {cardioItems.length === 1 ? "session" : "sessions"}
                       </Badge>
                     </div>
-
-                    {day.exercises.length > 0 ? (
-                      <ul className="flex flex-col divide-y">
-                        {day.exercises.map((ex, exIdx) => {
-                          const setsReps = formatSetsAndReps(ex.sets, ex.reps);
-                          const restLabel =
-                            ex.rest_sec != null && ex.rest_sec > 0
-                              ? `${ex.rest_sec}s rest`
-                              : null;
-                          const notes = ex.notes?.trim();
-                          return (
-                            <li
-                              key={`${ex.name}-${exIdx}`}
-                              className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
-                            >
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="min-w-0 flex-1 text-sm font-medium text-foreground break-words">
-                                  {ex.name}
-                                </span>
-                                {setsReps || restLabel ? (
-                                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                                    {setsReps ? (
-                                      <Badge
-                                        variant="outline"
-                                        className="font-mono tabular-nums"
-                                      >
-                                        {setsReps}
-                                      </Badge>
-                                    ) : null}
-                                    {restLabel ? (
-                                      <Badge
-                                        variant="secondary"
-                                        className="font-mono tabular-nums"
-                                      >
-                                        {restLabel}
-                                      </Badge>
-                                    ) : null}
-                                  </div>
-                                ) : null}
-                              </div>
-                              {notes ? (
-                                <p className="text-xs text-muted-foreground break-words">
-                                  {notes}
-                                </p>
+                    <ul className="flex flex-col divide-y">
+                      {cardioItems.map((c, idx) => (
+                        <li
+                          key={`${c.day}-${c.type}-${idx}`}
+                          className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="min-w-0 flex-1 text-sm font-medium text-foreground break-words">
+                              {c.day} ·{" "}
+                              <span className="capitalize">{c.type.replace(/_/g, " ")}</span>
+                            </span>
+                            <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                              <Badge variant="outline" className="font-mono tabular-nums">
+                                {c.minutes} min
+                              </Badge>
+                              {c.incline_pct != null ? (
+                                <Badge variant="secondary" className="font-mono tabular-nums">
+                                  {c.incline_pct}% incline
+                                </Badge>
                               ) : null}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        No exercises listed for this day.
-                      </p>
-                    )}
+                            </div>
+                          </div>
+                          {c.intensity?.trim() ? (
+                            <p className="text-xs text-muted-foreground break-words">
+                              {c.intensity.trim()}
+                            </p>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
                   </section>
-                ))}
+                ) : null}
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-secondary/30 p-6 text-center">

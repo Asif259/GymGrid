@@ -4,6 +4,12 @@ export type StaffRole = 'owner' | 'trainer' | 'staff';
 export type PlanKind = 'workout' | 'diet';
 export type SaasStatus = 'trial' | 'active' | 'suspended';
 export type AiProviderKind = 'gemini' | 'openai_compat';
+export type GoalType =
+  | 'muscle_gain'
+  | 'strength'
+  | 'fat_loss'
+  | 'maintain_lean'
+  | 'general_fitness';
 
 export interface AiProvider {
   id: string;
@@ -96,6 +102,9 @@ export interface Member {
   expiry_date: string | null;
   join_date?: string | null;
   goal?: string | null;
+  goal_type?: GoalType | string | null;
+  run_ok?: boolean | null;
+  session_minutes?: number | null;
   age?: number | null;
   sex?: string | null;
   height_cm?: number | null;
@@ -124,8 +133,10 @@ export interface StaffMember {
 
 export interface WorkoutExercise {
   name: string;
+  muscles?: string[];
   sets?: number;
   reps?: string;
+  rir?: number;
   rest_sec?: number;
   notes?: string;
 }
@@ -136,8 +147,17 @@ export interface WorkoutDay {
   exercises: WorkoutExercise[];
 }
 
+export interface WorkoutCardio {
+  day: string;
+  type: 'walk' | 'incline_walk' | 'run' | 'cycle' | string;
+  minutes: number;
+  incline_pct?: number;
+  intensity: string;
+}
+
 export interface WorkoutPlanData {
   days: WorkoutDay[];
+  cardio?: WorkoutCardio[];
 }
 
 export interface DietItem {

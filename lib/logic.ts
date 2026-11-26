@@ -295,6 +295,30 @@ export function formatMemberCode(
   return `${prefix}${numPart}${suffix}`;
 }
 
+export const GOAL_TYPE_LABELS: Record<string, string> = {
+  muscle_gain: 'Build muscle',
+  strength: 'Get stronger',
+  fat_loss: 'Lose fat',
+  maintain_lean: 'Stay lean',
+  general_fitness: 'General fitness',
+};
+
+/**
+ * Estimate workout session minutes in code: sum(sets * (40s + rest_sec)) + 5 min warm-up.
+ */
+export function estimateWorkoutDurationMin(
+  day: Pick<WorkoutPlanData['days'][number], 'exercises'> | null | undefined,
+): number {
+  const exercises = day?.exercises ?? [];
+  let totalSec = 0;
+  for (const ex of exercises) {
+    const sets = Number(ex.sets) || 0;
+    const rest = Number(ex.rest_sec ?? 90);
+    totalSec += sets * (40 + rest);
+  }
+  return exercises.length > 0 ? Math.round(totalSec / 60 + 5) : 0;
+}
+
 /**
  * Format an ISO timestamp in Asia/Dhaka as `26 Nov, 15:35` (or with year if different year).
  */

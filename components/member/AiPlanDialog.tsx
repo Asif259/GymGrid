@@ -22,7 +22,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { Member } from "@/types/gym";
+import type { GoalType, Member } from "@/types/gym";
 
 export interface AiPlanDialogProps {
   open: boolean;
@@ -33,11 +33,28 @@ export interface AiPlanDialogProps {
 
 type FieldKey = "age" | "height_cm" | "weight_kg" | "goal_weight_kg";
 
-function initialGoal(raw: string | null | undefined): string {
-  const g = raw?.trim().toLowerCase() ?? "";
-  if (g === "fat loss" || g === "muscle" || g === "lean") return g;
-  if (g === "fitness") return "lean";
-  return "lean";
+const GOAL_TYPES: readonly GoalType[] = [
+  "muscle_gain",
+  "strength",
+  "fat_loss",
+  "maintain_lean",
+  "general_fitness",
+];
+
+function initialGoalType(
+  goalType: string | null | undefined,
+  rawGoal: string | null | undefined,
+): GoalType {
+  if (goalType && (GOAL_TYPES as readonly string[]).includes(goalType)) {
+    return goalType as GoalType;
+  }
+  const g = rawGoal?.trim().toLowerCase() ?? "";
+  if (g.includes("fat") || g.includes("lose") || g.includes("cut")) return "fat_loss";
+  if (g.includes("strength")) return "strength";
+  if (g.includes("muscle") || g.includes("bulk") || g.includes("hypertrophy")) return "muscle_gain";
+  if (g.includes("lean")) return "maintain_lean";
+  if (g.includes("fitness")) return "general_fitness";
+  return "general_fitness";
 }
 
 async function extractInvokeError(error: unknown, data: unknown): Promise<{ message: string; code?: string }> {
@@ -111,7 +128,15 @@ function AiPlanDialogForm({
   const weightRef = useRef<HTMLInputElement>(null);
   const goalWeightRef = useRef<HTMLInputElement>(null);
 
-  const [goal, setGoal] = useState(() => initialGoal(member.goal));
+  const [goalType, setGoalType] = useState<GoalType>(() =>
+    initialGoalType(member.goal_type, member.goal),
+  );
+  const [runOk, setRunOk] = useState<"yes" | "no">(() =>
+    member.run_ok === true ? "yes" : "no",
+  );
+  const [sessionMinutes, setSessionMinutes] = useState<"45" | "60">(() =>
+    member.session_minutes === 45 ? "45" : "60",
+  );
   const [heightCm, setHeightCm] = useState(() =>
     member.height_cm != null ? String(member.height_cm) : "",
   );
@@ -207,7 +232,9 @@ function AiPlanDialogForm({
     const parsedGoalWeight = goalWeightKg.trim() ? Number(goalWeightKg) : null;
     const intake = {
       member_id: member.id,
-      goal,
+      goal_type: goalType,
+      run_ok: runOk === "yes",
+      session_minutes: Number(sessionMinutes),
       age: Number(age),
       sex,
       height_cm: Number(heightCm),
@@ -294,14 +321,21 @@ function AiPlanDialogForm({
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="ai-goal">Goal *</Label>
-            <Select name="goal" value={goal} onValueChange={setGoal} disabled={submitting}>
+            <Select
+              name="goal_type"
+              value={goalType}
+              onValueChange={(v) => setGoalType(v as GoalType)}
+              disabled={submitting}
+            >
               <SelectTrigger id="ai-goal" className="min-h-11 w-full sm:min-h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fat loss">Fat loss</SelectItem>
-                <SelectItem value="muscle">Muscle gain</SelectItem>
-                <SelectItem value="lean">Stay lean / fitness</SelectItem>
+                <SelectItem value="muscle_gain">Build muscle (hypertrophy)</SelectItem>
+                <SelectItem value="strength">Get stronger</SelectItem>
+                <SelectItem value="fat_loss">Lose fat (cutting)</SelectItem>
+                <SelectItem value="maintain_lean">Stay lean</SelectItem>
+                <SelectItem value="general_fitness">General fitness</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -496,6 +530,42 @@ function AiPlanDialogForm({
                 <SelectItem value="light">Light (1–2 walks/wk)</SelectItem>
                 <SelectItem value="moderate">Moderate (active daily)</SelectItem>
                 <SelectItem value="active">Very active (physical job)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ai-session-minutes">Session length *</Label>
+            <Select
+              name="session_minutes"
+              value={sessionMinutes}
+              onValueChange={(v) => setSessionMinutes(v === "45" ? "45" : "60")}
+              disabled={submitting}
+            >
+              <SelectTrigger id="ai-session-minutes" className="min-h-11 w-full sm:min-h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="45">45 minutes</SelectItem>
+                <SelectItem value="60">60 minutes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="ai-run-ok">OK with running? *</Label>
+            <Select
+              name="run_ok"
+              value={runOk}
+              onValueChange={(v) => setRunOk(v === "yes" ? "yes" : "no")}
+              disabled={submitting}
+            >
+              <SelectTrigger id="ai-run-ok" className="min-h-11 w-full sm:min-h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no">No (low-impact cardio only)</SelectItem>
+                <SelectItem value="yes">Yes (running is OK)</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -622,7 +622,39 @@ await as(OWNER_B, async () => {
 await as(MEMBER, async () => {
   const [gu] = await q(`with x as (update gyms set member_code_prefix = 'HACK-' returning 1) select count(*)::int n from x`).catch(() => [{ n: 0 }]);
   check('member_code: member cannot alter gym member_code settings', gu.n === 0, gu);
+
+  const [rpcRes] = await q(`
+    select public.update_my_profile(
+      p_member_id := '${A}',
+      p_name := 'Alpha Updated',
+      p_phone := '8801711223344',
+      p_goal_type := 'fat_loss',
+      p_run_ok := false,
+      p_session_minutes := 45
+    ) as updated_at
+  `);
+  const [upd] = await q(`
+    select goal_type, run_ok, session_minutes, details_updated_at
+    from public.members where id = '${A}'
+  `);
+  check('ai_goals_cardio: member updates goal_type, run_ok, session_minutes via update_my_profile',
+    !!rpcRes?.updated_at && upd.goal_type === 'fat_loss' && upd.run_ok === false && upd.session_minutes === 45 && !!upd.details_updated_at,
+    { rpcRes, upd });
 });
+
+await as(OWNER, async () => {
+  const badGoalErr = await fails(`update members set goal_type = 'bulk' where id = '${A}'`);
+  const badSessionErr = await fails(`update members set session_minutes = 90 where id = '${A}'`);
+  const [priv] = await q(`
+    select
+      has_column_privilege('service_role', 'public.members', 'goal_type', 'UPDATE') as gt,
+      has_column_privilege('service_role', 'public.members', 'run_ok', 'UPDATE') as ro,
+      has_column_privilege('service_role', 'public.members', 'session_minutes', 'UPDATE') as sm
+  `);
+  check('ai_goals_cardio: constraints reject invalid goal_type/session_minutes & service_role has update grants',
+    !!badGoalErr && !!badSessionErr && priv.gt && priv.ro && priv.sm,
+    { badGoalErr, badSessionErr, priv });
+}, 'owner@example.test');
 
 let pass = true;
 for (const r of results) { pass &&= r.ok; console.log(`${r.ok ? 'PASS' : 'FAIL'} - ${r.name}${r.ok ? '' : ' :: ' + JSON.stringify(r.evidence)}`); }

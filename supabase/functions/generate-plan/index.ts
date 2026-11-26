@@ -4,6 +4,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   targetKcal,
+  proteinRangeGrams,
+  getProgram,
+  weeklySetRange,
+  computeBmi,
   validateIntake,
   checkWorkout,
   checkDiet,
@@ -27,31 +31,76 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
-const SYSTEM_PROMPT = `You are an evidence-based strength, conditioning, and nutrition coach for gym members.
-You provide training and nutrition guidance only. You never diagnose medical conditions or prescribe medication; when injuries are listed, select safe pain-free movements and include a brief note recommending a human trainer or doctor for pain/injury concerns.
+function buildWorkoutSystemPrompt(intake: Record<string, unknown>): string {
+  const prog = getProgram(intake);
+  const [minSets, maxSets] = weeklySetRange(intake);
+  const rangeStr = `${minSets}-${maxSets} sets per muscle per week`;
 
-Respond with valid JSON only (no markdown fences, no extra prose).
+  return `You are a strength and conditioning coach. Write ONE week of training for this member.
+Return JSON only, matching the schema. No text outside the JSON.
 
-Workout JSON contract:
+MEMBER: goal_type, level, sex, age, height_cm, weight_kg, goal_weight_kg,
+days_per_week, session_minutes, equipment, injuries, run_ok.
+
+RULES
+1. Lifting sessions: exactly ${intake.days_per_week}, each ${intake.session_minutes} minutes or less of lifting. Cardio is listed separately.
+2. Effort over volume. Every working set ends 1-3 reps short of failure (rir 1-3). Beginners: rir 2-3 on every exercise. No failure sets on squat, deadlift or bench.
+3. Hard sets per muscle per week must fall in ${rangeStr}. Train each major muscle twice a week (full body, upper/lower or push/pull/legs, depending on days).
+4. Per session: 5-7 exercises, at most 20 working sets. Compounds first. At most 2 exercises per muscle per session. No duplicate movement patterns, no finishers, burnouts, drop sets or circuits unless goal_type is general_fitness. If an exercise does not serve the goal, leave it out.
+5. Reps and rest by role as in ${prog.repsSummary}. Use only: ${intake.equipment}.
+6. Injuries: ${intake.injuries ?? 'None'}. Replace any exercise that loads that area. If unsure, leave it out and say why in notes.
+7. Cardio: ${prog.cardioSummary}. Prefer walking and incline walking. Write minutes, incline % and a speed or "conversation pace". Include running only when run_ok is true and rule 6 allows it.
+8. Tag every exercise's muscles using only: chest, back, shoulders, biceps, triceps, quads, hamstrings, glutes, calves, core.
+Do not give medical advice. Do not claim results or timelines.
+
+Schema:
 {
   "days": [
     {
       "day": "Mon",
       "focus": "Upper Body",
       "exercises": [
-        { "name": "Push-ups", "sets": 3, "reps": "8-12", "rest_sec": 60, "notes": "Control the descent" }
+        {
+          "name": "Dumbbell Bench Press",
+          "muscles": ["chest", "triceps", "shoulders"],
+          "sets": 3,
+          "reps": "6-10",
+          "rir": 2,
+          "rest_sec": 120,
+          "notes": "Controlled lower, stop 2 reps short"
+        }
       ]
+    }
+  ],
+  "cardio": [
+    {
+      "day": "Tue",
+      "type": "walk",
+      "minutes": 30,
+      "incline_pct": 6,
+      "intensity": "conversation pace"
     }
   ]
 }
+(Omit duration_min on days; omit incline_pct unless type is incline_walk. Valid cardio type values: walk, incline_walk, run, cycle.)`;
+}
 
-Workout rules:
-- Return the exact number of training days requested in days_per_week.
-- Respect equipment: bodyweight (no weights/machines), dumbbells (dumbbells + bodyweight only), full_gym (barbells, dumbbells, cables, machines).
-- Give each primary muscle group at least 48 hours of rest between sessions.
-- Beginner rule: maximum 4 sets per exercise and strictly NO 1-rep-max (1RM) or single-rep maximal testing.
-- Injury safety: NEVER include any exercise that loads, stresses, or names an injured area (e.g., knee injury -> no squats, lunges, jumps, leg press, leg extensions, sprints; lower back -> no deadlifts, good mornings, bent-over barbell rows, hyperextensions; shoulder -> no overhead presses, dips, upright rows).
-- Include integer rest_sec (e.g. 60-120) and short form/safety notes on every exercise.
+function buildDietSystemPrompt(intake: Record<string, unknown>, protRange: [number, number | null]): string {
+  const prog = getProgram(intake);
+  const [minProt, maxProt] = protRange;
+  const proteinRule = maxProt != null
+    ? `Target ${minProt}-${maxProt}g protein/day (${prog.minProteinPerKg}-${prog.maxProteinPerKg} g/kg for ${prog.goalType}).`
+    : `Meet or exceed ${minProt}g protein/day (at least ${prog.minProteinPerKg} g/kg for ${prog.goalType}).`;
+  const goalCalorieNote =
+    prog.goalType === 'muscle_gain'
+      ? 'Includes +10% lean surplus for muscle_gain.'
+      : prog.goalType === 'fat_loss'
+        ? 'Includes -15% calorie deficit capped at 500 kcal/day for fat_loss (never below 1200 kcal F / 1500 kcal M).'
+        : `Calibrated for ${prog.goalType} (never below 1200 kcal F / 1500 kcal M).`;
+
+  return `You are an evidence-based nutrition coach for gym members.
+You provide nutrition guidance only. You never diagnose medical conditions or prescribe medication. Do not claim results or timelines.
+Respond with valid JSON only (no markdown fences, no extra prose).
 
 Diet JSON contract:
 {
@@ -70,31 +119,48 @@ Diet JSON contract:
 }
 
 Diet rules:
-- Use the exact target_kcal provided in the user prompt (already computed via Mifflin-St Jeor and safe calorie floors). Do not alter target_kcal.
-- Include integer protein_g, carbs_g, and fat_g aligned with the goal and target_kcal.
+- Use the exact target_kcal provided in the user prompt. Do not alter target_kcal. (${goalCalorieNote})
+- ${proteinRule} Include integer carbs_g and fat_g aligned with target_kcal.
 - Ensure the sum of item kcal across all meals is within +-5% of target_kcal.
 - Strictly exclude every listed allergy and anything excluded by diet_pref (e.g. vegetarian = no meat/poultry/fish/seafood; vegan = no animal products; halal = no pork or alcohol). Watch out for hidden ingredients.`;
+}
 
 const RATE_LIMIT_MS = 24 * 60 * 60 * 1000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function buildUserPrompt(kind: 'workout' | 'diet', intake: Record<string, unknown>, kcal: number | null) {
+function buildUserPrompt(
+  kind: 'workout' | 'diet',
+  intake: Record<string, unknown>,
+  kcal: number | null,
+  protRange: [number, number | null] | null,
+) {
+  const bmi = computeBmi(intake);
+  const protLine =
+    kind === 'diet' && protRange
+      ? protRange[1] != null
+        ? `- Target protein_g per day: ${protRange[0]}-${protRange[1]}g (minimum ${protRange[0]}g)`
+        : `- Minimum protein_g per day: ${protRange[0]}g`
+      : null;
   const lines = [
-    `Create a personalized ${kind} plan as valid JSON for this gym member:`,
-    `- Goal: ${intake.goal}`,
-    `- Age: ${intake.age}`,
-    `- Sex: ${intake.sex}`,
-    `- Height: ${intake.height_cm} cm`,
-    `- Weight: ${intake.weight_kg} kg`,
-    intake.goal_weight_kg != null ? `- Goal weight: ${intake.goal_weight_kg} kg` : null,
-    `- Experience level: ${intake.level}`,
-    `- Training days per week: ${intake.days_per_week}`,
-    `- Equipment: ${intake.equipment}`,
-    `- Daily activity level: ${intake.activity}`,
-    `- Injuries / limitations: ${intake.injuries ?? 'None'}`,
-    `- Diet preference: ${intake.diet_pref ?? 'None'}`,
-    `- Allergies: ${intake.allergies ?? 'None'}`,
+    `MEMBER:`,
+    `- goal_type: ${intake.goal_type}`,
+    intake.goal ? `- goal notes: ${intake.goal}` : null,
+    `- level: ${intake.level}`,
+    `- sex: ${intake.sex}`,
+    `- age: ${intake.age}`,
+    `- height_cm: ${intake.height_cm}`,
+    `- weight_kg: ${intake.weight_kg}${bmi ? ` (BMI ${bmi.toFixed(1)})` : ''}`,
+    intake.goal_weight_kg != null ? `- goal_weight_kg: ${intake.goal_weight_kg}` : null,
+    `- days_per_week: ${intake.days_per_week}`,
+    `- session_minutes: ${intake.session_minutes}`,
+    `- equipment: ${intake.equipment}`,
+    `- activity: ${intake.activity}`,
+    `- injuries: ${intake.injuries ?? 'None'}`,
+    `- run_ok: ${Boolean(intake.run_ok)}`,
+    kind === 'diet' ? `- diet_pref: ${intake.diet_pref ?? 'None'}` : null,
+    kind === 'diet' ? `- allergies: ${intake.allergies ?? 'None'}` : null,
     kind === 'diet' && kcal != null ? `- Exact target_kcal to use: ${kcal}` : null,
+    protLine,
   ].filter(Boolean);
   return lines.join('\n');
 }
@@ -247,7 +313,13 @@ Deno.serve(async (req) => {
   }
 
   const kcal = kind === 'diet' ? targetKcal(intake) : null;
-  const basePrompt = buildUserPrompt(kind, intake, kcal);
+  const protRange: [number, number | null] | null =
+    kind === 'diet' && kcal != null ? (proteinRangeGrams(intake, kcal) as [number, number | null]) : null;
+  const systemPrompt =
+    kind === 'workout'
+      ? buildWorkoutSystemPrompt(intake)
+      : buildDietSystemPrompt(intake, protRange ?? [0, null]);
+  const basePrompt = buildUserPrompt(kind, intake, kcal, protRange);
   const validatePlan = (plan: unknown) =>
     kind === 'workout' ? checkWorkout(plan, intake) : checkDiet(plan, intake, kcal);
 
@@ -261,12 +333,12 @@ Deno.serve(async (req) => {
     failoverResult = await runWithFailover(
       providersWithKeys,
       async (provider: AiProviderRow & { apiKey: string }) => {
-        let plan = await complete(provider, { system: SYSTEM_PROMPT, user: basePrompt });
+        let plan = await complete(provider, { system: systemPrompt, user: basePrompt });
         let failures = validatePlan(plan);
 
         if (failures.length > 0) {
           const retryPrompt = `${basePrompt}\n\nYour previous JSON failed safety/schema checks:\n- ${failures.join('\n- ')}\n\nFix every listed issue and return valid JSON only.`;
-          plan = await complete(provider, { system: SYSTEM_PROMPT, user: retryPrompt });
+          plan = await complete(provider, { system: systemPrompt, user: retryPrompt });
           failures = validatePlan(plan);
         }
 
@@ -293,7 +365,6 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Persist cooldowns for any providers that failed before failover succeeded, and clear winning provider's error.
   await Promise.all([
     ...failoverResult.failures.map((f) =>
       db

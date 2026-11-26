@@ -109,7 +109,14 @@ function MemberProfileForm({
 
   const [name, setName] = useState(member.name ?? "");
   const [phone, setPhone] = useState(member.phone ?? "");
+  const [goalType, setGoalType] = useState(member.goal_type ?? "");
   const [goal, setGoal] = useState(member.goal ?? "");
+  const [runOk, setRunOk] = useState<"" | "yes" | "no">(
+    member.run_ok === true ? "yes" : member.run_ok === false ? "no" : "",
+  );
+  const [sessionMinutes, setSessionMinutes] = useState<"" | "45" | "60">(
+    member.session_minutes === 45 ? "45" : member.session_minutes === 60 ? "60" : "",
+  );
   const [age, setAge] = useState(member.age != null ? String(member.age) : "");
   const [sex, setSex] = useState(member.sex ?? "");
   const [heightCm, setHeightCm] = useState(
@@ -194,7 +201,10 @@ function MemberProfileForm({
         p_member_id: member.id,
         p_name: name.trim(),
         p_phone: cleanPhone,
-        p_goal: goal || null,
+        p_goal: goal.trim() || null,
+        p_goal_type: goalType || null,
+        p_run_ok: runOk === "" ? null : runOk === "yes",
+        p_session_minutes: sessionMinutes ? Number(sessionMinutes) : null,
         p_age: age.trim() ? Number(age) : null,
         p_sex: sex || null,
         p_height_cm: heightCm.trim() ? Number(heightCm) : null,
@@ -447,24 +457,82 @@ function MemberProfileForm({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="prof-goal">Goal</Label>
+              <Label htmlFor="prof-goal-type">Goal</Label>
               <Select
-                name="goal"
-                value={goal || "none"}
-                onValueChange={(v) => setGoal(v === "none" ? "" : v)}
+                name="goal_type"
+                value={goalType || "none"}
+                onValueChange={(v) => setGoalType(v === "none" ? "" : v)}
                 disabled={saving}
               >
-                <SelectTrigger id="prof-goal" className="min-h-11 w-full sm:min-h-10">
+                <SelectTrigger id="prof-goal-type" className="min-h-11 w-full sm:min-h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Not set</SelectItem>
-                  <SelectItem value="fat loss">Fat loss</SelectItem>
-                  <SelectItem value="muscle">Muscle gain</SelectItem>
-                  <SelectItem value="lean">Stay lean</SelectItem>
-                  <SelectItem value="fitness">Fitness</SelectItem>
+                  <SelectItem value="muscle_gain">Build muscle (hypertrophy)</SelectItem>
+                  <SelectItem value="strength">Get stronger</SelectItem>
+                  <SelectItem value="fat_loss">Lose fat (cutting)</SelectItem>
+                  <SelectItem value="maintain_lean">Stay lean</SelectItem>
+                  <SelectItem value="general_fitness">General fitness</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="prof-session-minutes">Session length</Label>
+              <Select
+                name="session_minutes"
+                value={sessionMinutes || "none"}
+                onValueChange={(v) =>
+                  setSessionMinutes(v === "45" || v === "60" ? v : "")
+                }
+                disabled={saving}
+              >
+                <SelectTrigger id="prof-session-minutes" className="min-h-11 w-full sm:min-h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not set</SelectItem>
+                  <SelectItem value="45">45 minutes</SelectItem>
+                  <SelectItem value="60">60 minutes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="prof-run-ok">OK with running?</Label>
+              <Select
+                name="run_ok"
+                value={runOk || "none"}
+                onValueChange={(v) =>
+                  setRunOk(v === "yes" || v === "no" ? v : "")
+                }
+                disabled={saving}
+              >
+                <SelectTrigger id="prof-run-ok" className="min-h-11 w-full sm:min-h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Not set</SelectItem>
+                  <SelectItem value="no">No (low-impact cardio only)</SelectItem>
+                  <SelectItem value="yes">Yes (running is OK)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="prof-goal-notes">Goal notes</Label>
+              <Input
+                id="prof-goal-notes"
+                name="goal"
+                maxLength={60}
+                enterKeyHint="next"
+                placeholder="Optional extra note"
+                className="min-h-11 sm:min-h-10"
+                value={goal}
+                disabled={saving}
+                onChange={(e) => setGoal(e.target.value)}
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">

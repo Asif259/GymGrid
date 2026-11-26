@@ -40,6 +40,7 @@ import {
   dhakaToday,
   fmtDate,
   fmtDateTimeDhaka,
+  GOAL_TYPE_LABELS,
   money,
   pendingPayment,
   renewalLink,
@@ -482,8 +483,12 @@ function MemberDialogContent({
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs sm:grid-cols-3">
               <div>
                 <dt className="text-muted-foreground">Goal</dt>
-                <dd className="font-medium text-foreground capitalize">
-                  {member.goal?.trim() || "—"}
+                <dd className="font-medium text-foreground break-words">
+                  {member.goal_type
+                    ? member.goal?.trim()
+                      ? `${GOAL_TYPE_LABELS[member.goal_type]} (${member.goal.trim()})`
+                      : GOAL_TYPE_LABELS[member.goal_type]
+                    : member.goal?.trim() || "—"}
                 </dd>
               </div>
               <div>
@@ -538,6 +543,18 @@ function MemberDialogContent({
                 <dt className="text-muted-foreground">Activity</dt>
                 <dd className="font-medium text-foreground capitalize">
                   {member.activity?.trim() || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Session</dt>
+                <dd className="font-medium text-foreground tabular-nums">
+                  {member.session_minutes != null ? `${member.session_minutes} min` : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Running OK</dt>
+                <dd className="font-medium text-foreground">
+                  {member.run_ok === true ? "Yes" : member.run_ok === false ? "No" : "—"}
                 </dd>
               </div>
               <div className="col-span-2 sm:col-span-3">
