@@ -29,13 +29,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   dhakaToday,
   fmtDate,
@@ -53,7 +53,7 @@ interface MemberDialogProps {
 }
 
 /**
- * shadcn `Sheet` drawer keyed per member so local form fields reset cleanly
+ * Centered `Dialog` modal keyed per member so local form fields reset cleanly
  * without `setState` in an effect.
  */
 export function MemberDialog({ member, onClose }: MemberDialogProps) {
@@ -316,21 +316,18 @@ function MemberDialogContent({
   }
 
   return (
-    <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col gap-0 overflow-hidden sm:max-w-xl"
-      >
-        <SheetHeader className="border-b px-6 py-4">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[90dvh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className="border-b px-6 py-4 pe-12">
           <div className="flex flex-wrap items-center gap-2">
-            <SheetTitle>{member.name}</SheetTitle>
+            <DialogTitle>{member.name}</DialogTitle>
             {member.member_code ? (
               <Badge variant="secondary" className="font-mono text-xs tabular-nums">
                 {member.member_code}
               </Badge>
             ) : null}
           </div>
-          <SheetDescription asChild>
+          <DialogDescription asChild>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>+{member.phone}</span>
               <StatusBadge member={member} />
@@ -340,10 +337,10 @@ function MemberDialogContent({
                   : "Never paid"}
               </span>
             </div>
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6">
+        <div className="flex flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-6">
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
@@ -720,12 +717,12 @@ function MemberDialogContent({
           </section>
         </div>
 
-        <SheetFooter className="border-t px-6 py-3">
+        <DialogFooter className="mx-0 mb-0 border-t bg-muted/40 px-6 py-3">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

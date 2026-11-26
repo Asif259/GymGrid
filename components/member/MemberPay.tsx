@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -410,38 +411,31 @@ export function MemberPay({
               ))}
             </div>
           ) : (
-            <div
-              role="status"
-              className="flex items-start gap-2.5 rounded-2xl border border-transparent bg-status-yellow-bg p-3.5 text-sm text-status-yellow-fg"
-            >
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <p className="font-medium text-foreground">
-                  Ask the front desk for the gym’s bKash or Nagad number.
-                </p>
-                <p className="text-xs text-foreground/85">
-                  Payment submission is unavailable until a mobile wallet number is
-                  configured.
-                </p>
-              </div>
-            </div>
+            <Alert className="rounded-2xl border-transparent bg-status-yellow-bg p-3.5 text-status-yellow-fg">
+              <AlertTriangle className="size-4" aria-hidden="true" />
+              <AlertTitle className="font-medium text-foreground">
+                Ask the front desk for the gym’s bKash or Nagad number.
+              </AlertTitle>
+              <AlertDescription className="text-xs text-foreground/85">
+                Payment submission is unavailable until a mobile wallet number is
+                configured.
+              </AlertDescription>
+            </Alert>
           )}
 
           {planPrice == null ? (
-            <div
-              role="status"
-              className="flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-status-rose-bg p-3.5 text-sm text-status-rose-fg"
+            <Alert
+              variant="destructive"
+              className="rounded-2xl border-destructive/30 bg-status-rose-bg p-3.5 text-status-rose-fg"
             >
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <p className="font-medium text-foreground">
-                  Ask the front desk to assign a plan first.
-                </p>
-                <p className="text-xs text-foreground/85">
-                  A membership plan is required before you can submit a renewal TrxID.
-                </p>
-              </div>
-            </div>
+              <AlertTriangle className="size-4" aria-hidden="true" />
+              <AlertTitle className="font-medium text-foreground">
+                Ask the front desk to assign a plan first.
+              </AlertTitle>
+              <AlertDescription className="text-xs text-foreground/85">
+                A membership plan is required before you can submit a renewal TrxID.
+              </AlertDescription>
+            </Alert>
           ) : null}
 
           <form

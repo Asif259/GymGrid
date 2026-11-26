@@ -19,6 +19,16 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { useGymStore } from "@/lib/stores/gym-store";
 import { useMembersStore } from "@/lib/stores/members-store";
 import { AiProvidersDialog } from "@/components/admin/AiProvidersDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,6 +107,7 @@ export default function SettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [aiProviders, setAiProviders] = useState<AiProvider[]>([]);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [confirmRotate, setConfirmRotate] = useState<"signup" | "qr" | null>(null);
 
   const loadAiProviders = useCallback(async () => {
     if (!gymId || role !== "owner") return;
@@ -732,7 +743,7 @@ export default function SettingsPage() {
                 type="button"
                 variant="outline"
                 disabled={saving}
-                onClick={() => void rotateSignupToken()}
+                onClick={() => setConfirmRotate("signup")}
               >
                 <RefreshCw className="size-4" aria-hidden="true" />
                 <span>Make a new signup link</span>
@@ -753,7 +764,7 @@ export default function SettingsPage() {
                 type="button"
                 variant="outline"
                 disabled={saving}
-                onClick={() => void rotateQrToken()}
+                onClick={() => setConfirmRotate("qr")}
               >
                 <RefreshCw className="size-4" aria-hidden="true" />
                 <span>Make a new QR</span>
@@ -900,6 +911,41 @@ export default function SettingsPage() {
         providers={aiProviders}
         onReload={loadAiProviders}
       />
+
+      <AlertDialog
+        open={Boolean(confirmRotate)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setConfirmRotate(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmRotate === "signup"
+                ? "Create a new member signup link?"
+                : "Create a new check-in QR code?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmRotate === "signup"
+                ? "Your previous signup link will immediately stop working for new members."
+                : "Any printed or displayed desk QR codes using the old token will stop working."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (confirmRotate === "signup") void rotateSignupToken();
+                else if (confirmRotate === "qr") void rotateQrToken();
+                setConfirmRotate(null);
+              }}
+            >
+              {confirmRotate === "signup" ? "Rotate signup link" : "Rotate QR token"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

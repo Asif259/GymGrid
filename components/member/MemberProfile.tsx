@@ -1,10 +1,11 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent } from "react";
-import { Clock, Copy, LogOut, Phone, Save } from "lucide-react";
+import { AlertTriangle, Clock, Copy, LogOut, Phone, Save } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -248,14 +249,17 @@ function MemberProfileForm({
       >
         <CardContent className="flex flex-col gap-4">
           {errorMsg ? (
-            <div
+            <Alert
               ref={alertRef}
               tabIndex={-1}
-              role="alert"
-              className="rounded-xl bg-status-rose-bg px-3 py-2.5 text-xs font-medium text-status-rose-fg break-words"
+              variant="destructive"
+              className="border-destructive/30 bg-status-rose-bg text-status-rose-fg"
             >
-              {errorMsg}
-            </div>
+              <AlertTriangle className="size-4" aria-hidden="true" />
+              <AlertDescription className="text-xs font-medium text-status-rose-fg break-words">
+                {errorMsg}
+              </AlertDescription>
+            </Alert>
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">

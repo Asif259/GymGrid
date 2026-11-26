@@ -1,9 +1,10 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent } from "react";
-import { Sparkles } from "lucide-react";
+import { AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,13 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { GoalType, Member } from "@/types/gym";
 
 export interface AiPlanDialogProps {
@@ -303,19 +304,22 @@ function AiPlanDialogForm({
     <form
       aria-labelledby={titleId}
       noValidate
-      className="flex flex-1 flex-col"
+      className="flex min-h-0 flex-1 flex-col"
       onSubmit={(e) => void handleSubmit(e)}
     >
-      <div className="flex flex-1 flex-col gap-4 p-5">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-5">
         {errorMsg ? (
-          <div
+          <Alert
             ref={alertRef}
             tabIndex={-1}
-            role="alert"
-            className="rounded-xl bg-status-rose-bg px-3 py-2.5 text-xs font-medium text-status-rose-fg break-words"
+            variant="destructive"
+            className="border-destructive/30 bg-status-rose-bg text-status-rose-fg"
           >
-            {errorMsg}
-          </div>
+            <AlertTriangle className="size-4" aria-hidden="true" />
+            <AlertDescription className="text-xs font-medium text-status-rose-fg break-words">
+              {errorMsg}
+            </AlertDescription>
+          </Alert>
         ) : null}
 
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
@@ -622,7 +626,7 @@ function AiPlanDialogForm({
         </div>
       </div>
 
-      <SheetFooter className="border-t p-5">
+      <DialogFooter className="mx-0 mb-0 border-t bg-muted/40 p-5">
         <Button
           type="submit"
           className="min-h-11 w-full touch-manipulation"
@@ -631,13 +635,13 @@ function AiPlanDialogForm({
           <Sparkles className="size-4" aria-hidden="true" />
           <span>{submitting ? stageText || "Generating plans…" : "Generate my AI plans"}</span>
         </Button>
-      </SheetFooter>
+      </DialogFooter>
     </form>
   );
 }
 
 /**
- * Member-triggered AI workout and diet plan intake sheet.
+ * Member-triggered AI workout and diet plan intake modal.
  * Prefills from the member row and invokes `generate-plan` for workout and diet.
  */
 export function AiPlanDialog({
@@ -648,17 +652,14 @@ export function AiPlanDialog({
 }: AiPlanDialogProps) {
   const titleId = useId();
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col gap-0 overflow-y-auto overscroll-contain data-[side=right]:w-full sm:max-w-lg data-[side=right]:sm:max-w-lg"
-      >
-        <SheetHeader className="gap-1.5 border-b p-5 pe-12">
-          <SheetTitle id={titleId}>Create your AI plans</SheetTitle>
-          <SheetDescription className="text-pretty">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[90dvh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+        <DialogHeader className="gap-1.5 border-b p-5 pe-12">
+          <DialogTitle id={titleId}>Create your AI plans</DialogTitle>
+          <DialogDescription className="text-pretty">
             Confirm your stats and preferences. Safety checks run automatically before saving.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         {open ? (
           <AiPlanDialogForm
@@ -669,7 +670,7 @@ export function AiPlanDialog({
             onGenerated={onGenerated}
           />
         ) : null}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }

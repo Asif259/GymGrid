@@ -24,6 +24,16 @@ import { SearchInput } from "@/components/SearchInput";
 import { StatCards, type StatItem } from "@/components/StatCards";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MemberDialog } from "@/components/admin/MemberDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,6 +78,7 @@ export function TodayClient() {
 
   const [checkinQuery, setCheckinQuery] = useState("");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [confirmCheckinMember, setConfirmCheckinMember] = useState<Member | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const today = dhakaToday();
@@ -142,12 +153,8 @@ export function TodayClient() {
   const expiringRows = todayReport?.expiring ?? [];
   const expiredRecent = todayReport?.expired_recent ?? [];
 
-  async function handleCheckIn(m: Member) {
+  async function performCheckIn(m: Member, isWarning: boolean) {
     if (busyId || !user) return;
-    const isWarning = m.status === "expired" || m.status === "frozen" || !m.expiry_date;
-    if (isWarning && !window.confirm(`${m.name} is ${standing(m)}. Check in anyway?`)) {
-      return;
-    }
 
     setBusyId(m.id);
     try {
@@ -170,6 +177,16 @@ export function TodayClient() {
     } finally {
       setBusyId(null);
     }
+  }
+
+  function handleCheckIn(m: Member) {
+    if (busyId || !user) return;
+    const isWarning = m.status === "expired" || m.status === "frozen" || !m.expiry_date;
+    if (isWarning) {
+      setConfirmCheckinMember(m);
+      return;
+    }
+    void performCheckIn(m, false);
   }
 
   async function handleConfirmPending(m: Member) {
@@ -530,6 +547,37 @@ export function TodayClient() {
         member={selectedMember}
         onClose={() => setSelectedMember(null)}
       />
+
+      <AlertDialog
+        open={Boolean(confirmCheckinMember)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setConfirmCheckinMember(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Check in member with overdue status?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmCheckinMember
+                ? `${confirmCheckinMember.name} is ${standing(confirmCheckinMember)}. Check in anyway?`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmCheckinMember) {
+                  void performCheckIn(confirmCheckinMember, true);
+                  setConfirmCheckinMember(null);
+                }
+              }}
+            >
+              Check in anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -9,6 +9,16 @@ import { useGymStore } from "@/lib/stores/gym-store";
 import { useMembersStore } from "@/lib/stores/members-store";
 import { DataTable } from "@/components/DataTable";
 import { MemberDialog } from "@/components/admin/MemberDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -23,7 +33,7 @@ import type { Member, MemberFilter } from "@/types/gym";
 
 /**
  * Members directory view powered by shadcn `DataTable`, bulk plan template
- * assignment, and member `Sheet` drawer.
+ * assignment, and member action modal.
  */
 export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter }) {
   const supabase = useMemo(() => createClient(), []);
@@ -39,16 +49,13 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [confirmCheckinMember, setConfirmCheckinMember] = useState<Member | null>(null);
   const [assigning, setAssigning] = useState(false);
 
   const today = dhakaToday();
 
-  async function handleCheckIn(m: Member) {
+  async function performCheckIn(m: Member, isWarning: boolean) {
     if (!user) return;
-    const isWarning = m.status === "expired" || m.status === "frozen" || !m.expiry_date;
-    if (isWarning && !window.confirm(`${m.name} is ${standing(m)}. Check in anyway?`)) {
-      return;
-    }
     const { error } = await supabase.from("attendance").insert({
       member_id: m.id,
       method: "staff",
@@ -61,6 +68,16 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
     await reloadAll();
     if (isWarning) toast.error(`${m.name} checked in (${standing(m)})`);
     else toast.success(`${m.name} checked in`);
+  }
+
+  function handleCheckIn(m: Member) {
+    if (!user) return;
+    const isWarning = m.status === "expired" || m.status === "frozen" || !m.expiry_date;
+    if (isWarning) {
+      setConfirmCheckinMember(m);
+      return;
+    }
+    void performCheckIn(m, false);
   }
 
   async function handleQuickPay(m: Member) {
@@ -198,6 +215,37 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
         member={selectedMember}
         onClose={() => setSelectedMember(null)}
       />
+
+      <AlertDialog
+        open={Boolean(confirmCheckinMember)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setConfirmCheckinMember(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Check in member with overdue status?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmCheckinMember
+                ? `${confirmCheckinMember.name} is ${standing(confirmCheckinMember)}. Check in anyway?`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmCheckinMember) {
+                  void performCheckIn(confirmCheckinMember, true);
+                  setConfirmCheckinMember(null);
+                }
+              }}
+            >
+              Check in anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

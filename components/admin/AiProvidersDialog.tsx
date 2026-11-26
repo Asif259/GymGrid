@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowUp,
   CheckCircle2,
@@ -15,6 +16,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,13 +41,13 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { AiProvider, AiProviderKind } from "@/types/gym";
 
 interface PresetOption {
@@ -160,6 +172,7 @@ export function AiProvidersDialog({
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AiProvider | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
   const activePreset = PRESETS.find((p) => p.id === presetId) ?? PRESETS[0];
@@ -321,19 +334,17 @@ export function AiProvidersDialog({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col gap-0 overflow-y-auto overscroll-contain data-[side=right]:w-full sm:max-w-xl data-[side=right]:sm:max-w-xl"
-      >
-        <SheetHeader className="gap-1.5 border-b p-5 pe-12">
-          <SheetTitle>AI providers</SheetTitle>
-          <SheetDescription className="text-pretty">
-            Keys are stored encrypted on the server and tried in priority order. Members never see your keys.
-          </SheetDescription>
-        </SheetHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="flex max-h-[90dvh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+          <DialogHeader className="gap-1.5 border-b p-5 pe-12">
+            <DialogTitle>AI providers</DialogTitle>
+            <DialogDescription className="text-pretty">
+              Keys are stored encrypted on the server and tried in priority order. Members never see your keys.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="flex flex-1 flex-col gap-5 p-5">
+          <div className="flex flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-5">
           {/* Configured providers list */}
           <section className="flex flex-col gap-2.5">
             <h3 className="text-sm font-medium text-foreground text-balance">
@@ -415,7 +426,7 @@ export function AiProvidersDialog({
                             aria-label={`Delete ${p.label}`}
                             disabled={isBusy}
                             className="[@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:min-w-11 touch-manipulation"
-                            onClick={() => void handleDelete(p)}
+                            onClick={() => setDeleteTarget(p)}
                           >
                             <Trash2 className="size-3.5 text-destructive" aria-hidden="true" />
                           </Button>
@@ -446,13 +457,16 @@ export function AiProvidersDialog({
             </h3>
 
             {testError ? (
-              <div
+              <Alert
                 id={keyErrorId}
-                role="alert"
-                className="rounded-xl bg-status-rose-bg px-3 py-2 text-xs font-medium text-status-rose-fg break-words"
+                variant="destructive"
+                className="border-destructive/30 bg-status-rose-bg text-status-rose-fg"
               >
-                {testError}
-              </div>
+                <AlertTriangle className="size-4" aria-hidden="true" />
+                <AlertDescription className="text-xs font-medium text-status-rose-fg break-words">
+                  {testError}
+                </AlertDescription>
+              </Alert>
             ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -702,17 +716,50 @@ export function AiProvidersDialog({
           </details>
         </div>
 
-        <SheetFooter className="border-t p-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11 touch-manipulation sm:min-h-9"
-            onClick={() => onOpenChange(false)}
-          >
-            Done
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+          <DialogFooter className="mx-0 mb-0 border-t bg-muted/40 p-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 touch-manipulation sm:min-h-9"
+              onClick={() => onOpenChange(false)}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove AI provider?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `This will permanently delete "${deleteTarget.label}" and its encrypted API key from the server.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) {
+                  void handleDelete(deleteTarget);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete provider
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
