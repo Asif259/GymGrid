@@ -152,7 +152,7 @@ export default function AddMemberPage() {
   }
 
   return (
-    <Card className="rounded-3xl shadow-xs">
+    <Card className="rounded-2xl shadow-xs">
       <CardHeader>
         <CardTitle className="text-xl">New member</CardTitle>
         <CardDescription>

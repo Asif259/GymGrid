@@ -668,7 +668,7 @@ function MemberDialogContent({
                   onValueChange={setSelectedWorkoutTpl}
                 >
                   <SelectTrigger id="md-workout-tpl" className="w-full">
-                    <SelectValue placeholder="Choose workout template…" />
+                    <SelectValue placeholder="Select workout template" />
                   </SelectTrigger>
                   <SelectContent>
                     {workoutTemplates.map((t) => (
@@ -693,7 +693,7 @@ function MemberDialogContent({
                 <Label htmlFor="md-diet-tpl">Diet template</Label>
                 <Select value={selectedDietTpl} onValueChange={setSelectedDietTpl}>
                   <SelectTrigger id="md-diet-tpl" className="w-full">
-                    <SelectValue placeholder="Choose diet template…" />
+                    <SelectValue placeholder="Select diet template" />
                   </SelectTrigger>
                   <SelectContent>
                     {dietTemplates.map((t) => (

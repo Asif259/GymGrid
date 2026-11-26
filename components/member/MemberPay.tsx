@@ -201,7 +201,7 @@ export function MemberPay({
   return (
     <div className="grid items-start gap-6 lg:grid-cols-2">
       <div className="flex flex-col gap-6">
-        <Card className="rounded-3xl shadow-xs">
+        <Card className="rounded-2xl shadow-xs">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
@@ -252,7 +252,7 @@ export function MemberPay({
         </Card>
 
         {owed ? (
-          <Card className="rounded-3xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-xs">
+          <Card className="rounded-2xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-xs">
             <CardHeader>
               <div className="flex items-start gap-3">
                 <Clock className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
@@ -315,7 +315,7 @@ export function MemberPay({
         ) : null}
 
         {gymPlans.length > 0 ? (
-          <Card className="rounded-3xl shadow-xs">
+          <Card className="rounded-2xl shadow-xs">
             <CardHeader>
               <CardTitle className="text-lg">Gym plan tiers</CardTitle>
               <CardDescription>Ask the front desk to switch plans.</CardDescription>
@@ -354,7 +354,7 @@ export function MemberPay({
         ) : null}
       </div>
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader>
           <CardTitle className="text-lg">Submit mobile payment</CardTitle>
           <CardDescription>

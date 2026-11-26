@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Dumbbell,
   Salad,
-  Sparkles,
   Target,
   UserCheck,
   UtensilsCrossed,
@@ -92,7 +91,7 @@ export function MemberPlans({
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
@@ -114,7 +113,7 @@ export function MemberPlans({
               className="min-h-11 w-full shrink-0 touch-manipulation sm:min-h-9 sm:w-auto"
               onClick={onOpenAiPlan}
             >
-              <Sparkles className="size-4" aria-hidden="true" />
+              <Dumbbell className="size-4" aria-hidden="true" />
               <span>{hasAnyPlan ? "Regenerate" : "Create my AI plan"}</span>
             </Button>
           ) : null}
@@ -160,7 +159,7 @@ export function MemberPlans({
       </Card>
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <Card className="rounded-3xl shadow-xs">
+        <Card className="rounded-2xl shadow-xs">
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -376,7 +375,7 @@ export function MemberPlans({
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl shadow-xs">
+        <Card className="rounded-2xl shadow-xs">
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">

@@ -53,7 +53,7 @@ export function LoginCard({
   }
 
   return (
-    <Card className="mx-auto mt-14 w-full max-w-[440px] rounded-3xl shadow-xs">
+    <Card className="mx-auto mt-14 w-full max-w-md rounded-2xl shadow-xs">
       <CardHeader>
         <CardTitle className="text-xl">{title}</CardTitle>
         <CardDescription>{subtitle}</CardDescription>

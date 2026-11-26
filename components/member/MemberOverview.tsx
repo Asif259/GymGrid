@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import {
   AlertTriangle,
   Calendar,
@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { StatCards, type StatItem } from "@/components/StatCards";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,7 +220,7 @@ export function MemberOverview({
           role="status"
           aria-live="polite"
           className={cn(
-            "rounded-3xl shadow-xs",
+            "rounded-xl shadow-none",
             checkinBanner.ok
               ? "border-transparent bg-status-lime-bg text-status-lime-fg"
               : "border-destructive bg-status-rose-bg text-status-rose-fg",
@@ -263,7 +264,7 @@ export function MemberOverview({
       ) : null}
 
       {owed ? (
-        <Card className="rounded-3xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-xs">
+        <Card className="rounded-xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-none">
           <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
               <Clock className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
@@ -318,7 +319,7 @@ export function MemberOverview({
       ) : member.status === "expired" || member.status === "due" ? (
         <Card
           className={cn(
-            "rounded-3xl shadow-xs",
+            "rounded-xl shadow-none",
             member.status === "expired"
               ? "border-destructive/40 bg-status-rose-bg text-status-rose-fg"
               : "border-transparent bg-status-yellow-bg text-status-yellow-fg",
@@ -350,7 +351,7 @@ export function MemberOverview({
           </CardContent>
         </Card>
       ) : member.status === "frozen" ? (
-        <Card className="rounded-3xl bg-muted shadow-xs">
+        <Card className="rounded-xl bg-muted shadow-none">
           <CardContent className="flex items-start gap-3">
             <PauseCircle
               className="mt-0.5 size-5 shrink-0 text-muted-foreground"
@@ -371,145 +372,134 @@ export function MemberOverview({
 
       <StatCards stats={kpiStats} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-3xl shadow-xs">
-          <CardHeader className="flex flex-row items-start justify-between gap-3">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card className="rounded-xl border-t-2 border-t-primary shadow-xs lg:col-span-5">
+          <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-border/60 pb-4">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-muted-foreground">
-                7-day attendance pulse
-              </p>
-              <CardTitle className="text-2xl tabular-nums">
-                {kpis.weekVisits} visits
-              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <CardTitle className="text-base font-medium">Member pass</CardTitle>
+                {member.member_code ? (
+                  <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
+                    {member.member_code}
+                  </Badge>
+                ) : null}
+              </div>
+              <CardDescription className="mt-1 truncate">
+                Coach: {trainerName.trim() || "Not assigned"}
+              </CardDescription>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11 shrink-0 touch-manipulation sm:min-h-8"
-              onClick={() => onNavigateTab("visits")}
-            >
-              All visits
-            </Button>
+            <StatusBadge member={member} className="shrink-0" />
           </CardHeader>
 
-          <CardContent className="flex flex-col gap-2">
-            <ChartContainer config={PULSE_CHART_CONFIG} className="h-44 w-full">
-              <BarChart
-                data={pulse}
-                margin={{ top: 8, right: 4, left: -24, bottom: 0 }}
-              >
-                <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar
-                  dataKey="count"
-                  fill="var(--color-count)"
-                  radius={[6, 6, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-            {kpis.weekVisits === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                No check-ins logged in the last 7 days.
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl shadow-xs">
-          <CardHeader>
-            <CardTitle className="text-lg">Today’s training</CardTitle>
-            <CardDescription className="truncate">
-              Coach: {trainerName.trim() || "Not assigned"}
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="flex flex-1 flex-col gap-4">
-            {workoutDays.length > 0 && activeDay ? (
-              <div className="flex flex-col gap-3">
-                <div
-                  role="group"
-                  aria-label="Workout split days"
-                  className="flex flex-wrap gap-1.5"
-                >
-                  {workoutDays.map((day, idx) => (
-                    <Button
-                      key={`${day.day}-${idx}`}
-                      type="button"
-                      size="sm"
-                      variant={safeDayIdx === idx ? "default" : "outline"}
-                      aria-pressed={safeDayIdx === idx}
-                      className="min-h-11 max-w-full rounded-full px-3 touch-manipulation sm:min-h-8"
-                      onClick={() => setSelectedDayIdx(idx)}
+          <CardContent className="flex flex-1 flex-col gap-5 pt-4">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
+              {profileChips
+                .filter((chip) => chip.label !== "Member ID")
+                .map((chip) => (
+                  <div key={chip.label} className="min-w-0">
+                    <dt className="text-[11px] font-medium text-muted-foreground">
+                      {chip.label}
+                    </dt>
+                    <dd
+                      className={cn(
+                        "truncate text-xs font-medium text-foreground tabular-nums",
+                        chip.capitalize && "capitalize",
+                      )}
                     >
-                      <span className="truncate">{day.day}</span>
-                    </Button>
-                  ))}
-                </div>
+                      {chip.value}
+                    </dd>
+                  </div>
+                ))}
+            </dl>
 
-                <div className="flex flex-col gap-2 rounded-2xl border bg-secondary/40 p-3.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate text-sm font-medium text-foreground">
-                      {activeDay.focus
-                        ? `${activeDay.day} · ${activeDay.focus}`
-                        : activeDay.day}
-                    </span>
-                    <Badge variant="secondary" className="shrink-0 tabular-nums">
-                      {activeDay.exercises.length}{" "}
-                      {activeDay.exercises.length === 1 ? "exercise" : "exercises"}
-                    </Badge>
+            <div className="flex flex-col gap-3 border-t border-border/60 pt-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  Today&apos;s training
+                </span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {mealsCount > 0
+                    ? `${mealsCount} ${mealsCount === 1 ? "meal" : "meals"} planned`
+                    : "No diet plan"}
+                </span>
+              </div>
+
+              {workoutDays.length > 0 && activeDay ? (
+                <div className="flex flex-col gap-3">
+                  <div
+                    role="group"
+                    aria-label="Workout split days"
+                    className="flex flex-wrap gap-1.5"
+                  >
+                    {workoutDays.map((day, idx) => (
+                      <Button
+                        key={`${day.day}-${idx}`}
+                        type="button"
+                        size="sm"
+                        variant={safeDayIdx === idx ? "default" : "outline"}
+                        aria-pressed={safeDayIdx === idx}
+                        className="min-h-11 max-w-full rounded-full px-3 touch-manipulation sm:min-h-8"
+                        onClick={() => setSelectedDayIdx(idx)}
+                      >
+                        <span className="truncate">{day.day}</span>
+                      </Button>
+                    ))}
                   </div>
 
-                  {activeDay.exercises.length > 0 ? (
-                    <ul className="flex flex-col divide-y">
-                      {activeDay.exercises.slice(0, 4).map((ex, idx) => (
-                        <li
-                          key={`${ex.name}-${idx}`}
-                          className="flex items-center justify-between gap-3 py-1.5 text-xs first:pt-0 last:pb-0"
-                        >
-                          <span className="min-w-0 truncate font-medium text-foreground">
-                            {ex.name}
-                          </span>
-                          {ex.sets != null || ex.reps ? (
-                            <span className="shrink-0 font-mono text-muted-foreground tabular-nums">
-                              {ex.sets != null && ex.reps
-                                ? `${ex.sets}×${ex.reps}`
-                                : ex.sets != null
-                                  ? `${ex.sets} sets`
-                                  : ex.reps}
+                  <div className="flex flex-col gap-2 rounded-lg border bg-secondary/40 p-3.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-sm font-medium text-foreground">
+                        {activeDay.focus
+                          ? `${activeDay.day} · ${activeDay.focus}`
+                          : activeDay.day}
+                      </span>
+                      <Badge variant="secondary" className="shrink-0 rounded-md font-mono text-xs tabular-nums">
+                        {activeDay.exercises.length}{" "}
+                        {activeDay.exercises.length === 1 ? "exercise" : "exercises"}
+                      </Badge>
+                    </div>
+
+                    {activeDay.exercises.length > 0 ? (
+                      <ul className="flex flex-col divide-y">
+                        {activeDay.exercises.slice(0, 4).map((ex, idx) => (
+                          <li
+                            key={`${ex.name}-${idx}`}
+                            className="flex items-center justify-between gap-3 py-1.5 text-xs first:pt-0 last:pb-0"
+                          >
+                            <span className="min-w-0 truncate font-medium text-foreground">
+                              {ex.name}
                             </span>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      No exercises listed for this day.
-                    </p>
-                  )}
+                            {ex.sets != null || ex.reps ? (
+                              <span className="shrink-0 font-mono text-muted-foreground tabular-nums">
+                                {ex.sets != null && ex.reps
+                                  ? `${ex.sets}×${ex.reps}`
+                                  : ex.sets != null
+                                    ? `${ex.sets} sets`
+                                    : ex.reps}
+                              </span>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No exercises listed for this day.
+                      </p>
+                    )}
 
-                  {activeDay.exercises.length > 4 ? (
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      +{activeDay.exercises.length - 4} more in full plans
-                    </p>
-                  ) : null}
+                    {activeDay.exercises.length > 4 ? (
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        +{activeDay.exercises.length - 4} more in full plans
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed bg-secondary/30 p-4 text-xs text-muted-foreground">
-                No verified workout plan assigned yet. Ask your coach to publish
-                your training split.
-              </div>
-            )}
-
-            <div className="flex items-center justify-between gap-2 rounded-xl border bg-secondary/30 px-3 py-2 text-xs">
-              <span className="font-medium text-foreground">Diet plan</span>
-              <span className="text-muted-foreground tabular-nums">
-                {mealsCount > 0
-                  ? `${mealsCount} ${mealsCount === 1 ? "meal" : "meals"} planned`
-                  : "No diet plan yet"}
-              </span>
+              ) : (
+                <div className="rounded-lg border border-dashed bg-secondary/30 p-4 text-xs text-muted-foreground">
+                  No verified workout plan assigned yet. Ask your coach to publish
+                  your training split.
+                </div>
+              )}
             </div>
           </CardContent>
 
@@ -529,7 +519,16 @@ export function MemberOverview({
               onClick={() => onNavigateTab("plans")}
             >
               <Dumbbell data-icon="inline-start" aria-hidden="true" />
-              <span>Open full plans</span>
+              <span>Plans</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 touch-manipulation sm:min-h-0"
+              onClick={onOpenProfile}
+            >
+              <User data-icon="inline-start" aria-hidden="true" />
+              <span>Profile</span>
             </Button>
             {gymPhone ? (
               <Button
@@ -548,156 +547,187 @@ export function MemberOverview({
             ) : null}
           </CardFooter>
         </Card>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-3xl shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <CardTitle className="text-lg">Recent visits</CardTitle>
-              <Badge variant="secondary" className="tabular-nums">
-                {visits.length}
-              </Badge>
-            </div>
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              className="h-auto min-h-11 shrink-0 px-2 text-xs touch-manipulation sm:min-h-0"
-              onClick={() => onNavigateTab("visits")}
-            >
-              View all
-            </Button>
-          </CardHeader>
-
-          <CardContent className="flex flex-col divide-y">
-            {recentVisits.map((v, idx) => (
-              <div
-                key={`${v.checked_in_at}-${idx}`}
-                className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-sm font-medium text-foreground tabular-nums">
-                    {fmtDate(v.day)}
-                  </span>
-                  {v.day === todayIso ? (
-                    <Badge className="border-transparent bg-status-lime-bg text-status-lime-fg">
-                      Today
-                    </Badge>
-                  ) : null}
-                </div>
-                <span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
-                  {hhmmDhaka(v.checked_in_at)}
-                </span>
-              </div>
-            ))}
-            {recentVisits.length === 0 ? (
-              <p className="py-3 text-xs text-muted-foreground">
-                No visits recorded yet. Scan the desk QR poster when you arrive to
-                log your first check-in.
+        <Card className="rounded-xl shadow-none lg:col-span-7">
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-muted-foreground">
+                7-day attendance pulse
               </p>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl shadow-xs">
-          <CardHeader className="flex flex-row items-center justify-between gap-2">
-            <CardTitle className="text-lg">Billing &amp; profile</CardTitle>
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              className="h-auto min-h-11 shrink-0 px-2 text-xs touch-manipulation sm:min-h-0"
-              onClick={() => onNavigateTab("receipts")}
-            >
-              All receipts
-            </Button>
-          </CardHeader>
-
-          <CardContent className="flex flex-1 flex-col gap-4">
-            {latestReceipt ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-secondary/40 p-3.5">
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground tabular-nums">
-                    {money(latestReceipt.amount, currency)} ·{" "}
-                    {latestReceipt.method ?? "cash"}
-                  </div>
-                  <div className="truncate text-xs text-muted-foreground tabular-nums">
-                    {latestReceipt.paid_on
-                      ? fmtDate(latestReceipt.paid_on)
-                      : "Confirmed"}
-                    {latestReceipt.receipt_no
-                      ? ` · ${latestReceipt.receipt_no}`
-                      : ""}
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  {latestReceipt.receipt_path ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="min-h-11 touch-manipulation sm:min-h-8"
-                      onClick={() => onDownloadPdf(latestReceipt)}
-                    >
-                      <Download data-icon="inline-start" aria-hidden="true" />
-                      <span>PDF</span>
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="min-h-11 touch-manipulation sm:min-h-8"
-                    asChild
-                  >
-                    <Link
-                      href={`/receipt?id=${encodeURIComponent(String(latestReceipt.id))}`}
-                    >
-                      <span>View</span>
-                      <ExternalLink data-icon="inline-end" aria-hidden="true" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed bg-secondary/30 p-3.5 text-xs text-muted-foreground">
-                No confirmed receipts yet.
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {profileChips.map((chip) => (
-                <div
-                  key={chip.label}
-                  className="flex min-w-0 flex-col gap-0.5 rounded-xl border bg-secondary/30 px-3 py-2"
-                >
-                  <span className="text-[11px] font-medium text-muted-foreground">
-                    {chip.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "truncate text-xs font-medium text-foreground tabular-nums",
-                      chip.capitalize && "capitalize",
-                    )}
-                  >
-                    {chip.value}
-                  </span>
-                </div>
-              ))}
+              <CardTitle className="text-2xl font-medium tracking-tight tabular-nums">
+                {kpis.weekVisits} visits
+              </CardTitle>
             </div>
-          </CardContent>
-
-          <CardFooter className="mt-auto">
             <Button
               type="button"
               variant="outline"
-              className="min-h-11 w-full touch-manipulation sm:min-h-0 sm:w-auto"
-              onClick={onOpenProfile}
+              size="sm"
+              className="min-h-11 shrink-0 touch-manipulation sm:min-h-8"
+              onClick={() => onNavigateTab("visits")}
             >
-              <User data-icon="inline-start" aria-hidden="true" />
-              <span>Full profile</span>
+              All visits
             </Button>
-          </CardFooter>
+          </CardHeader>
+
+          <CardContent className="flex flex-1 flex-col gap-6">
+            <div className="flex flex-col gap-2">
+              <ChartContainer config={PULSE_CHART_CONFIG} className="h-44 w-full">
+                <BarChart
+                  data={pulse}
+                  margin={{ top: 8, right: 4, left: -24, bottom: 0 }}
+                >
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    className="font-mono text-[11px]"
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tickLine={false}
+                    axisLine={false}
+                    className="font-mono text-[11px]"
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                    {pulse.map((pt, idx) => (
+                      <Cell
+                        key={pt.day}
+                        fill={
+                          idx === pulse.length - 1
+                            ? "var(--color-count)"
+                            : "color-mix(in oklch, var(--muted-foreground) 32%, transparent)"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+              {kpis.weekVisits === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No check-ins logged in the last 7 days.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-2.5 border-t border-border/60 pt-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">
+                    Recent visits
+                  </span>
+                  <Badge variant="secondary" className="rounded-md font-mono text-xs tabular-nums">
+                    {visits.length}
+                  </Badge>
+                </div>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto min-h-11 shrink-0 px-2 text-xs touch-manipulation sm:min-h-0"
+                  onClick={() => onNavigateTab("visits")}
+                >
+                  View all
+                </Button>
+              </div>
+
+              <div className="flex flex-col divide-y">
+                {recentVisits.map((v, idx) => (
+                  <div
+                    key={`${v.checked_in_at}-${idx}`}
+                    className="flex items-center justify-between gap-3 py-2 text-xs first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-sm font-medium text-foreground tabular-nums">
+                        {fmtDate(v.day)}
+                      </span>
+                      {v.day === todayIso ? (
+                        <Badge className="rounded-md border-transparent bg-status-lime-bg text-status-lime-fg">
+                          Today
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
+                      {hhmmDhaka(v.checked_in_at)}
+                    </span>
+                  </div>
+                ))}
+                {recentVisits.length === 0 ? (
+                  <p className="py-2 text-xs text-muted-foreground">
+                    No visits recorded yet. Scan the desk QR poster when you arrive to log your first check-in.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2.5 border-t border-border/60 pt-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  Latest receipt
+                </span>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto min-h-11 shrink-0 px-2 text-xs touch-manipulation sm:min-h-0"
+                  onClick={() => onNavigateTab("receipts")}
+                >
+                  All receipts
+                </Button>
+              </div>
+
+              {latestReceipt ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-secondary/40 p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground tabular-nums">
+                      {money(latestReceipt.amount, currency)} ·{" "}
+                      {latestReceipt.method ?? "cash"}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground tabular-nums">
+                      {latestReceipt.paid_on
+                        ? fmtDate(latestReceipt.paid_on)
+                        : "Confirmed"}
+                      {latestReceipt.receipt_no
+                        ? ` · ${latestReceipt.receipt_no}`
+                        : ""}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {latestReceipt.receipt_path ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 touch-manipulation sm:min-h-8"
+                        onClick={() => onDownloadPdf(latestReceipt)}
+                      >
+                        <Download data-icon="inline-start" aria-hidden="true" />
+                        <span>PDF</span>
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-11 touch-manipulation sm:min-h-8"
+                      asChild
+                    >
+                      <Link
+                        href={`/receipt?id=${encodeURIComponent(String(latestReceipt.id))}`}
+                      >
+                        <span>View</span>
+                        <ExternalLink data-icon="inline-end" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  No confirmed receipts yet.
+                </p>
+              )}
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>

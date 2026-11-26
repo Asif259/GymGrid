@@ -107,7 +107,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <Skeleton className="h-32 rounded-2xl" />
                 <Skeleton className="h-32 rounded-2xl" />
               </div>
-              <Skeleton className="h-64 rounded-3xl" />
+              <Skeleton className="h-64 rounded-2xl" />
             </div>
           ) : null}
 
@@ -131,7 +131,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           ) : null}
 
           {status === "no_gym" ? (
-            <Card className="mx-auto mt-12 w-full max-w-[460px] rounded-3xl">
+            <Card className="mx-auto mt-12 w-full max-w-md rounded-2xl">
               <CardHeader>
                 <CardTitle>Complete gym setup</CardTitle>
                 <CardDescription>
@@ -151,7 +151,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           ) : null}
 
           {status === "not_staff" ? (
-            <Card className="mx-auto mt-12 w-full max-w-[460px] rounded-3xl">
+            <Card className="mx-auto mt-12 w-full max-w-md rounded-2xl">
               <CardHeader>
                 <CardTitle>Account is not staff</CardTitle>
                 <CardDescription>

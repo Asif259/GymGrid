@@ -167,8 +167,9 @@ export function DashboardShell({
                         isActive={item.active}
                         tooltip={item.label}
                         className={cn(
+                          "h-9 gap-2.5 transition-colors",
                           item.active &&
-                            "bg-primary text-primary-foreground data-active:bg-primary data-active:text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
+                            "bg-sidebar-accent text-sidebar-accent-foreground font-medium data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground hover:bg-sidebar-accent/80 [&_svg]:text-primary",
                         )}
                       >
                         {isLink ? (
@@ -191,9 +192,9 @@ export function DashboardShell({
                       {item.badge != null ? (
                         <SidebarMenuBadge
                           className={cn(
-                            "tabular-nums",
+                            "tabular-nums text-muted-foreground",
                             item.active &&
-                              "text-primary-foreground peer-data-active/menu-button:text-primary-foreground",
+                              "text-sidebar-accent-foreground peer-data-active/menu-button:text-sidebar-accent-foreground",
                           )}
                         >
                           {item.badge}
@@ -241,7 +242,7 @@ export function DashboardShell({
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="min-w-0 px-4 pt-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 md:p-6">
+      <SidebarInset className="min-w-0 px-4 pt-0 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6 md:p-6">
         <div className="mx-auto flex min-w-0 w-full max-w-7xl flex-1 flex-col gap-5 md:gap-6">
           <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between gap-3 border-b border-border/80 bg-background/95 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-md sm:-mx-6 sm:px-6 md:static md:mx-0 md:border-b-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
             <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -254,7 +255,7 @@ export function DashboardShell({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h1 className="truncate text-lg font-medium tracking-tight text-foreground md:text-2xl">
+                  <h1 className="truncate font-[family-name:var(--font-editorial)] text-xl font-medium tracking-[-0.02em] text-foreground md:text-[1.75rem] md:leading-8">
                     {header.title}
                   </h1>
                   {header.badge ? (

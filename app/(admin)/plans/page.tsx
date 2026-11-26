@@ -149,7 +149,7 @@ export default function PlansPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <div>
             <CardTitle className="text-xl">Membership plans</CardTitle>
@@ -254,7 +254,7 @@ export default function PlansPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader>
           <CardTitle className="text-xl">Plan templates</CardTitle>
           <CardDescription>
@@ -323,7 +323,7 @@ export default function PlansPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader className="flex flex-row items-center gap-2">
           <CardTitle className="text-lg">Saved templates</CardTitle>
           <Badge variant="secondary">{templates.length}</Badge>

@@ -35,22 +35,22 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AiPlanDialog } from "@/components/member/AiPlanDialog";
 
 /** Shared dashboard-shaped loading skeleton used by both the shell pre-ready
  * state and app/(member)/loading.tsx */
 export function DashboardLoadingSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 flex flex-col gap-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-28 animate-pulse rounded-3xl bg-muted/50" />
+          <Skeleton key={i} className="h-28 rounded-2xl" />
         ))}
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="h-56 animate-pulse rounded-3xl bg-muted/50" />
-        ))}
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Skeleton className="h-56 rounded-2xl lg:col-span-7" />
+        <Skeleton className="h-56 rounded-2xl lg:col-span-5" />
       </div>
     </div>
   );
@@ -227,7 +227,7 @@ function MemberShellInner({
   if (status === "no_member") {
     return (
       <div className="mx-auto max-w-md px-4 py-16 flex flex-col items-center gap-6">
-        <Card className="rounded-3xl shadow-xs w-full">
+        <Card className="w-full rounded-2xl shadow-xs">
           <CardHeader>
             <CardTitle>Not registered as a member</CardTitle>
             <CardDescription>

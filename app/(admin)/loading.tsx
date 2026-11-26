@@ -10,7 +10,7 @@ export default function AdminLoading() {
         <Skeleton className="h-32 rounded-2xl" />
         <Skeleton className="h-32 rounded-2xl" />
       </div>
-      <Skeleton className="h-72 rounded-3xl" />
+      <Skeleton className="h-72 rounded-2xl" />
     </div>
   );
 }

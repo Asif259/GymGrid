@@ -6,7 +6,7 @@ import {
   Flame,
   Trophy,
 } from "lucide-react";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { StatCards, type StatItem } from "@/components/StatCards";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -132,7 +132,7 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
     <div className="flex flex-col gap-6">
       <StatCards stats={kpiStats} />
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             <CardDescription>14-day attendance pulse</CardDescription>
@@ -140,7 +140,7 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
               {pulseVisits} {pulseVisits === 1 ? "visit" : "visits"}
             </CardTitle>
           </div>
-          <Badge variant="secondary" className="shrink-0 tabular-nums">
+          <Badge variant="secondary" className="shrink-0 font-mono tabular-nums">
             {activeDaysInWindow}/14 days
           </Badge>
         </CardHeader>
@@ -151,13 +151,20 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
               data={pulse}
               margin={{ top: 8, right: 4, left: -24, bottom: 0 }}
             >
+              <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
                 minTickGap={10}
+                className="font-mono text-[11px]"
               />
-              <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+              <YAxis
+                allowDecimals={false}
+                tickLine={false}
+                axisLine={false}
+                className="font-mono text-[11px]"
+              />
               <ChartTooltip
                 content={
                   <ChartTooltipContent
@@ -173,11 +180,18 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
                   />
                 }
               />
-              <Bar
-                dataKey="count"
-                fill="var(--color-count)"
-                radius={[6, 6, 0, 0]}
-              />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                {pulse.map((pt, idx) => (
+                  <Cell
+                    key={pt.day}
+                    fill={
+                      idx === pulse.length - 1
+                        ? "var(--color-count)"
+                        : "color-mix(in oklch, var(--muted-foreground) 32%, transparent)"
+                    }
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ChartContainer>
           {pulseVisits === 0 ? (
@@ -188,7 +202,7 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 flex-col gap-1">

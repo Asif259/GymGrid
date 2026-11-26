@@ -144,7 +144,7 @@ export function MemberReceipts({
   return (
     <div className="flex flex-col gap-6">
       {pendingPayments.length > 0 ? (
-        <Card className="rounded-3xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-xs">
+        <Card className="rounded-2xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-xs">
           <CardHeader>
             <div className="flex items-start gap-3">
               <Clock className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
@@ -203,7 +203,7 @@ export function MemberReceipts({
         </Card>
       ) : null}
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 flex-col gap-1">

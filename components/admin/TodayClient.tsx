@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import {
   AlertTriangle,
   CalendarCheck,
@@ -228,14 +228,14 @@ export function TodayClient() {
     <div className="flex flex-col gap-6">
       <StatCards stats={kpiStats} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-3xl shadow-xs">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card className="rounded-xl shadow-xs lg:col-span-7">
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 7-day attendance pulse
               </p>
-              <CardTitle className="text-2xl tabular-nums">
+              <CardTitle className="text-2xl font-medium tracking-tight tabular-nums">
                 {weekVisits} visits
               </CardTitle>
             </div>
@@ -255,18 +255,40 @@ export function TodayClient() {
                 data={pulse}
                 margin={{ top: 8, right: 4, left: -24, bottom: 0 }}
               >
-                <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  className="font-mono text-[11px]"
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tickLine={false}
+                  axisLine={false}
+                  className="font-mono text-[11px]"
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" fill="var(--color-count)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                  {pulse.map((pt, idx) => (
+                    <Cell
+                      key={pt.day}
+                      fill={
+                        idx === pulse.length - 1
+                          ? "var(--color-count)"
+                          : "color-mix(in oklch, var(--muted-foreground) 32%, transparent)"
+                      }
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl shadow-xs">
+        <Card className="rounded-xl bg-secondary/45 shadow-none lg:col-span-5">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-lg">Check someone in</CardTitle>
+            <CardTitle className="text-base font-medium">Check someone in</CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" asChild>
                 <Link href="/desk" target="_blank">
@@ -286,7 +308,7 @@ export function TodayClient() {
           <CardContent className="flex flex-col gap-4">
             <SearchInput
               aria-label="Find a member to check in"
-              placeholder="Search name, ID, or phone…"
+              placeholder="Search name, ID, or phone"
               value={checkinQuery}
               onValueChange={setCheckinQuery}
             />
@@ -303,7 +325,7 @@ export function TodayClient() {
                         {m.name}
                       </span>
                       {m.member_code ? (
-                        <Badge variant="outline" className="font-mono text-[11px] tabular-nums">
+                        <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
                           {m.member_code}
                         </Badge>
                       ) : null}
@@ -335,7 +357,7 @@ export function TodayClient() {
 
               {!checkinQuery.trim() ? (
                 <p className="py-3 text-xs text-muted-foreground">
-                  Type a member name or phone number to log an instant front-desk visit.
+                  Type a member name, ID, or phone number to log a front-desk visit.
                 </p>
               ) : null}
             </div>
@@ -343,14 +365,16 @@ export function TodayClient() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="flex flex-col gap-6">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="flex flex-col gap-6 lg:col-span-7">
           {unpaidCheckins.length > 0 ? (
-            <Card className="rounded-3xl border-destructive shadow-xs">
+            <Card className="rounded-xl border-destructive/50 bg-status-rose-bg/25 shadow-none">
               <CardHeader className="flex flex-row items-center gap-2">
-                <AlertTriangle className="size-5 text-destructive" aria-hidden="true" />
-                <CardTitle className="text-lg">Trained without paying today</CardTitle>
-                <Badge variant="secondary">{unpaidCheckins.length}</Badge>
+                <AlertTriangle className="size-4 text-destructive" aria-hidden="true" />
+                <CardTitle className="text-base font-medium">Trained without paying today</CardTitle>
+                <Badge variant="secondary" className="rounded-md font-mono text-xs tabular-nums">
+                  {unpaidCheckins.length}
+                </Badge>
               </CardHeader>
 
               <CardContent className="flex flex-col divide-y">
@@ -384,11 +408,13 @@ export function TodayClient() {
             </Card>
           ) : null}
 
-          <Card className="rounded-3xl shadow-xs">
+          <Card className="rounded-xl shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">Pending approvals</CardTitle>
-                <Badge variant="secondary">{pendingRows.length}</Badge>
+                <CardTitle className="text-base font-medium">Pending approvals</CardTitle>
+                <Badge variant="secondary" className="rounded-md font-mono text-xs tabular-nums">
+                  {pendingRows.length}
+                </Badge>
               </div>
               <Link
                 href="/members?filter=pending"
@@ -410,9 +436,14 @@ export function TodayClient() {
                       <div className="text-sm font-medium text-foreground">
                         {m.name}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground tabular-nums">
                         {owed ? `${money(owed.amount, currency)} · ${owed.method ?? ""}` : ""}
-                        {owed?.trx_id ? ` · TrxID ${owed.trx_id}` : ""}
+                        {owed?.trx_id ? (
+                          <>
+                            {" "}
+                            · TrxID <span className="font-mono text-foreground">{owed.trx_id}</span>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -444,102 +475,112 @@ export function TodayClient() {
           </Card>
         </div>
 
-        <div className="flex flex-col gap-6">
-          <Card className="rounded-3xl shadow-xs">
-            <CardHeader className="flex flex-row items-center gap-2">
-              <CardTitle className="text-lg">Expiring in 2 days</CardTitle>
-              <Badge variant="secondary">{expiringRows.length}</Badge>
-            </CardHeader>
-
-            <CardContent className="flex flex-col divide-y">
-              {expiringRows.map((m) => (
-                <div
-                  key={`${m.phone}-${m.expiry_date}`}
-                  className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-foreground">
-                      {m.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {m.plan ?? "No plan"} · Ends {fmtDate(m.expiry_date)}
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <a
-                      href={renewalLink(
-                        { ...m, plans: { name: m.plan } },
-                        gymName,
-                        today,
-                        settings.app_url ?? null,
-                      )}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <MessageCircle className="size-4" aria-hidden="true" />
-                      <span>WhatsApp</span>
-                    </a>
-                  </Button>
-                </div>
-              ))}
-
-              {expiringRows.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  No memberships ending in 48 hours.
-                </p>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          {expiredRecent.length > 0 ? (
-            <Card className="rounded-3xl shadow-xs">
-              <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">Expired recently</CardTitle>
-                  <Badge variant="secondary">{expiredRecent.length}</Badge>
-                </div>
+        <div className="flex flex-col gap-6 lg:col-span-5">
+          <Card className="rounded-xl shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base font-medium">Renewals watchlist</CardTitle>
+                <Badge variant="secondary" className="rounded-md font-mono text-xs tabular-nums">
+                  {expiringRows.length + expiredRecent.length}
+                </Badge>
+              </div>
+              {expiredRecent.length > 0 ? (
                 <Link
                   href="/members?filter=expired"
                   className="text-xs font-medium text-primary hover:underline"
                 >
-                  View all
+                  View expired
                 </Link>
-              </CardHeader>
+              ) : null}
+            </CardHeader>
 
-              <CardContent className="flex flex-col divide-y">
-                {expiredRecent.slice(0, 5).map((m) => (
-                  <div
-                    key={`exp-${m.phone}`}
-                    className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">
-                        {m.name}
+            <CardContent className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                  <span>Expiring in 2 days</span>
+                  <span className="font-mono tabular-nums">{expiringRows.length}</span>
+                </div>
+                <div className="flex flex-col divide-y">
+                  {expiringRows.map((m) => (
+                    <div
+                      key={`${m.phone}-${m.expiry_date}`}
+                      className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground">
+                          {m.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {m.plan ?? "No plan"} · Ends {fmtDate(m.expiry_date)}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Ended {fmtDate(m.expiry_date)}
-                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <a
+                          href={renewalLink(
+                            { ...m, plans: { name: m.plan } },
+                            gymName,
+                            today,
+                            settings.app_url ?? null,
+                          )}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <MessageCircle className="size-4" aria-hidden="true" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href={renewalLink(
-                          { ...m, plans: { name: m.plan } },
-                          gymName,
-                          today,
-                          settings.app_url ?? null,
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <MessageCircle className="size-4" aria-hidden="true" />
-                        <span>WhatsApp</span>
-                      </a>
-                    </Button>
+                  ))}
+                  {expiringRows.length === 0 ? (
+                    <p className="py-1 text-xs text-muted-foreground">
+                      No memberships ending in 48 hours.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {expiredRecent.length > 0 ? (
+                <div className="flex flex-col gap-2 border-t border-border/70 pt-4">
+                  <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                    <span>Expired recently</span>
+                    <span className="font-mono tabular-nums">{expiredRecent.length}</span>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          ) : null}
+                  <div className="flex flex-col divide-y">
+                    {expiredRecent.slice(0, 5).map((m) => (
+                      <div
+                        key={`exp-${m.phone}`}
+                        className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-foreground">
+                            {m.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Ended {fmtDate(m.expiry_date)}
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" asChild>
+                          <a
+                            href={renewalLink(
+                              { ...m, plans: { name: m.plan } },
+                              gymName,
+                              today,
+                              settings.app_url ?? null,
+                            )}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <MessageCircle className="size-4" aria-hidden="true" />
+                            <span>WhatsApp</span>
+                          </a>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
         </div>
       </div>
 

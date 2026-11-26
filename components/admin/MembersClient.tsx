@@ -157,10 +157,10 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
 
   return (
     <div className="flex flex-col gap-5">
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardContent className="flex flex-col gap-5 pt-6">
           {templates.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-secondary/60 p-3">
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-secondary/60 p-3">
               <Select
                 value={selectedTemplateId}
                 onValueChange={setSelectedTemplateId}
@@ -169,7 +169,7 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
                   aria-label="Plan template for visible members"
                   className="min-w-60 flex-1 sm:max-w-sm"
                 >
-                  <SelectValue placeholder="Bulk assign template to shown…" />
+                  <SelectValue placeholder="Bulk assign template to shown" />
                 </SelectTrigger>
                 <SelectContent>
                   {templates.map((t) => (

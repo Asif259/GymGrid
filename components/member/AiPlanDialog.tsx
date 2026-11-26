@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent } from "react";
-import { AlertTriangle, Sparkles } from "lucide-react";
+import { AlertTriangle, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -288,7 +288,7 @@ function AiPlanDialogForm({
       }
 
       await onGenerated();
-      toast.success("Your personalized AI plans are ready!");
+      toast.success("Your personalized AI plans are ready.");
       onOpenChange(false);
     } catch (err) {
       if (anySaved) await onGenerated();
@@ -632,7 +632,7 @@ function AiPlanDialogForm({
           className="min-h-11 w-full touch-manipulation"
           disabled={submitting}
         >
-          <Sparkles className="size-4" aria-hidden="true" />
+          <Dumbbell className="size-4" aria-hidden="true" />
           <span>{submitting ? stageText || "Generating plans…" : "Generate my AI plans"}</span>
         </Button>
       </DialogFooter>

@@ -5,11 +5,11 @@ import Link from "next/link";
 import {
   Copy,
   ImagePlus,
+  KeyRound,
   Monitor,
   QrCode,
   RefreshCw,
   Save,
-  Sparkles,
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -198,7 +198,7 @@ export default function SettingsPage() {
 
   if (role !== "owner" || !gymId) {
     return (
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader>
           <CardTitle>Owner settings</CardTitle>
           <CardDescription>
@@ -393,7 +393,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader>
           <CardTitle className="text-xl">Gym settings</CardTitle>
           <CardDescription>
@@ -774,7 +774,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-lg">AI workout &amp; diet plans</CardTitle>
@@ -788,7 +788,7 @@ export default function SettingsPage() {
             className="min-h-11 touch-manipulation sm:min-h-9"
             onClick={() => setAiDialogOpen(true)}
           >
-            <Sparkles className="size-4" aria-hidden="true" />
+            <KeyRound className="size-4" aria-hidden="true" />
             <span>Manage AI providers</span>
           </Button>
         </CardHeader>
@@ -816,7 +816,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="rounded-2xl shadow-xs">
         <CardHeader>
           <CardTitle className="text-lg">Staff & trainers</CardTitle>
           <CardDescription>

@@ -228,7 +228,7 @@ export function DataTable({
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-muted/40 p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-dashed bg-muted/40 p-8 text-center text-sm text-muted-foreground">
           No members match this filter{query.trim() ? ` for “${query.trim()}”` : ""}.
         </div>
       ) : (
