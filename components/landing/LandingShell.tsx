@@ -361,14 +361,31 @@ export function LandingShell() {
       </main>
 
       <footer className="lp-foot lp-wrap">
-        <span>GymGrid · Member operations for Bangladesh gyms</span>
-        <nav aria-label="Footer">
-          <Link href="/admin">Admin</Link>
-          <Link href="/member">Member</Link>
-          <Link href="/desk">Desk</Link>
-          <Link href="/desk-qr">Desk QR</Link>
-          <Link href="/checkin">Check in</Link>
-        </nav>
+        <div className="lp-foot-main">
+          <span>
+            © <span suppressHydrationWarning>{new Date().getFullYear()}</span>{" "}
+            GymGrid · Member operations for Bangladesh gyms
+          </span>
+          <nav aria-label="Footer">
+            <Link href="/admin">Admin</Link>
+            <Link href="/member">Member</Link>
+            <Link href="/desk">Desk</Link>
+            <Link href="/desk-qr">Desk QR</Link>
+            <Link href="/checkin">Check in</Link>
+          </nav>
+        </div>
+        <div className="lp-foot-credit">
+          <span>
+            Designed &amp; built by{" "}
+            <a
+              href="https://ashrafulasif.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Ashraful Asif
+            </a>
+          </span>
+        </div>
       </footer>
     </div>
   );

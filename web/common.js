@@ -2,8 +2,10 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_KEY, GYM_NAME } from './config.js';
 
-import { $, el } from './dom.js';
-export { $, el };
+import { $, el, ensureFooter } from './dom.js';
+export { $, el, ensureFooter };
+
+ensureFooter(GYM_NAME);
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 export const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' }); // YYYY-MM-DD, gym time

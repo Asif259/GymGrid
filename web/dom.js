@@ -34,3 +34,22 @@ export function icon(name) {
   svg.append(use);
   return svg;
 }
+
+export function ensureFooter(brandName = 'GymGrid') {
+  if (typeof document === 'undefined' || document.querySelector('.site-footer')) return;
+  const host = document.querySelector('main') || document.body;
+  const year = String(new Date().getFullYear());
+  const link = el('a', {
+    href: 'https://ashrafulasif.vercel.app',
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    textContent: 'Ashraful Asif',
+  });
+  const footer = el(
+    'footer',
+    { className: 'site-footer no-print' },
+    el('p', { className: 'site-footer-copy', textContent: `© ${year} ${brandName}` }),
+    el('p', { className: 'site-footer-credit' }, 'Designed & built by ', link),
+  );
+  host.append(footer);
+}

@@ -1897,3 +1897,47 @@ dialog::backdrop {
   body { background: #fff; color: #000; }
   .card { border: 0; box-shadow: none; padding: 0; }
 }
+
+.site-footer {
+  margin-top: var(--space-6, 1.5rem);
+  padding: var(--space-4, 1rem) 0;
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.site-footer-copy,
+.site-footer-credit {
+  margin: 0;
+}
+.site-footer-credit {
+  opacity: 0.85;
+  padding-inline-start: 1rem;
+  border-inline-start: 1px solid var(--hairline);
+}
+.site-footer-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.site-footer-credit a:hover,
+.site-footer-credit a:focus-visible {
+  color: var(--ink);
+  opacity: 1;
+}
+@media (max-width: 640px) {
+  .site-footer {
+    flex-direction: column;
+    text-align: center;
+  }
+  .site-footer-credit {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--hairline);
+  }
+}

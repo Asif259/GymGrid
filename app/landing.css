@@ -480,16 +480,54 @@ html.lenis, html.lenis body { height: auto; }
 .lp-close a:focus-visible { outline-color: #a8c7fa; }
 .lp-foot {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
   padding-block: 2rem;
   border-top: 1px solid var(--lp-line);
   font-size: 0.85rem;
   color: var(--lp-muted);
 }
+.lp-foot-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
 .lp-foot nav { display: flex; gap: 0.25rem 1.25rem; flex-wrap: wrap; }
 .lp-foot nav a { display: inline-flex; align-items: center; min-height: 44px; }
+.lp-foot-credit {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--lp-line);
+  font-size: 0.78rem;
+  color: var(--lp-muted);
+  opacity: 0.85;
+}
+.lp-foot-credit a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+.lp-foot-credit a:hover,
+.lp-foot-credit a:focus-visible {
+  color: var(--lp-ink);
+  opacity: 1;
+}
+@media (max-width: 40rem) {
+  .lp-foot-main {
+    flex-direction: column;
+    text-align: center;
+  }
+  .lp-foot nav {
+    justify-content: center;
+  }
+  .lp-foot-credit {
+    justify-content: center;
+    text-align: center;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .lp *, .lp *::before, .lp *::after { transition: none !important; animation: none !important; }

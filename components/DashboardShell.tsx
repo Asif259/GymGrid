@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { LogOut, User, type LucideIcon } from "lucide-react";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -302,6 +303,7 @@ export function DashboardShell({
           <div className="flex min-w-0 flex-1 flex-col gap-5 md:gap-6">
             {children}
           </div>
+          <SiteFooter brandName={brand.name} />
         </div>
       </SidebarInset>
 

@@ -1,8 +1,10 @@
 <!doctype html>
+<!-- Designed & built by Moh Asraful Hasan Asif -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="author" content="Moh Asraful Hasan Asif">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#f0f4f9">
   <title>Design preview (sample data)</title>
@@ -56,12 +58,13 @@
   </main>
 </div>
 <script type="module">
-  import { el, ensureSprite, icon } from './dom.js';
+  import { el, ensureFooter, ensureSprite, icon } from './dom.js';
   import { money, renewalLink, fmtDate, sortMembers } from './logic.js';
   import { renderPlates, renderPulse, unpaidCard, confirmCard, remindCard, renderMembersTable, renderTableToolbar } from './views.js';
   import { REPORT, MEMBERS, PULSE_7D } from './preview-data.js';
 
   ensureSprite();
+  ensureFooter('Our Gym');
   const $ = (id) => document.getElementById(id);
   const cur = (n) => money(n, '৳');
   const wa = (m, plan) => renewalLink(plan === undefined ? m : { ...m, plans: plan ? { name: plan } : undefined }, 'Our Gym', REPORT.date, 'https://our-gym.example');

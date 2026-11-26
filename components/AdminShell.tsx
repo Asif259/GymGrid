@@ -17,6 +17,7 @@ import { useGymStore } from "@/lib/stores/gym-store";
 import { useMembersStore } from "@/lib/stores/members-store";
 import { DashboardShell, type DashboardNavItem } from "@/components/DashboardShell";
 import { LoginCard } from "@/components/LoginCard";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -176,6 +177,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </CardContent>
             </Card>
           ) : null}
+          <SiteFooter brandName={gymName} />
         </main>
       </div>
     );

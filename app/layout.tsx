@@ -9,6 +9,7 @@ import {
 } from "next/font/google";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
+import { AppFooter } from "@/components/AppFooter";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -58,6 +59,7 @@ export const metadata: Metadata = {
   },
   description:
     "GymGrid member management, QR check-in, billing, and workout plans.",
+  authors: [{ name: "Moh Asraful Hasan Asif" }],
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -82,7 +84,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
       className={`${inter.variable} ${bengali.variable} ${mono.variable} ${editorial.variable} ${geist.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-background font-sans text-foreground">
+      {/* <!-- Designed & built by Moh Asraful Hasan Asif --> */}
+      <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -90,7 +93,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           disableTransitionOnChange
         >
           <TooltipProvider>
-            {children}
+            <div className="flex-1">{children}</div>
+            <AppFooter />
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>

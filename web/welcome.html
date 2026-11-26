@@ -1,8 +1,10 @@
 <!doctype html>
+<!-- Designed & built by Moh Asraful Hasan Asif -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Moh Asraful Hasan Asif">
   <meta name="theme-color" content="#0f5132">
   <meta name="description" content="Check in with a QR, pay by bKash or Nagad, and keep your plans and receipts on your phone.">
   <title>Gym App: check in, pay, train</title>
@@ -66,8 +68,17 @@
       </div>
     </div>
   </main>
+  <footer class="site-footer no-print">
+    <p class="site-footer-copy">© <span id="footer-year"></span> Our Gym</p>
+    <p class="site-footer-credit">
+      Designed &amp; built by
+      <a href="https://ashrafulasif.vercel.app" target="_blank" rel="noopener noreferrer">Ashraful Asif</a>
+    </p>
+  </footer>
 </div>
 <script>
+  const yearEl = document.getElementById('footer-year');
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
   // Scale the 600x430 stage to its column; the wrapper takes the scaled height so nothing overlaps.
   const fit = document.getElementById('fit'), stage = document.getElementById('stage');
   const resize = () => { const s = Math.min(1, fit.clientWidth / 600); stage.style.transform = `scale(${s})`; fit.style.height = `${430 * s}px`; };
