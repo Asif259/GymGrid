@@ -24,7 +24,7 @@ const FAQ_SCHEMA = {
 
 // Runs before first paint so hero elements start hidden for the entrance, without a flash.
 const MOTION_FLAG =
-  "if(matchMedia('(prefers-reduced-motion: no-preference)').matches)document.documentElement.classList.add('lp-motion')";
+  "if(matchMedia('(prefers-reduced-motion: no-preference)').matches)document.documentElement.classList.add('js','lp-motion')";
 
 export default function HomePage() {
   return (

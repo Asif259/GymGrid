@@ -6,51 +6,29 @@ import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { SiteFooter } from "@/components/SiteFooter";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { FAQ } from "./faq";
+import { HeroDesk } from "./HeroDesk";
+import { MemberPass, OwnerView, Register, StepScreen } from "./mocks";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const CHAPTERS = [
-  {
-    n: "01",
-    title: "Members scan in at the desk",
-    body: "Print the Desk QR poster on plain paper. Members scan it with their phone camera, and the desk screen flags anyone whose plan is due or expired.",
-    row: { name: "Samira Hossain", meta: "Checked in · 06:42", status: "active" },
-  },
-  {
-    n: "02",
-    title: "bKash and Nagad land in one queue",
-    body: "Members send the fee to your gym number and type the TrxID into their pass. You match it to your wallet and confirm once. The expiry date and receipt update together.",
-    row: { name: "Arif Hasan", meta: "bKash · TrxID 9F3K2L7Q · ৳1,500", status: "pending" },
-  },
-  {
-    n: "03",
-    title: "Renewals show up two days early",
-    body: "Plans ending in 48 hours appear on the desk with a WhatsApp reminder already written. It opens in your own WhatsApp, so sending it costs nothing.",
-    row: { name: "Nusrat Jahan", meta: "Expires in 2 days", status: "due" },
-  },
-  {
-    n: "04",
-    title: "Workout and diet plans go to their phone",
-    body: "Build a plan once and assign it to a member or a whole group. It stays in their pass between sessions.",
-    row: { name: "Tanvir Ahmed", meta: "Push / Pull / Legs · shared", status: "active" },
-  },
+const STEPS = [
+  { title: "Scan the desk QR", body: "A printed poster at the door. Members scan it with their phone camera. No card, no turnstile." },
+  { title: "Check-in is marked", body: "The desk screen shows the scan with the member's plan status the moment it happens." },
+  { title: "Pay with a TrxID", body: "Members send the fee by bKash or Nagad to your number and type the TrxID into their pass." },
+  { title: "Staff verify it", body: "The TrxID waits in a queue. Check it in your own wallet, then confirm once." },
+  { title: "Receipt is issued", body: "The expiry date moves forward and a PDF receipt is ready for the member to download." },
 ] as const;
 
-const FEATURES = [
-  { k: "Catch unpaid walk-ins at the door", v: "Every scan appears on the desk screen with the member's plan status, so an expired plan is flagged before they reach the floor." },
-  { k: "Confirm every payment in one place", v: "Each bKash and Nagad TrxID waits in Pending Verification. Tap confirm and the member's expiry date and PDF receipt are done." },
-  { k: "Renew members before they lapse", v: "Anyone whose plan ends in two days is listed with a WhatsApp link to send them a reminder." },
-  { k: "Start the day knowing who is due", v: "An 8 AM email lists yesterday's check ins, payments received and today's renewals." },
-];
+const FIT = [
+  { h: "bKash and Nagad, straight to you", p: "Members pay your own wallet with Send Money. No payment gateway sits in between, so nothing is deducted." },
+  { h: "WhatsApp, one tap", p: "Renewals due in two days list a ready message. It opens in your WhatsApp, so there is no SMS bill." },
+  { h: "Built for Dhaka", p: "Amounts in ৳, times in Asia/Dhaka, and Bengali text renders cleanly." },
+] as const;
 
-const SURFACES = [
-  { href: "/admin", tag: "Owner and front desk", title: "Admin", body: "Members, plans, payments and receipts in one place." },
-  { href: "/member", tag: "Member mobile pass", title: "Member", body: "Opens in the phone's browser and pins to the home screen like an app." },
-  { href: "/desk", tag: "Live reception screen", title: "Desk", body: "Every scan, as it happens, with the member's plan status." },
-];
-
-const TICKER = ["Replace the paper register", "bKash and Nagad TrxID", "WhatsApp reminders", "Printed QR poster", "PDF receipts", "8 AM owner report", "Asia/Dhaka time"];
+const SLIDE = "No gateway fees. No SMS costs. No app store.";
 
 /** Word-masked heading. Screen readers get the plain sentence. */
 function Words({ text }: { text: string }) {
@@ -85,7 +63,7 @@ export function LandingShell() {
         ({ conditions }) => {
           const { motion, desktop } = conditions as { motion: boolean; desktop: boolean };
           if (!motion) {
-            html.classList.remove("lp-motion");
+            html.classList.remove("js", "lp-motion");
             return;
           }
 
@@ -94,64 +72,50 @@ export function LandingShell() {
           gsap.ticker.add(tick);
           gsap.ticker.lagSmoothing(0);
 
-          // Hero: eyebrow, headline words, lead, CTAs, then the phone and its chips.
-          const hero = gsap.timeline({ defaults: { ease: "power4.out" } });
-          hero
-            .fromTo(".lp-hero [data-enter='eyebrow']", { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.7 })
-            .fromTo(".lp-hero .lp-word", { yPercent: 110 }, { yPercent: 0, duration: 1, stagger: 0.05 }, "-=0.45")
-            .set(".lp-hero h1", { autoAlpha: 1 }, 0)
-            .fromTo(".lp-sweep", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power3.inOut" }, "-=0.5")
-            .fromTo(".lp-hero [data-enter='copy']", { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.08 }, "-=0.7")
-            .fromTo(".lp-phone", { y: 48, autoAlpha: 0, rotate: 2 }, { y: 0, autoAlpha: 1, rotate: 0, duration: 1.1, ease: "expo.out" }, 0.35)
-            .fromTo(".lp-chip", { scale: 0.9, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.6, stagger: 0.15, ease: "power3.out" }, "-=0.5");
+          // Hero: the headline paints at once (it is the LCP); only the desk demo rises in.
+          gsap.fromTo(".lp-hero-visual", { y: 48, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.1, ease: "expo.out", delay: 0.15 });
 
-          // Section headings: words rise out of a mask once.
           gsap.utils.toArray<HTMLElement>("[data-words]").forEach((el) =>
-            gsap.fromTo(el.querySelectorAll(".lp-word"), { yPercent: 110 }, {
-              yPercent: 0, duration: 0.95, ease: "power4.out", stagger: 0.04,
+            gsap.fromTo(el.querySelectorAll(".lp-word"), { yPercent: 115 }, {
+              yPercent: 0, duration: 1, ease: "power4.out", stagger: 0.05,
               scrollTrigger: { trigger: el, start: "top 85%", once: true },
             }),
           );
           gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) =>
-            gsap.fromTo(el, { y: 32, autoAlpha: 0 }, {
+            gsap.fromTo(el, { y: 28, autoAlpha: 0 }, {
               y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out",
-              scrollTrigger: { trigger: el, start: "top 85%", once: true },
-            }),
-          );
-          gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((group) =>
-            gsap.fromTo(group.children, { y: 36, autoAlpha: 0 }, {
-              y: 0, autoAlpha: 1, duration: 0.8, ease: "power3.out", stagger: 0.08,
-              scrollTrigger: { trigger: group, start: "top 82%", once: true },
-            }),
-          );
-          gsap.utils.toArray<HTMLElement>("[data-speed]").forEach((el) =>
-            gsap.to(el, {
-              yPercent: -Number(el.dataset.speed), ease: "none",
-              scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: 1.2 },
+              scrollTrigger: { trigger: el, start: "top 86%", once: true },
             }),
           );
 
+          // Owner view: the alert rows slide in once the dashboard is on screen.
+          gsap.fromTo("[data-owner-rows] .lp-panel", { y: 36, autoAlpha: 0 }, {
+            y: 0, autoAlpha: 1, duration: 0.9, ease: "power3.out", stagger: 0.14,
+            scrollTrigger: { trigger: ".lp-frame--wide", start: "top 70%", once: true },
+          });
+
+          // The one type moment: the three "no" lines slide across as the section passes.
+          gsap.fromTo(".lp-slide-track", { xPercent: 8 }, {
+            xPercent: -42, ease: "none",
+            scrollTrigger: { trigger: ".lp-slide", start: "top bottom", end: "bottom top", scrub: 1 },
+          });
+
           if (desktop) {
-            // Pinned story: one chapter per viewport of scroll, snapping to each chapter.
-            const last = CHAPTERS.length - 1;
+            // Pinned stage: one step per viewport of scroll; the phone screen follows the active step.
+            const last = STEPS.length - 1;
             gsap.timeline({
               scrollTrigger: {
-                trigger: ".lp-story",
+                trigger: ".lp-how",
                 start: "top top",
-                end: () => `+=${window.innerHeight * last}`,
-                pin: ".lp-story-stage",
+                end: () => `+=${window.innerHeight * last * 0.9}`,
+                pin: ".lp-how-stage",
                 anticipatePin: 1,
-                scrub: 0.8,
+                scrub: 0.6,
                 snap: { snapTo: 1 / last, duration: { min: 0.2, max: 0.5 }, ease: "power2.inOut" },
                 invalidateOnRefresh: true,
                 onUpdate: (s) => setActive(Math.round(s.progress * last)),
               },
             }).fromTo(".lp-progress-bar", { scaleY: 0 }, { scaleY: 1, ease: "none" });
-          } else {
-            gsap.fromTo(".lp-step", { y: 28, autoAlpha: 0 }, {
-              y: 0, autoAlpha: 1, duration: 0.8, ease: "power3.out", stagger: 0.1,
-              scrollTrigger: { trigger: ".lp-steps", start: "top 82%", once: true },
-            });
           }
 
           return () => {
@@ -164,7 +128,7 @@ export function LandingShell() {
       );
     }, root);
 
-    // Fonts and images shift layout after first paint; re-measure triggers once.
+    // Fonts and images move layout after first paint; re-measure triggers once.
     const refresh = () => ScrollTrigger.refresh();
     document.fonts?.ready.then(refresh);
     window.addEventListener("load", refresh);
@@ -173,114 +137,86 @@ export function LandingShell() {
       window.removeEventListener("load", refresh);
       mm.revert();
       ctx.revert();
-      html.classList.remove("lp-motion");
+      html.classList.remove("js", "lp-motion");
     };
   }, []);
-
-  const chapter = CHAPTERS[active];
 
   return (
     <div ref={root} className="lp">
       <a href="#main-content" className="lp-skip">Skip to content</a>
 
       <header className="lp-nav">
-        <Link href="/" className="lp-brand flex items-center gap-2">
-          <Image
-            src="/images/gymgrid-mark.png"
-            alt=""
-            width={28}
-            height={28}
-            className="size-7 shrink-0 object-contain"
-          />
-          <span>GymGrid</span>
+        <Link href="/" className="lp-brand">
+          <Image src="/images/gymgrid-mark.png" alt="" width={28} height={28} />
+          <span translate="no">GymGrid</span>
         </Link>
         <nav aria-label="Primary" className="lp-nav-links">
-          <a href="#demo">Demo</a>
-          <a href="#story">How it works</a>
-          <a href="#surfaces">Screens</a>
+          <a href="#how">How it works</a>
+          <a href="#owner">Owner view</a>
+          <a href="#member">Member pass</a>
           <a href="#faq">FAQ</a>
         </nav>
+        <ThemeToggle />
         <Link href="/onboarding" className="lp-btn lp-btn--sm">Set up your gym</Link>
       </header>
 
       <main id="main-content">
-        <section className="lp-hero lp-wrap" aria-labelledby="hero-title">
-          <div className="lp-hero-copy">
-            <p className="lp-eyebrow" data-enter="eyebrow">For gym owners and front-desk staff in Bangladesh</p>
-            <h1 id="hero-title" className="lp-display" data-enter="title">
-              <Words text="Replace the" />{" "}
-              <span className="lp-mark"><Words text="paper register" /><span className="lp-sweep" aria-hidden /></span>{" "}
-              <Words text="at your front desk." />
-            </h1>
-            <p className="lp-lead" data-enter="copy">
-              Members check in by scanning a printed QR. Their bKash and Nagad payments arrive with the TrxID, ready for you to confirm. Plans ending in two days come with a WhatsApp reminder ready to send.
-            </p>
-            <div className="lp-cta-block" data-enter="copy">
+        <section className="lp-hero" aria-labelledby="hero-title">
+          <div className="lp-wrap lp-hero-inner">
+            <div className="lp-hero-copy">
+              <h1 id="hero-title" className="lp-display">
+                Replace your front desk paper register
+              </h1>
+              <p className="lp-lead">
+                Track QR check-ins, bKash renewals, and expiring memberships live.
+              </p>
               <div className="lp-ctas">
-                <Link href="/onboarding" className="lp-btn">Set up your gym <span className="lp-arrow" aria-hidden>→</span></Link>
-                <Link href="/preview" className="lp-btn lp-btn--ghost">See the live preview</Link>
+                <Link href="/onboarding" className="lp-btn">
+                  Set up your gym
+                </Link>
+                <Link href="/preview" className="lp-btn lp-btn--ghost">
+                  See live preview
+                </Link>
               </div>
-              <p className="lp-micro">Runs in the browser on any phone or laptop. Members install nothing.</p>
             </div>
-          </div>
-          <div className="lp-hero-visual">
-            <div className="lp-phone">
-              <Image src="/images/screens/preview-phone.png" alt="Gym dashboard on a phone: 42 active members, 18 check ins today, ৳68,500 this month" width={390} height={844} priority />
-            </div>
-            <div className="lp-chip lp-chip--a" data-speed="40">
-              <span className="lp-dot lp-dot--pending" /> TrxID received · ৳1,500
-            </div>
-            <div className="lp-chip lp-chip--b" data-speed="80">
-              <span className="lp-dot lp-dot--active" /> Checked in · 06:42
+            <div className="lp-hero-visual" data-slot="hero" data-kind="product">
+              <HeroDesk />
             </div>
           </div>
         </section>
 
-        <section id="demo" className="lp-demo lp-wrap" aria-labelledby="demo-title">
-          <p className="lp-eyebrow" data-reveal>Watch it work</p>
-          <h2 id="demo-title" className="lp-h2" data-words><Words text="From QR scan to renewal in 30 seconds." /></h2>
-          <div className="lp-video" data-reveal>
-            <iframe
-              src="/qr_demo.html"
-              title="Animated demo: a member scans the desk QR, attendance appears on the desk screen, and a bKash renewal is confirmed"
-              loading="lazy"
-              allow="autoplay"
-            />
+        <section id="problem" className="lp-problem lp-wrap" aria-labelledby="problem-title">
+          <div className="lp-problem-copy">
+            <h2 id="problem-title" className="lp-h2" data-words><Words text="The register can’t tell you who paid." /></h2>
+            <ul className="lp-plain" data-reveal>
+              <li>Someone signs in at 6:42. Whether they paid this month is a guess.</li>
+              <li>A plan ended on Tuesday. Nobody noticed until the owner counted cash on Friday.</li>
+              <li>A bKash message says ৳1,500, but not which member it belongs to.</li>
+            </ul>
           </div>
-          <p className="lp-micro">Hover the video for pause, restart and a scrubber.</p>
+          <div data-reveal><Register /></div>
         </section>
 
-        <section id="story" className="lp-story" aria-labelledby="story-title">
-          <div className="lp-story-stage lp-wrap">
-            <div className="lp-story-copy">
-              <p className="lp-eyebrow">How it works</p>
-              <h2 id="story-title" className="lp-h2 lp-story-title" data-words><Words text="One morning at the desk." /></h2>
+        <section id="how" className="lp-how" aria-labelledby="how-title">
+          <div className="lp-how-stage lp-wrap">
+            <div className="lp-how-copy">
+              <h2 id="how-title" className="lp-h2" data-words><Words text="From the door to the receipt." /></h2>
               <ol className="lp-steps">
-                {CHAPTERS.map((c, i) => (
-                  <li key={c.n} className="lp-step" data-active={i === active || undefined}>
-                    <span className="lp-num">{c.n}</span>
-                    <div>
-                      <h3 className="lp-h3">{c.title}</h3>
-                      <p>{c.body}</p>
-                    </div>
+                {STEPS.map((s, i) => (
+                  <li key={s.title} className="lp-step" data-active={i === active || undefined}>
+                    <h3 className="lp-h3">{s.title}</h3>
+                    <p>{s.body}</p>
+                    <div className="lp-phone lp-phone--inline" aria-hidden><StepScreen step={i} /></div>
                   </li>
                 ))}
               </ol>
             </div>
-            <div className="lp-story-panel" aria-hidden>
+            <div className="lp-how-visual" aria-hidden>
               <div className="lp-progress"><span className="lp-progress-bar" /></div>
-              <div className="lp-queue">
-                <div className="lp-queue-head">
-                  <span>Desk · Today</span>
-                  <span className="lp-num">{chapter.n} / 04</span>
-                </div>
-                {CHAPTERS.map((c, i) => (
-                  <div key={c.n} className="lp-queue-row" data-on={i === active || undefined}>
-                    <div>
-                      <strong>{c.row.name}</strong>
-                      <span>{c.row.meta}</span>
-                    </div>
-                    <span className={`lp-status lp-status--${c.row.status}`}>{c.row.status}</span>
+              <div className="lp-phone">
+                {STEPS.map((s, i) => (
+                  <div key={s.title} className="lp-stepscreen" data-on={i === active || undefined}>
+                    <StepScreen step={i} />
                   </div>
                 ))}
               </div>
@@ -288,44 +224,40 @@ export function LandingShell() {
           </div>
         </section>
 
-        <section className="lp-features lp-wrap" aria-labelledby="features-title">
-          <h2 id="features-title" className="lp-h2" data-words><Words text="Built around bKash, WhatsApp and a front desk." /></h2>
-          <div className="lp-grid" data-stagger>
-            {FEATURES.map((f, i) => (
-              <article key={f.k} className="lp-card">
-                <span className="lp-num lp-card-n">0{i + 1}</span>
-                <h3 className="lp-h3">{f.k}</h3>
-                <p>{f.v}</p>
-              </article>
-            ))}
-          </div>
-          <div className="lp-inline-cta" data-reveal>
-            <p>Your desk can run this way by tomorrow morning.</p>
-            <Link href="/onboarding" className="lp-btn">Set up your gym <span className="lp-arrow" aria-hidden>→</span></Link>
+        <section id="owner" className="lp-owner lp-wrap" aria-labelledby="owner-title">
+          <h2 id="owner-title" className="lp-h2" data-words><Words text="Money truth, at a glance." /></h2>
+          <p className="lp-lead" data-reveal>
+            Active members, today&rsquo;s attendance, revenue and pending payments sit in one strip. Anyone who trained without paying is listed below it.
+          </p>
+          <OwnerView />
+        </section>
+
+        <section id="member" className="lp-member lp-wrap" aria-labelledby="member-title">
+          <div className="lp-phone lp-phone--pass" aria-hidden data-reveal><MemberPass /></div>
+          <div className="lp-member-copy">
+            <h2 id="member-title" className="lp-h2" data-words><Words text="A pass that lives on their phone." /></h2>
+            <p className="lp-lead" data-reveal>
+              Members open GymGrid in their browser, check in, pay a renewal with a TrxID, and download receipts. They also see their workout and diet plans and their visit streak.
+            </p>
+            <p className="lp-lead" data-reveal>It adds to the home screen like an app. Nothing to download from a store.</p>
           </div>
         </section>
 
-        <div className="lp-ticker" aria-hidden>
-          <div className="lp-ticker-track">
-            {[...TICKER, ...TICKER].map((t, i) => <span key={i}>{t}</span>)}
-          </div>
-        </div>
-
-        <section id="surfaces" className="lp-surfaces" aria-labelledby="surfaces-title">
+        <section id="bangladesh" className="lp-bd" aria-labelledby="bd-title">
           <div className="lp-wrap">
-            <h2 id="surfaces-title" className="lp-h2" data-words><Words text="Three screens. One gym." /></h2>
-            <div className="lp-shot" data-reveal>
-              <div data-speed="6">
-                <Image src="/images/screens/preview-desktop.png" alt="Admin dashboard with members, payments and attendance" width={1440} height={900} sizes="(min-width: 72rem) 72rem, 100vw" />
-              </div>
-            </div>
-            <div className="lp-grid lp-grid--3" data-stagger>
-              {SURFACES.map((s) => (
-                <Link key={s.href} href={s.href} className="lp-card lp-card--link">
-                  <span className="lp-eyebrow">{s.tag}</span>
-                  <h3 className="lp-h3">{s.title} <span className="lp-arrow" aria-hidden>→</span></h3>
-                  <p>{s.body}</p>
-                </Link>
+            <h2 id="bd-title" className="lp-h2" data-words><Words text="Made for how Bangladeshi gyms already run." /></h2>
+          </div>
+          <div className="lp-slide" aria-hidden>
+            <div className="lp-slide-track">{SLIDE}</div>
+          </div>
+          <p className="lp-sr">{SLIDE}</p>
+          <div className="lp-wrap">
+            <div className="lp-fit">
+              {FIT.map((f) => (
+                <div key={f.h} className="lp-fit-row" data-reveal>
+                  <h3 className="lp-fit-h">{f.h}</h3>
+                  <p>{f.p}</p>
+                </div>
               ))}
             </div>
           </div>
@@ -336,7 +268,7 @@ export function LandingShell() {
             <h2 id="faq-title" className="lp-h2" data-words><Words text="Questions owners ask" /></h2>
             <p className="lp-lead" data-reveal>Something else? Open the <Link href="/preview" className="lp-link">live preview</Link> and click around. No account needed.</p>
           </div>
-          <div data-stagger>
+          <div>
             {FAQ.map((f) => (
               <details key={f.q} className="lp-qa">
                 <summary>{f.q}</summary>
@@ -351,7 +283,7 @@ export function LandingShell() {
             <h2 id="close-title" className="lp-display" data-words><Words text="Open the doors tomorrow without the register." /></h2>
             <div className="lp-cta-block" data-reveal>
               <div className="lp-ctas">
-                <Link href="/onboarding" className="lp-btn lp-btn--light">Set up your gym <span className="lp-arrow" aria-hidden>→</span></Link>
+                <Link href="/onboarding" className="lp-btn lp-btn--onnavy">Set up your gym</Link>
                 <Link href="/desk-qr" className="lp-btn lp-btn--ghost-light">Print the desk QR</Link>
               </div>
               <p className="lp-micro">Sign in with your email. Add members when you are ready.</p>
@@ -360,33 +292,16 @@ export function LandingShell() {
         </section>
       </main>
 
-      <footer className="lp-foot lp-wrap">
-        <div className="lp-foot-main">
-          <span>
-            © <span suppressHydrationWarning>{new Date().getFullYear()}</span>{" "}
-            GymGrid · Member operations for Bangladesh gyms
-          </span>
-          <nav aria-label="Footer">
-            <Link href="/admin">Admin</Link>
-            <Link href="/member">Member</Link>
-            <Link href="/desk">Desk</Link>
-            <Link href="/desk-qr">Desk QR</Link>
-            <Link href="/checkin">Check in</Link>
-          </nav>
-        </div>
-        <div className="lp-foot-credit">
-          <span>
-            Designed &amp; built by{" "}
-            <a
-              href="https://ashrafulasif.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Ashraful Asif
-            </a>
-          </span>
-        </div>
-      </footer>
+      <div className="lp-wrap lp-foot">
+        <nav aria-label="Footer">
+          <Link href="/admin">Admin</Link>
+          <Link href="/member">Member</Link>
+          <Link href="/desk">Desk</Link>
+          <Link href="/desk-qr">Desk QR</Link>
+          <Link href="/checkin">Check in</Link>
+        </nav>
+        <SiteFooter />
+      </div>
     </div>
   );
 }
