@@ -326,13 +326,13 @@ export function TodayClient() {
                       </span>
                       {m.member_code ? (
                         <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
-                          {m.member_code}
+                          <bdi>{m.member_code}</bdi>
                         </Badge>
                       ) : null}
                       <StatusBadge member={m} />
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      +{m.phone}
+                    <p className="text-xs leading-[1.4] text-muted-foreground">
+                      <bdi>+{m.phone}</bdi>
                       {m.expiry_date ? ` · Until ${fmtDate(m.expiry_date)}` : ""}
                     </p>
                   </div>
@@ -387,8 +387,8 @@ export function TodayClient() {
                       <div className="text-sm font-medium text-foreground">
                         {u.name}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        +{u.phone} ·{" "}
+                      <div className="text-xs leading-[1.4] text-muted-foreground">
+                        <bdi>+{u.phone}</bdi> ·{" "}
                         {u.expiry_date ? `Ended ${fmtDate(u.expiry_date)}` : "Never paid"}
                       </div>
                     </div>
@@ -441,7 +441,8 @@ export function TodayClient() {
                         {owed?.trx_id ? (
                           <>
                             {" "}
-                            · TrxID <span className="font-mono text-foreground">{owed.trx_id}</span>
+                            · TrxID{" "}
+                            <bdi className="font-mono text-foreground">{owed.trx_id}</bdi>
                           </>
                         ) : null}
                       </div>

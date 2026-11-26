@@ -382,7 +382,7 @@ export function AiProvidersDialog({
                               </Label>
                               <Badge variant={st.variant}>{st.label}</Badge>
                               <span className="font-mono text-xs text-muted-foreground">
-                                ...{p.key_hint}
+                                <bdi>…{p.key_hint}</bdi>
                               </span>
                             </div>
                             <p className="mt-0.5 font-mono text-xs text-muted-foreground break-all">
@@ -560,7 +560,7 @@ export function AiProvidersDialog({
                     size="icon-sm"
                     aria-pressed={showKey}
                     aria-label={showKey ? "Hide API key" : "Show API key"}
-                    className="absolute top-1/2 right-1 -translate-y-1/2 [@media(pointer:coarse)]:min-h-10 [@media(pointer:coarse)]:min-w-10"
+                    className="absolute top-1/2 end-1 -translate-y-1/2 [@media(pointer:coarse)]:min-h-10 [@media(pointer:coarse)]:min-w-10"
                     onClick={() => setShowKey((v) => !v)}
                   >
                     {showKey ? (

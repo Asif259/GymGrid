@@ -55,11 +55,11 @@ export function StatCards({
             className={cn(
               "flex flex-col justify-between gap-4 p-4 sm:p-5",
               idx >= 2 && "sm:border-t sm:border-border xl:border-t-0",
-              idx % 2 === 1 && "sm:border-l sm:border-border xl:border-l-0",
+              idx % 2 === 1 && "sm:border-s sm:border-border xl:border-s-0",
             )}
           >
-            <div className="flex items-center justify-between gap-3">
-              <span className="truncate text-sm font-medium text-muted-foreground">
+            <div className="flex items-start justify-between gap-3">
+              <span className="min-w-0 text-sm leading-[1.35] font-medium text-muted-foreground text-pretty">
                 {stat.label}
               </span>
               <span
@@ -72,17 +72,17 @@ export function StatCards({
               </span>
             </div>
 
-            <p className="text-2xl font-medium tracking-tight tabular-nums text-foreground sm:text-[1.875rem] sm:leading-9">
+            <p className="text-2xl leading-[1.15] font-medium tracking-tight tabular-nums text-foreground sm:text-[1.875rem]">
               {stat.value}
             </p>
 
-            <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
-              <span className="truncate text-xs text-muted-foreground">
+            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
+              <span className="min-w-0 text-xs leading-[1.4] text-muted-foreground text-pretty">
                 {stat.caption}
               </span>
               <Badge
                 className={cn(
-                  "rounded-md font-mono text-[11px] font-medium tabular-nums",
+                  "shrink-0 rounded-md font-mono text-[11px] font-medium tabular-nums",
                   DELTA_CLASSES[stat.deltaTone],
                 )}
               >

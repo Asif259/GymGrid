@@ -110,10 +110,10 @@ export function DashboardShell({
 
   const accountSummary = (
     <>
-      <div className="truncate text-xs font-medium text-foreground">
-        {account.primaryLabel}
+      <div className="truncate text-xs leading-[1.35] font-medium text-foreground">
+        <bdi>{account.primaryLabel}</bdi>
       </div>
-      <div className="truncate text-xs text-muted-foreground capitalize">
+      <div className="truncate text-xs leading-[1.35] text-muted-foreground capitalize">
         {account.secondaryLabel}
       </div>
     </>
@@ -218,7 +218,7 @@ export function DashboardShell({
               <button
                 type="button"
                 onClick={account.onOpenProfile}
-                className="min-w-0 flex-1 rounded-lg px-1.5 py-1 text-left outline-hidden transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring touch-manipulation group-data-[collapsible=icon]:hidden"
+                className="min-w-0 flex-1 rounded-lg px-1.5 py-1 text-start outline-hidden transition-colors hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring touch-manipulation group-data-[collapsible=icon]:hidden"
               >
                 {accountSummary}
                 <span className="sr-only"> — open profile</span>
@@ -254,8 +254,8 @@ export function DashboardShell({
                 className="md:hidden"
               />
               <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  <h1 className="truncate font-[family-name:var(--font-editorial)] text-xl font-medium tracking-[-0.02em] text-foreground md:text-[1.75rem] md:leading-8">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h1 className="font-[family-name:var(--font-editorial)] text-xl leading-[1.2] font-medium tracking-[-0.02em] text-foreground text-balance md:text-[1.75rem]">
                     {header.title}
                   </h1>
                   {header.badge ? (
@@ -263,7 +263,7 @@ export function DashboardShell({
                   ) : null}
                 </div>
                 {header.subtitle ? (
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="text-xs leading-[1.4] text-muted-foreground text-pretty">
                     {header.subtitle}
                   </p>
                 ) : null}
@@ -336,14 +336,14 @@ export function DashboardShell({
                   <Icon className="size-5" aria-hidden="true" />
                   {item.badgeDot ? (
                     <span
-                      className="absolute right-1.5 top-0.5 size-2 rounded-full bg-status-yellow-fg"
+                      className="absolute end-1.5 top-0.5 size-2 rounded-full bg-status-yellow-fg"
                       aria-hidden="true"
                     />
                   ) : null}
                 </span>
                 <span
                   className={cn(
-                    "max-w-full truncate text-[11px] leading-none",
+                    "max-w-full truncate text-[11px] leading-[1.2]",
                     item.active ? "font-semibold text-primary" : "font-medium",
                   )}
                 >

@@ -278,17 +278,20 @@ export function DataTable({
                           </Avatar>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="truncate font-medium text-foreground">
-                                {m.name}
+                              <span
+                                title={m.name}
+                                className="truncate font-medium text-foreground"
+                              >
+                                <bdi>{m.name}</bdi>
                               </span>
                               {m.member_code ? (
-                                <Badge variant="outline" className="font-mono text-[11px] tabular-nums">
-                                  {m.member_code}
+                                <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
+                                  <bdi>{m.member_code}</bdi>
                                 </Badge>
                               ) : null}
                             </div>
-                            <div className="truncate text-xs text-muted-foreground">
-                              +{m.phone}
+                            <div className="truncate text-xs leading-[1.35] text-muted-foreground">
+                              <bdi>+{m.phone}</bdi>
                               {m.plans?.name ? ` · ${m.plans.name}` : ""}
                             </div>
                           </div>

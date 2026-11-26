@@ -179,6 +179,11 @@
   }
   html {
     @apply font-sans;
+    scroll-padding-top: 4.5rem;
+  }
+  a {
+    text-underline-position: from-font;
+    text-decoration-thickness: from-font;
   }
   .hl-page {
     --font-heading: var(--font-geist), "Geist", system-ui, -apple-system, sans-serif;

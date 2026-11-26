@@ -206,7 +206,7 @@ export function MemberPay({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
                 <CardTitle className="text-lg">Current plan &amp; renewal</CardTitle>
-                <CardDescription className="truncate">
+                <CardDescription className="text-pretty leading-[1.4]">
                   {member.plans ? member.plans.name : "No plan assigned"}
                 </CardDescription>
               </div>
@@ -217,33 +217,33 @@ export function MemberPay({
           <CardContent className="flex flex-col gap-4">
             {member.plans ? (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div className="flex min-w-0 flex-col gap-0.5 rounded-2xl border bg-secondary/40 p-3">
-                  <span className="text-xs text-muted-foreground">Cycle fee</span>
-                  <span className="truncate text-base font-semibold text-foreground tabular-nums">
+                <div className="flex min-w-0 flex-col gap-0.5 rounded-xl border bg-secondary/40 p-3">
+                  <span className="text-xs leading-[1.35] text-muted-foreground">Cycle fee</span>
+                  <span className="break-words text-base leading-[1.3] font-medium text-foreground tabular-nums">
                     {money(member.plans.price, currency)}
                   </span>
                 </div>
-                <div className="flex min-w-0 flex-col gap-0.5 rounded-2xl border bg-secondary/40 p-3">
-                  <span className="text-xs text-muted-foreground">Duration</span>
-                  <span className="truncate text-base font-semibold text-foreground tabular-nums">
+                <div className="flex min-w-0 flex-col gap-0.5 rounded-xl border bg-secondary/40 p-3">
+                  <span className="text-xs leading-[1.35] text-muted-foreground">Duration</span>
+                  <span className="break-words text-base leading-[1.3] font-medium text-foreground tabular-nums">
                     {member.plans.months}{" "}
                     {member.plans.months === 1 ? "month" : "months"}
                   </span>
                 </div>
-                <div className="col-span-2 flex min-w-0 flex-col gap-0.5 rounded-2xl border bg-secondary/40 p-3 sm:col-span-1">
-                  <span className="text-xs text-muted-foreground">Valid until</span>
-                  <span className="truncate text-base font-semibold text-foreground tabular-nums">
+                <div className="col-span-2 flex min-w-0 flex-col gap-0.5 rounded-xl border bg-secondary/40 p-3 sm:col-span-1">
+                  <span className="text-xs leading-[1.35] text-muted-foreground">Valid until</span>
+                  <span className="break-words text-base leading-[1.3] font-medium text-foreground tabular-nums">
                     {member.expiry_date ? fmtDate(member.expiry_date) : "Not active"}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed bg-secondary/40 p-3.5 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed bg-secondary/40 p-3.5 text-sm leading-[1.45] text-muted-foreground">
                 Ask the front desk to assign a plan first.
               </div>
             )}
 
-            <p className="rounded-2xl border bg-secondary/30 p-3.5 text-xs leading-relaxed text-muted-foreground">
+            <p className="max-w-[65ch] rounded-xl border bg-secondary/30 p-3.5 text-xs leading-[1.5] text-muted-foreground text-pretty">
               Renewing early extends your cycle directly from your current expiry date.
               If your plan has already expired, your new cycle starts when the front desk
               confirms your TrxID.
@@ -260,7 +260,7 @@ export function MemberPay({
                   <CardTitle className="text-base text-foreground">
                     Pending TrxID verification
                   </CardTitle>
-                  <CardDescription className="text-foreground/85">
+                  <CardDescription className="max-w-[65ch] text-foreground/85 text-pretty leading-[1.45]">
                     Your payment is in the desk queue—no need to pay again if you already
                     sent money.
                   </CardDescription>
@@ -269,28 +269,28 @@ export function MemberPay({
             </CardHeader>
 
             <CardContent className="flex flex-col gap-4">
-              <dl className="grid grid-cols-2 gap-3 rounded-2xl bg-card/70 p-3.5 text-foreground">
+              <dl className="grid grid-cols-2 gap-3 rounded-xl bg-card/70 p-3.5 text-foreground">
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <dt className="text-xs text-muted-foreground">Amount</dt>
-                  <dd className="truncate text-sm font-semibold tabular-nums">
+                  <dd className="break-words text-sm leading-[1.35] font-medium tabular-nums">
                     {money(owed.amount, currency)}
                   </dd>
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <dt className="text-xs text-muted-foreground">Method</dt>
-                  <dd className="truncate text-sm font-medium capitalize">
+                  <dd className="break-words text-sm leading-[1.35] font-medium capitalize">
                     {owed.method ?? "Mobile wallet"}
                   </dd>
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <dt className="text-xs text-muted-foreground">TrxID</dt>
                   <dd className="font-mono text-xs font-medium break-all" translate="no">
-                    {owed.trx_id || "—"}
+                    <bdi>{owed.trx_id || "—"}</bdi>
                   </dd>
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <dt className="text-xs text-muted-foreground">Submitted</dt>
-                  <dd className="truncate text-xs font-medium tabular-nums">
+                  <dd className="break-words text-xs leading-[1.35] font-medium tabular-nums">
                     {formatSubmissionDate(owed.created_at)}
                   </dd>
                 </div>
@@ -386,10 +386,10 @@ export function MemberPay({
                       {wallet.label}
                     </div>
                     <div
-                      className="truncate font-mono text-base font-medium text-foreground tabular-nums"
+                      className="break-all font-mono text-base leading-[1.35] font-medium text-foreground tabular-nums"
                       translate="no"
                     >
-                      {wallet.number}
+                      <bdi>{wallet.number}</bdi>
                     </div>
                   </div>
                   <Button

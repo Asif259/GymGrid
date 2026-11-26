@@ -124,7 +124,7 @@ export function MemberPlans({
             {goal ? (
               <Badge
                 variant="secondary"
-                className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-left whitespace-normal break-words"
+                className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-start whitespace-normal break-words"
               >
                 <Target aria-hidden="true" />
                 <span>Goal: {goal}</span>
@@ -133,7 +133,7 @@ export function MemberPlans({
             {dietPref ? (
               <Badge
                 variant="outline"
-                className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-left whitespace-normal break-words"
+                className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-start whitespace-normal break-words"
               >
                 <Salad aria-hidden="true" />
                 <span>Diet: {dietPref}</span>
@@ -142,14 +142,14 @@ export function MemberPlans({
             {allergies ? (
               <Badge
                 variant="outline"
-                className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-left whitespace-normal break-words"
+                className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-start whitespace-normal break-words"
               >
                 <AlertTriangle aria-hidden="true" />
                 <span>Allergies: {allergies}</span>
               </Badge>
             ) : null}
             {injuries ? (
-              <Badge className="h-auto max-w-full gap-1.5 rounded-xl border-transparent bg-status-yellow-bg px-2.5 py-1 text-left text-status-yellow-fg whitespace-normal break-words">
+              <Badge className="h-auto max-w-full gap-1.5 rounded-xl border-transparent bg-status-yellow-bg px-2.5 py-1 text-start text-status-yellow-fg whitespace-normal break-words">
                 <AlertTriangle aria-hidden="true" />
                 <span>Notes: {injuries}</span>
               </Badge>

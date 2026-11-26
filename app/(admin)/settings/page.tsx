@@ -803,7 +803,7 @@ export default function SettingsPage() {
                 >
                   <span>{p.label}</span>
                   <span className="font-mono text-[11px] text-muted-foreground">
-                    ...{p.key_hint}
+                    <bdi>…{p.key_hint}</bdi>
                   </span>
                 </Badge>
               ))}

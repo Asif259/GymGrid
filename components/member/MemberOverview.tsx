@@ -380,11 +380,11 @@ export function MemberOverview({
                 <CardTitle className="text-base font-medium">Member pass</CardTitle>
                 {member.member_code ? (
                   <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
-                    {member.member_code}
+                    <bdi>{member.member_code}</bdi>
                   </Badge>
                 ) : null}
               </div>
-              <CardDescription className="mt-1 truncate">
+              <CardDescription className="mt-1 text-pretty leading-[1.4]">
                 Coach: {trainerName.trim() || "Not assigned"}
               </CardDescription>
             </div>
@@ -392,17 +392,17 @@ export function MemberOverview({
           </CardHeader>
 
           <CardContent className="flex flex-1 flex-col gap-5 pt-4">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
               {profileChips
                 .filter((chip) => chip.label !== "Member ID")
                 .map((chip) => (
                   <div key={chip.label} className="min-w-0">
-                    <dt className="text-[11px] font-medium text-muted-foreground">
+                    <dt className="text-[11px] leading-[1.3] font-medium text-muted-foreground">
                       {chip.label}
                     </dt>
                     <dd
                       className={cn(
-                        "truncate text-xs font-medium text-foreground tabular-nums",
+                        "break-words text-xs leading-[1.4] font-medium text-foreground tabular-nums",
                         chip.capitalize && "capitalize",
                       )}
                     >
@@ -611,7 +611,7 @@ export function MemberOverview({
               ) : null}
             </div>
 
-            <div className="flex flex-col gap-2.5 border-t border-border/60 pt-4">
+            <div className="flex flex-col gap-3 border-t border-border/60 pt-5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">
@@ -639,7 +639,7 @@ export function MemberOverview({
                     className="flex items-center justify-between gap-3 py-2 text-xs first:pt-0 last:pb-0"
                   >
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-sm font-medium text-foreground tabular-nums">
+                      <span className="text-sm leading-[1.35] font-medium text-foreground tabular-nums">
                         {fmtDate(v.day)}
                       </span>
                       {v.day === todayIso ? (
@@ -654,14 +654,14 @@ export function MemberOverview({
                   </div>
                 ))}
                 {recentVisits.length === 0 ? (
-                  <p className="py-2 text-xs text-muted-foreground">
+                  <p className="max-w-[65ch] py-2 text-xs leading-[1.45] text-muted-foreground text-pretty">
                     No visits recorded yet. Scan the desk QR poster when you arrive to log your first check-in.
                   </p>
                 ) : null}
               </div>
             </div>
 
-            <div className="flex flex-col gap-2.5 border-t border-border/60 pt-4">
+            <div className="flex flex-col gap-3 border-t border-border/60 pt-5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-foreground">
                   Latest receipt
@@ -680,17 +680,20 @@ export function MemberOverview({
               {latestReceipt ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-secondary/40 p-3">
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-foreground tabular-nums">
+                    <div className="text-sm leading-[1.35] font-medium text-foreground tabular-nums">
                       {money(latestReceipt.amount, currency)} ·{" "}
                       {latestReceipt.method ?? "cash"}
                     </div>
-                    <div className="truncate text-xs text-muted-foreground tabular-nums">
+                    <div className="break-words text-xs leading-[1.4] text-muted-foreground tabular-nums">
                       {latestReceipt.paid_on
                         ? fmtDate(latestReceipt.paid_on)
                         : "Confirmed"}
-                      {latestReceipt.receipt_no
-                        ? ` · ${latestReceipt.receipt_no}`
-                        : ""}
+                      {latestReceipt.receipt_no ? (
+                        <>
+                          {" "}
+                          · <bdi>{latestReceipt.receipt_no}</bdi>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
