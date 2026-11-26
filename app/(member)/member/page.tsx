@@ -11,6 +11,7 @@ import { MemberPlans } from "@/components/member/MemberPlans";
 import { MemberPay } from "@/components/member/MemberPay";
 import { MemberVisits } from "@/components/member/MemberVisits";
 import { MemberReceipts } from "@/components/member/MemberReceipts";
+import { MemberProfile } from "@/components/member/MemberProfile";
 import type { Payment } from "@/types/gym";
 
 async function downloadPdf(payment: Payment) {
@@ -28,6 +29,7 @@ async function downloadPdf(payment: Payment) {
 
 function MemberPageInner() {
   const {
+    user,
     member,
     settings,
     workout,
@@ -43,6 +45,7 @@ function MemberPageInner() {
     loadMemberData,
     refreshMemberData,
     refreshing,
+    signOut,
   } = useMemberAppStore();
 
   const navigateTab = (next: MemberTab) => {
@@ -98,6 +101,20 @@ function MemberPageInner() {
                 onDownloadPdf={(payment) => void downloadPdf(payment)}
               />
             );
+
+          case "profile":
+            return member ? (
+              <MemberProfile
+                member={member}
+                settings={settings}
+                trainerName={trainerName}
+                email={user?.email ?? null}
+                onUpdated={async () => {
+                  await loadMemberData(member.gym_id ?? null);
+                }}
+                onSignOut={() => void signOut()}
+              />
+            ) : null;
 
           default: // "home"
             return member ? (

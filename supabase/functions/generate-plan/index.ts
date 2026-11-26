@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
 
   const { error: updateErr } = await db
     .from('members')
-    .update(intake)
+    .update({ ...intake, details_updated_at: new Date().toISOString() })
     .eq('id', member.id);
   if (updateErr) {
     console.error('member intake update error:', updateErr.message);

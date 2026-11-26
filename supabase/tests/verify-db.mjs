@@ -560,6 +560,33 @@ await as(OWNER, async () => {
 const [vcnt] = await q(`select count(*)::int n from vault.secrets`);
 check('ai_providers: delete_ai_provider removes Vault secret', vcnt.n === 0, vcnt);
 
+// ---------- Member self-profile update RPC + details_updated_at ----------
+await as(MEMBER, async () => {
+  const [ts] = await q(`
+    select update_my_profile(
+      '${A}', 'Alpha Updated', '+880 1711-223344', 'muscle', 27, 'male',
+      178, 76.5, 80.0, 'intermediate', 4, 'full_gym', 'moderate',
+      'mild shoulder', 'halal', 'shellfish'
+    ) ts
+  `);
+  const [mAfter] = await q(`
+    select name, phone, goal, age, height_cm, weight_kg::float, goal_weight_kg::float,
+           level, days_per_week, equipment, activity, injuries, diet_pref, allergies,
+           details_updated_at, status
+    from members where id = '${A}'
+  `);
+  const dupPhoneErr = await fails(`select update_my_profile('${A}', 'Alpha Updated', '15550000002')`);
+  const otherMemberErr = await fails(`select update_my_profile('${B}', 'Hack B', '8801711223345')`);
+  const badAgeErr = await fails(`select update_my_profile('${A}', 'Alpha', '8801711223344', 'muscle', 5)`);
+  check('update_my_profile: member updates own details, stamps details_updated_at, rejects bad/dup/other',
+    !!ts.ts && mAfter.name === 'Alpha Updated' && mAfter.phone === '8801711223344'
+      && mAfter.goal === 'muscle' && mAfter.age === 27 && mAfter.level === 'intermediate'
+      && mAfter.days_per_week === 4 && mAfter.allergies === 'shellfish'
+      && !!mAfter.details_updated_at && mAfter.status === 'active'
+      && !!dupPhoneErr && !!otherMemberErr && !!badAgeErr,
+    { ts, mAfter, dupPhoneErr, otherMemberErr, badAgeErr });
+});
+
 let pass = true;
 for (const r of results) { pass &&= r.ok; console.log(`${r.ok ? 'PASS' : 'FAIL'} - ${r.name}${r.ok ? '' : ' :: ' + JSON.stringify(r.evidence)}`); }
 console.log(`VERDICT: ${pass ? 'PASS' : 'FAIL'} (${results.filter(r => r.ok).length}/${results.length})`);

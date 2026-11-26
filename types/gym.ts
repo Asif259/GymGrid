@@ -103,6 +103,7 @@ export interface Member {
   injuries?: string | null;
   diet_pref?: string | null;
   allergies?: string | null;
+  details_updated_at?: string | null;
   plans?: MemberPlanRef | null;
   payments?: Payment[];
   gyms?: Partial<Gym> | null;

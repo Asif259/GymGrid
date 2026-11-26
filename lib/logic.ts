@@ -280,6 +280,29 @@ export function hhmmDhaka(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' });
 }
 
+/**
+ * Format an ISO timestamp in Asia/Dhaka as `26 Nov, 15:35` (or with year if different year).
+ */
+export function fmtDateTimeDhaka(iso: string | null | undefined, now = new Date()): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const datePart = d
+    .toLocaleDateString('en-GB', {
+      timeZone: 'Asia/Dhaka',
+      day: 'numeric',
+      month: 'short',
+      ...(d.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+    })
+    .replace(/ /g, '\u00A0');
+  const timePart = d.toLocaleTimeString('en-GB', {
+    timeZone: 'Asia/Dhaka',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${datePart}, ${timePart}`;
+}
+
 export interface MemberKpis {
   standingLabel: string;
   planCaption: string;

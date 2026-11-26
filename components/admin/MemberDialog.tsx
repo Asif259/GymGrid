@@ -38,6 +38,7 @@ import {
 import {
   dhakaToday,
   fmtDate,
+  fmtDateTimeDhaka,
   money,
   pendingPayment,
   renewalLink,
@@ -429,6 +430,100 @@ function MemberDialogContent({
                 ))}
               </div>
             ) : null}
+          </section>
+
+          <section className="flex flex-col gap-3 rounded-2xl border bg-secondary/60 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-medium text-foreground">
+                Profile &amp; fitness details
+              </h3>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {member.details_updated_at
+                  ? `Updated by member: ${fmtDateTimeDhaka(member.details_updated_at)}`
+                  : "Not updated by member yet"}
+              </span>
+            </div>
+
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs sm:grid-cols-3">
+              <div>
+                <dt className="text-muted-foreground">Goal</dt>
+                <dd className="font-medium text-foreground capitalize">
+                  {member.goal?.trim() || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Age</dt>
+                <dd className="font-medium text-foreground tabular-nums">
+                  {member.age != null ? member.age : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Sex</dt>
+                <dd className="font-medium text-foreground capitalize">
+                  {member.sex?.trim() || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Height</dt>
+                <dd className="font-medium text-foreground tabular-nums">
+                  {member.height_cm != null ? `${member.height_cm} cm` : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Weight</dt>
+                <dd className="font-medium text-foreground tabular-nums">
+                  {member.weight_kg != null ? `${member.weight_kg} kg` : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Goal weight</dt>
+                <dd className="font-medium text-foreground tabular-nums">
+                  {member.goal_weight_kg != null ? `${member.goal_weight_kg} kg` : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Level</dt>
+                <dd className="font-medium text-foreground capitalize">
+                  {member.level?.trim() || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Days / week</dt>
+                <dd className="font-medium text-foreground tabular-nums">
+                  {member.days_per_week != null ? `${member.days_per_week} days` : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Equipment</dt>
+                <dd className="font-medium text-foreground capitalize">
+                  {member.equipment ? member.equipment.replace(/_/g, " ") : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Activity</dt>
+                <dd className="font-medium text-foreground capitalize">
+                  {member.activity?.trim() || "—"}
+                </dd>
+              </div>
+              <div className="col-span-2 sm:col-span-3">
+                <dt className="text-muted-foreground">Injuries</dt>
+                <dd className="font-medium text-foreground break-words">
+                  {member.injuries?.trim() || "—"}
+                </dd>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <dt className="text-muted-foreground">Diet pref</dt>
+                <dd className="font-medium text-foreground break-words">
+                  {member.diet_pref?.trim() || "—"}
+                </dd>
+              </div>
+              <div className="col-span-2 sm:col-span-2">
+                <dt className="text-muted-foreground">Allergies</dt>
+                <dd className="font-medium text-foreground break-words">
+                  {member.allergies?.trim() || "—"}
+                </dd>
+              </div>
+            </dl>
           </section>
 
           <section className="flex flex-col gap-3 rounded-2xl border bg-secondary/60 p-4">

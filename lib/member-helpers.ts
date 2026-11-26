@@ -1,4 +1,4 @@
-export type MemberTab = 'home' | 'plans' | 'pay' | 'visits' | 'receipts';
+export type MemberTab = 'home' | 'plans' | 'pay' | 'visits' | 'receipts' | 'profile';
 
 export const VALID_MEMBER_TABS: readonly MemberTab[] = [
   'home',
@@ -6,6 +6,7 @@ export const VALID_MEMBER_TABS: readonly MemberTab[] = [
   'pay',
   'visits',
   'receipts',
+  'profile',
 ] as const;
 
 /**
@@ -95,5 +96,7 @@ export function resolvePaymentMethod(
  * Map mobile bottom navigation item count to a static Tailwind grid columns class.
  */
 export function mobileNavGridCols(count: number): string {
-  return count === 4 ? 'grid-cols-4' : 'grid-cols-5';
+  if (count === 4) return 'grid-cols-4';
+  if (count === 6) return 'grid-cols-6';
+  return 'grid-cols-5';
 }

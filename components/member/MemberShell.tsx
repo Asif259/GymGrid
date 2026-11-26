@@ -10,6 +10,7 @@ import {
   Dumbbell,
   LayoutDashboard,
   RefreshCw,
+  User,
   UserPlus,
 } from "lucide-react";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
@@ -34,7 +35,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { MemberProfileSheet } from "@/components/member/MemberProfileSheet";
 import { AiPlanDialog } from "@/components/member/AiPlanDialog";
 
 /** Shared dashboard-shaped loading skeleton used by both the shell pre-ready
@@ -69,7 +69,6 @@ function MemberShellInner({
   const {
     status,
     member,
-    trainerName,
     settings,
     tab,
     setTab,
@@ -81,10 +80,8 @@ function MemberShellInner({
     setStatus,
     setGymBranding,
     setPendingCheckin,
-    user,
   } = useMemberAppStore();
 
-  const [profileOpen, setProfileOpen] = useState(false);
   const [aiDialogOpen, setAiDialogOpen] = useState(() => setupParam === "ai");
 
   // Entry 1: clean ?setup=ai from URL once member data is ready (aiDialogOpen initialized from param)
@@ -309,6 +306,13 @@ function MemberShellInner({
       active: tab === "receipts",
       onSelect: () => selectTab("receipts"),
     },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: User,
+      active: tab === "profile",
+      onSelect: () => selectTab("profile"),
+    },
   ];
 
   return (
@@ -346,37 +350,26 @@ function MemberShellInner({
         account={{
           primaryLabel: member?.name ?? member?.phone ?? "Member",
           secondaryLabel: member?.status ?? "member",
-          onOpenProfile: () => setProfileOpen(true),
+          onOpenProfile: () => selectTab("profile"),
           onSignOut: () => void signOut(),
         }}
       >
         {children({
-          openProfile: () => setProfileOpen(true),
+          openProfile: () => selectTab("profile"),
           openAiPlan: () => setAiDialogOpen(true),
         })}
       </DashboardShell>
 
       {member ? (
-        <>
-          <MemberProfileSheet
-            open={profileOpen}
-            onOpenChange={setProfileOpen}
-            member={member}
-            settings={settings}
-            trainerName={trainerName}
-            email={user?.email ?? null}
-            onSignOut={() => void signOut()}
-          />
-          <AiPlanDialog
-            open={aiDialogOpen}
-            onOpenChange={setAiDialogOpen}
-            member={member}
-            onGenerated={async () => {
-              await loadMemberData(member.gym_id ?? null);
-              selectTab("plans");
-            }}
-          />
-        </>
+        <AiPlanDialog
+          open={aiDialogOpen}
+          onOpenChange={setAiDialogOpen}
+          member={member}
+          onGenerated={async () => {
+            await loadMemberData(member.gym_id ?? null);
+            selectTab("plans");
+          }}
+        />
       ) : null}
     </>
   );
