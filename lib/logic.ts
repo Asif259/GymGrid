@@ -281,6 +281,21 @@ export function hhmmDhaka(iso: string): string {
 }
 
 /**
+ * Format a customizable gym member ID from prefix, sequence number, zero-padding digits, and suffix.
+ */
+export function formatMemberCode(
+  prefix = 'MM-',
+  next = 1,
+  digits = 3,
+  suffix = '',
+): string {
+  const safeNext = Number.isFinite(next) ? Math.max(1, Math.trunc(next)) : 1;
+  const safeDigits = Number.isFinite(digits) ? Math.min(6, Math.max(0, Math.trunc(digits))) : 3;
+  const numPart = safeDigits > 0 ? String(safeNext).padStart(safeDigits, '0') : String(safeNext);
+  return `${prefix}${numPart}${suffix}`;
+}
+
+/**
  * Format an ISO timestamp in Asia/Dhaka as `26 Nov, 15:35` (or with year if different year).
  */
 export function fmtDateTimeDhaka(iso: string | null | undefined, now = new Date()): string {

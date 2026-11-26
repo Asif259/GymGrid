@@ -143,6 +143,7 @@ export function DataTable({
       if (!q) return true;
       return (
         m.name.toLowerCase().includes(q) ||
+        (m.member_code ?? "").toLowerCase().includes(q) ||
         m.phone.toLowerCase().includes(q) ||
         (m.plans?.name ?? "").toLowerCase().includes(q)
       );
@@ -194,7 +195,7 @@ export function DataTable({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <SearchInput
             aria-label="Search members"
-            placeholder="Search name, phone, plan"
+            placeholder="Search name, ID, phone, plan"
             value={query}
             onValueChange={(val) => {
               onQueryChange(val);
@@ -276,8 +277,15 @@ export function DataTable({
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <div className="truncate font-medium text-foreground">
-                              {m.name}
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="truncate font-medium text-foreground">
+                                {m.name}
+                              </span>
+                              {m.member_code ? (
+                                <Badge variant="outline" className="font-mono text-[11px] tabular-nums">
+                                  {m.member_code}
+                                </Badge>
+                              ) : null}
                             </div>
                             <div className="truncate text-xs text-muted-foreground">
                               +{m.phone}

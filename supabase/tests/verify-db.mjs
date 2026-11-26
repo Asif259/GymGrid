@@ -587,6 +587,43 @@ await as(MEMBER, async () => {
     { ts, mAfter, dupPhoneErr, otherMemberErr, badAgeErr });
 });
 
+// ---------- Customizable Member IDs ----------
+const [backfilled] = await q(`select member_code from members where id = '${A}'`);
+check('member_code: existing members backfilled with MM-xxx', /^MM-\d{3}$/.test(backfilled?.member_code ?? ''), backfilled);
+
+await as(OWNER, async () => {
+  await q(`
+    update gyms
+    set member_code_prefix = 'MS-', member_code_suffix = '-26', member_code_next = 221, member_code_digits = 3
+    where id = '${DEFAULT_GYM}'
+  `);
+  const [ins1] = await q(`
+    insert into members (gym_id, name, phone) values ('${DEFAULT_GYM}', 'Code One', '15550000901')
+    returning member_code
+  `);
+  const [ins2] = await q(`
+    insert into members (gym_id, name, phone) values ('${DEFAULT_GYM}', 'Code Two', '15550000902')
+    returning member_code
+  `);
+  const dupCodeErr = await fails(`insert into members (gym_id, name, phone, member_code) values ('${DEFAULT_GYM}', 'Code Dup', '15550000903', 'MS-221-26')`);
+  const badFmtErr = await fails(`update gyms set member_code_prefix = 'BAD PREFIX!' where id = '${DEFAULT_GYM}'`);
+  check('member_code: owner customizes prefix/start/suffix, auto-increments, rejects duplicates & bad format',
+    ins1.member_code === 'MS-221-26' && ins2.member_code === 'MS-222-26' && !!dupCodeErr && !!badFmtErr,
+    { ins1, ins2, dupCodeErr, badFmtErr });
+}, 'owner@example.test');
+
+await as(OWNER_B, async () => {
+  const sameInGymBOk = !(await fails(`
+    insert into members (gym_id, name, phone, member_code) values ('${gymBId}', 'Gym B Same Code', '15550000904', 'MS-221-26')
+  `));
+  check('member_code: same code allowed independently across different gyms', sameInGymBOk, 'cross-gym');
+}, 'ownerb@example.test');
+
+await as(MEMBER, async () => {
+  const [gu] = await q(`with x as (update gyms set member_code_prefix = 'HACK-' returning 1) select count(*)::int n from x`).catch(() => [{ n: 0 }]);
+  check('member_code: member cannot alter gym member_code settings', gu.n === 0, gu);
+});
+
 let pass = true;
 for (const r of results) { pass &&= r.ok; console.log(`${r.ok ? 'PASS' : 'FAIL'} - ${r.name}${r.ok ? '' : ' :: ' + JSON.stringify(r.evidence)}`); }
 console.log(`VERDICT: ${pass ? 'PASS' : 'FAIL'} (${results.filter(r => r.ok).length}/${results.length})`);

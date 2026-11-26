@@ -25,16 +25,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { money, normalizePhone } from "@/lib/logic";
+import { formatMemberCode, money, normalizePhone } from "@/lib/logic";
 
 export default function AddMemberPage() {
   const supabase = useMemo(() => createClient(), []);
   const user = useAuthStore((s) => s.user);
   const gymId = useGymStore((s) => s.gymId);
+  const settings = useGymStore((s) => s.settings);
   const currency = useGymStore((s) => s.currency);
   const plans = useGymStore((s) => s.plans);
   const reloadAll = useMembersStore((s) => s.reloadAll);
 
+  const [memberCode, setMemberCode] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -52,10 +54,22 @@ export default function AddMemberPage() {
   const [saving, setSaving] = useState(false);
 
   const effectivePlanId = planId || (plans[0] ? String(plans[0].id) : "");
+  const nextCodePreview = formatMemberCode(
+    settings.member_code_prefix ?? "MM-",
+    settings.member_code_next ?? 1,
+    settings.member_code_digits ?? 3,
+    settings.member_code_suffix ?? "",
+  );
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (saving || !user || !gymId) return;
+
+    const cleanCode = memberCode.trim();
+    if (cleanCode && !/^[A-Za-z0-9_-]{1,40}$/.test(cleanCode)) {
+      toast.error("Member ID can only use letters, numbers, - and _ (max 40 chars)");
+      return;
+    }
 
     const cleanPhone = normalizePhone(phone);
     if (!cleanPhone) {
@@ -73,6 +87,7 @@ export default function AddMemberPage() {
     try {
       const payload = {
         gym_id: gymId,
+        ...(cleanCode ? { member_code: cleanCode } : {}),
         name: name.trim(),
         phone: cleanPhone,
         email: email.trim().toLowerCase() || null,
@@ -89,7 +104,7 @@ export default function AddMemberPage() {
       const { data: created, error } = await supabase
         .from("members")
         .insert(payload)
-        .select("id")
+        .select("id, member_code")
         .single();
 
       if (error || !created) {
@@ -113,6 +128,7 @@ export default function AddMemberPage() {
         }
       }
 
+      setMemberCode("");
       setName("");
       setPhone("");
       setEmail("");
@@ -125,7 +141,11 @@ export default function AddMemberPage() {
       setDietPref("");
       setTrxId("");
       await reloadAll();
-      toast.success(`${payload.name} added`);
+      toast.success(
+        created.member_code
+          ? `${payload.name} added (${created.member_code})`
+          : `${payload.name} added`,
+      );
     } finally {
       setSaving(false);
     }
@@ -143,6 +163,20 @@ export default function AddMemberPage() {
       <CardContent>
         <form className="flex flex-col gap-6" onSubmit={(e) => void handleSubmit(e)}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="add-member-code">Member ID (optional)</Label>
+              <Input
+                id="add-member-code"
+                dir="ltr"
+                maxLength={40}
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder={`Auto (${nextCodePreview})`}
+                value={memberCode}
+                onChange={(e) => setMemberCode(e.target.value)}
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="add-name">Name *</Label>
               <Input

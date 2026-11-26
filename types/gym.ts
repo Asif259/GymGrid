@@ -35,6 +35,10 @@ export interface Gym {
   app_url: string | null;
   sheet_id?: string | null;
   owner_digest_email?: string | null;
+  member_code_prefix?: string;
+  member_code_suffix?: string;
+  member_code_next?: number;
+  member_code_digits?: number;
   saas_status: SaasStatus;
   created_at: string;
 }
@@ -82,6 +86,7 @@ export interface MemberPlanRef {
 export interface Member {
   id: string;
   gym_id?: string;
+  member_code?: string | null;
   name: string;
   phone: string;
   email?: string | null;

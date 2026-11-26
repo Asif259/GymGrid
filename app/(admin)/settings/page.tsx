@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { AiProvider, StaffRole } from "@/types/gym";
+import { formatMemberCode } from "@/lib/logic";
 
 interface SettingsDraft {
   name?: string;
@@ -51,6 +52,10 @@ interface SettingsDraft {
   app_url?: string;
   sheet_id?: string;
   owner_digest_email?: string;
+  member_code_prefix?: string;
+  member_code_suffix?: string;
+  member_code_next?: string;
+  member_code_digits?: string;
 }
 
 const CURRENCIES = [
@@ -143,6 +148,21 @@ export default function SettingsPage() {
   const sheetId = draft.sheet_id ?? settings.sheet_id ?? "";
   const ownerDigestEmail =
     draft.owner_digest_email ?? settings.owner_digest_email ?? "";
+  const memberCodePrefix =
+    draft.member_code_prefix ?? settings.member_code_prefix ?? "MM-";
+  const memberCodeSuffix =
+    draft.member_code_suffix ?? settings.member_code_suffix ?? "";
+  const memberCodeNext =
+    draft.member_code_next ?? String(settings.member_code_next ?? 1);
+  const memberCodeDigits =
+    draft.member_code_digits ?? String(settings.member_code_digits ?? 3);
+
+  const memberCodePreview = formatMemberCode(
+    memberCodePrefix.trim(),
+    Number(memberCodeNext) || 1,
+    Number(memberCodeDigits),
+    memberCodeSuffix.trim(),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -181,6 +201,20 @@ export default function SettingsPage() {
   async function saveSettings(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (saving || !gymId) return;
+
+    const cleanPrefix = memberCodePrefix.trim();
+    const cleanSuffix = memberCodeSuffix.trim();
+    const parsedNext = Number(memberCodeNext);
+    const parsedDigits = Number(memberCodeDigits);
+    if (!/^[A-Za-z0-9_-]{0,16}$/.test(cleanPrefix) || !/^[A-Za-z0-9_-]{0,16}$/.test(cleanSuffix)) {
+      toast.error("Member ID prefix/suffix can only use letters, numbers, - and _ (max 16 chars).");
+      return;
+    }
+    if (!Number.isInteger(parsedNext) || parsedNext < 1 || parsedNext > 9999999) {
+      toast.error("Starting / next member number must be between 1 and 9999999.");
+      return;
+    }
+
     setSaving(true);
     try {
       const { error } = await supabase
@@ -196,6 +230,10 @@ export default function SettingsPage() {
           app_url: appUrl.trim() || null,
           sheet_id: sheetId.trim() || null,
           owner_digest_email: ownerDigestEmail.trim().toLowerCase() || null,
+          member_code_prefix: cleanPrefix,
+          member_code_suffix: cleanSuffix,
+          member_code_next: parsedNext,
+          member_code_digits: Number.isInteger(parsedDigits) ? parsedDigits : 3,
         })
         .eq("id", gymId);
       if (error) {
@@ -541,6 +579,105 @@ export default function SettingsPage() {
                     }))
                   }
                 />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-2xl border bg-secondary/40 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    Member ID format
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Customize the prefix, starting/next number, padding, and suffix for new members (e.g. MM-102 or MS-221).
+                  </p>
+                </div>
+                <Badge variant="secondary" className="font-mono tabular-nums">
+                  Next: {memberCodePreview}
+                </Badge>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="set-code-prefix">Starting prefix</Label>
+                  <Input
+                    id="set-code-prefix"
+                    dir="ltr"
+                    maxLength={16}
+                    autoCorrect="off"
+                    spellCheck={false}
+                    placeholder="MM-"
+                    value={memberCodePrefix}
+                    onChange={(e) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        member_code_prefix: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="set-code-next">Next number</Label>
+                  <Input
+                    id="set-code-next"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={9999999}
+                    value={memberCodeNext}
+                    onChange={(e) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        member_code_next: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="set-code-digits">Number digits</Label>
+                  <Select
+                    value={memberCodeDigits}
+                    onValueChange={(val) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        member_code_digits: val,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="set-code-digits" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">No zero-padding (1, 102)</SelectItem>
+                      <SelectItem value="2">2 digits (01, 102)</SelectItem>
+                      <SelectItem value="3">3 digits (001, 102)</SelectItem>
+                      <SelectItem value="4">4 digits (0001, 0102)</SelectItem>
+                      <SelectItem value="5">5 digits (00001)</SelectItem>
+                      <SelectItem value="6">6 digits (000001)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="set-code-suffix">Ending suffix (optional)</Label>
+                  <Input
+                    id="set-code-suffix"
+                    dir="ltr"
+                    maxLength={16}
+                    autoCorrect="off"
+                    spellCheck={false}
+                    placeholder="e.g. -26"
+                    value={memberCodeSuffix}
+                    onChange={(e) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        member_code_suffix: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
             </div>
 

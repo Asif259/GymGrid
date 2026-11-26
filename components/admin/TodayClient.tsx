@@ -126,7 +126,10 @@ export function TodayClient() {
     if (!q) return [];
     return members
       .filter(
-        (m) => m.name.toLowerCase().includes(q) || m.phone.toLowerCase().includes(q),
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          (m.member_code ?? "").toLowerCase().includes(q) ||
+          m.phone.toLowerCase().includes(q),
       )
       .slice(0, 8);
   }, [members, checkinQuery]);
@@ -266,7 +269,7 @@ export function TodayClient() {
           <CardContent className="flex flex-col gap-4">
             <SearchInput
               aria-label="Find a member to check in"
-              placeholder="Search name or phone…"
+              placeholder="Search name, ID, or phone…"
               value={checkinQuery}
               onValueChange={setCheckinQuery}
             />
@@ -282,6 +285,11 @@ export function TodayClient() {
                       <span className="text-sm font-medium text-foreground">
                         {m.name}
                       </span>
+                      {m.member_code ? (
+                        <Badge variant="outline" className="font-mono text-[11px] tabular-nums">
+                          {m.member_code}
+                        </Badge>
+                      ) : null}
                       <StatusBadge member={m} />
                     </div>
                     <p className="text-xs text-muted-foreground">

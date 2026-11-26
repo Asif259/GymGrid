@@ -186,6 +186,10 @@ export function MemberOverview({
 
   const profileChips = [
     {
+      label: "Member ID",
+      value: member.member_code?.trim() || "—",
+    },
+    {
       label: "Goal",
       value: member.goal?.trim() || "—",
       capitalize: Boolean(member.goal?.trim()),
@@ -197,10 +201,6 @@ export function MemberOverview({
     {
       label: "Height",
       value: member.height_cm != null ? `${member.height_cm}\u00A0cm` : "—",
-    },
-    {
-      label: "Diet",
-      value: member.diet_pref?.trim() || "—",
     },
     {
       label: "Plan",

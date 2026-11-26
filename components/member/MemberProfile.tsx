@@ -1,11 +1,12 @@
 "use client";
 
 import { useId, useRef, useState, type FormEvent } from "react";
-import { Clock, LogOut, Phone, Save } from "lucide-react";
+import { Clock, Copy, LogOut, Phone, Save } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -629,6 +630,16 @@ export function MemberProfile({
   const gymAddress = settings.address?.trim() || null;
   const lastUpdatedText = fmtDateTimeDhaka(member.details_updated_at);
 
+  async function copyMemberCode() {
+    if (!member.member_code) return;
+    try {
+      await navigator.clipboard.writeText(member.member_code);
+      toast.success(`Member ID ${member.member_code} copied`);
+    } catch {
+      toast.error("Could not copy Member ID");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Card className="rounded-3xl shadow-xs">
@@ -644,6 +655,11 @@ export function MemberProfile({
                 <CardTitle className="text-lg break-words text-balance">
                   {member.name}
                 </CardTitle>
+                {member.member_code ? (
+                  <Badge variant="secondary" className="font-mono text-xs tabular-nums">
+                    {member.member_code}
+                  </Badge>
+                ) : null}
                 <StatusBadge member={member} />
               </div>
               <CardDescription className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 break-words">
@@ -653,13 +669,27 @@ export function MemberProfile({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
-            <Clock className="size-3.5 shrink-0" aria-hidden="true" />
-            <span>
-              {lastUpdatedText
-                ? `Last updated ${lastUpdatedText}`
-                : "Details not updated yet"}
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {member.member_code ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-10 touch-manipulation sm:min-h-8"
+                onClick={() => void copyMemberCode()}
+              >
+                <Copy className="size-3.5" aria-hidden="true" />
+                <span>Copy ID</span>
+              </Button>
+            ) : null}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+              <Clock className="size-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                {lastUpdatedText
+                  ? `Last updated ${lastUpdatedText}`
+                  : "Details not updated yet"}
+              </span>
+            </div>
           </div>
         </CardHeader>
 

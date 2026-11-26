@@ -13,7 +13,7 @@ import type {
 } from "@/types/gym";
 
 export const GYM_PUBLIC_COLUMNS =
-  "id, owner_id, name, slug, logo_url, phone, address, currency, timezone, bkash_number, nagad_number, app_url, saas_status, created_at";
+  "id, owner_id, name, slug, logo_url, phone, address, currency, timezone, bkash_number, nagad_number, app_url, member_code_prefix, member_code_suffix, member_code_next, member_code_digits, saas_status, created_at";
 
 interface GymState {
   gym: Gym | null;

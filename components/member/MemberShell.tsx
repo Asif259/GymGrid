@@ -326,6 +326,7 @@ function MemberShellInner({
         navItems={navItems}
         header={{
           title: member?.name ?? "Member",
+          subtitle: member?.member_code ? `Member ID: ${member.member_code}` : undefined,
           badge: member ? <StatusBadge member={member} /> : undefined,
           actions: (
             <Button
@@ -349,7 +350,9 @@ function MemberShellInner({
         }}
         account={{
           primaryLabel: member?.name ?? member?.phone ?? "Member",
-          secondaryLabel: member?.status ?? "member",
+          secondaryLabel: member?.member_code
+            ? `${member.member_code} · ${member.status}`
+            : (member?.status ?? "member"),
           onOpenProfile: () => selectTab("profile"),
           onSignOut: () => void signOut(),
         }}

@@ -17,6 +17,7 @@ import { useGymStore } from "@/lib/stores/gym-store";
 import { useMembersStore } from "@/lib/stores/members-store";
 import { PlanView } from "@/components/PlanView";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +77,7 @@ function MemberDialogContent({
   const settings = useGymStore((s) => s.settings);
   const reloadAll = useMembersStore((s) => s.reloadAll);
 
+  const [memberCode, setMemberCode] = useState(member.member_code ?? "");
   const [email, setEmail] = useState(member.email ?? "");
   const [trainerId, setTrainerId] = useState(member.trainer_id ?? "");
   const [payMethod, setPayMethod] = useState("cash");
@@ -121,6 +123,32 @@ function MemberDialogContent({
   const workoutTemplates = templates.filter((t) => t.kind === "workout");
   const dietTemplates = templates.filter((t) => t.kind === "diet");
   const paidPayments = (member.payments ?? []).filter((p) => p.status === "paid");
+
+  async function saveMemberCode() {
+    if (busy) return;
+    const clean = memberCode.trim();
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(clean)) {
+      toast.error("Member ID must be 1–40 chars (letters, numbers, - and _)");
+      return;
+    }
+    setBusy(true);
+    try {
+      let q = supabase
+        .from("members")
+        .update({ member_code: clean })
+        .eq("id", member.id);
+      if (gymId) q = q.eq("gym_id", gymId);
+      const { error } = await q;
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      await reloadAll();
+      toast.success(`Member ID updated to ${clean}`);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function saveEmail() {
     if (busy) return;
@@ -293,7 +321,14 @@ function MemberDialogContent({
         className="flex w-full flex-col gap-0 overflow-hidden sm:max-w-xl"
       >
         <SheetHeader className="border-b px-6 py-4">
-          <SheetTitle>{member.name}</SheetTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <SheetTitle>{member.name}</SheetTitle>
+            {member.member_code ? (
+              <Badge variant="secondary" className="font-mono text-xs tabular-nums">
+                {member.member_code}
+              </Badge>
+            ) : null}
+          </div>
           <SheetDescription asChild>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>+{member.phone}</span>
@@ -528,8 +563,31 @@ function MemberDialogContent({
 
           <section className="flex flex-col gap-3 rounded-2xl border bg-secondary/60 p-4">
             <h3 className="text-base font-medium text-foreground">
-              Member app access & trainer
+              Member ID, access &amp; trainer
             </h3>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Label htmlFor="md-member-code">Member ID</Label>
+                <Input
+                  id="md-member-code"
+                  dir="ltr"
+                  maxLength={40}
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={memberCode}
+                  onChange={(e) => setMemberCode(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => void saveMemberCode()}
+              >
+                <Save className="size-4" aria-hidden="true" />
+                <span>Save ID</span>
+              </Button>
+            </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
               <div className="flex flex-1 flex-col gap-1.5">
