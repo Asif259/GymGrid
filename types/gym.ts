@@ -3,6 +3,22 @@ export type PaymentStatus = 'pending' | 'paid';
 export type StaffRole = 'owner' | 'trainer' | 'staff';
 export type PlanKind = 'workout' | 'diet';
 export type SaasStatus = 'trial' | 'active' | 'suspended';
+export type AiProviderKind = 'gemini' | 'openai_compat';
+
+export interface AiProvider {
+  id: string;
+  gym_id: string;
+  kind: AiProviderKind;
+  label: string;
+  base_url: string | null;
+  model: string;
+  enabled: boolean;
+  priority: number;
+  cooldown_until: string | null;
+  last_error: string | null;
+  key_hint: string;
+  created_at: string;
+}
 
 export interface Gym {
   id: string;
@@ -79,8 +95,14 @@ export interface Member {
   sex?: string | null;
   height_cm?: number | null;
   weight_kg?: number | null;
+  goal_weight_kg?: number | null;
+  level?: string | null;
+  days_per_week?: number | null;
+  equipment?: string | null;
+  activity?: string | null;
   injuries?: string | null;
   diet_pref?: string | null;
+  allergies?: string | null;
   plans?: MemberPlanRef | null;
   payments?: Payment[];
   gyms?: Partial<Gym> | null;
@@ -98,6 +120,8 @@ export interface WorkoutExercise {
   name: string;
   sets?: number;
   reps?: string;
+  rest_sec?: number;
+  notes?: string;
 }
 
 export interface WorkoutDay {
@@ -122,6 +146,10 @@ export interface DietMeal {
 }
 
 export interface DietPlanData {
+  target_kcal?: number;
+  protein_g?: number;
+  carbs_g?: number;
+  fat_g?: number;
   meals: DietMeal[];
 }
 

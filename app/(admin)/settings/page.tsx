@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Link from "next/link";
 import {
   Copy,
@@ -9,6 +9,7 @@ import {
   QrCode,
   RefreshCw,
   Save,
+  Sparkles,
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import { uploadGymLogo } from "@/lib/uploadLogo";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useGymStore } from "@/lib/stores/gym-store";
 import { useMembersStore } from "@/lib/stores/members-store";
+import { AiProvidersDialog } from "@/components/admin/AiProvidersDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { StaffRole } from "@/types/gym";
+import type { AiProvider, StaffRole } from "@/types/gym";
 
 interface SettingsDraft {
   name?: string;
@@ -88,6 +90,47 @@ export default function SettingsPage() {
   const [signupLink, setSignupLink] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [aiProviders, setAiProviders] = useState<AiProvider[]>([]);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+
+  const loadAiProviders = useCallback(async () => {
+    if (!gymId || role !== "owner") return;
+    const { data, error } = await supabase
+      .from("ai_providers")
+      .select(
+        "id, gym_id, kind, label, base_url, model, enabled, priority, cooldown_until, last_error, key_hint, created_at",
+      )
+      .eq("gym_id", gymId)
+      .order("priority", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (!error && data) {
+      setAiProviders(data as AiProvider[]);
+    }
+  }, [supabase, gymId, role]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchProviders() {
+      if (!gymId || role !== "owner") return;
+      const { data, error } = await supabase
+        .from("ai_providers")
+        .select(
+          "id, gym_id, kind, label, base_url, model, enabled, priority, cooldown_until, last_error, key_hint, created_at",
+        )
+        .eq("gym_id", gymId)
+        .order("priority", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (!cancelled && !error && data) {
+        setAiProviders(data as AiProvider[]);
+      }
+    }
+    if (role === "owner" && gymId) {
+      void fetchProviders();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, role, gymId]);
 
   const name = draft.name ?? settings.name ?? "";
   const phone = draft.phone ?? settings.phone ?? "";
@@ -584,6 +627,48 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="rounded-3xl shadow-xs">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-lg">AI workout &amp; diet plans</CardTitle>
+            <CardDescription>
+              Add a free Gemini or Groq API key so members can generate personalized workout and diet plans.
+            </CardDescription>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 touch-manipulation sm:min-h-9"
+            onClick={() => setAiDialogOpen(true)}
+          >
+            <Sparkles className="size-4" aria-hidden="true" />
+            <span>Manage AI providers</span>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {aiProviders.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {aiProviders.map((p) => (
+                <Badge
+                  key={p.id}
+                  variant={p.enabled ? "secondary" : "outline"}
+                  className="gap-1.5 rounded-xl px-2.5 py-1"
+                >
+                  <span>{p.label}</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    ...{p.key_hint}
+                  </span>
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Not configured yet. Members will see a friendly message until at least one provider is enabled.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl shadow-xs">
         <CardHeader>
           <CardTitle className="text-lg">Staff & trainers</CardTitle>
           <CardDescription>
@@ -670,6 +755,14 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
+
+      <AiProvidersDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        gymId={gymId}
+        providers={aiProviders}
+        onReload={loadAiProviders}
+      />
     </div>
   );
 }

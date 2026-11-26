@@ -58,7 +58,7 @@ function MemberPageInner() {
 
   return (
     <MemberShell>
-      {({ openProfile }) => {
+      {({ openProfile, openAiPlan }) => {
         switch (tab) {
           case "plans":
             return member ? (
@@ -67,6 +67,7 @@ function MemberPageInner() {
                 workout={workout}
                 diet={diet}
                 trainerName={trainerName}
+                onOpenAiPlan={openAiPlan}
               />
             ) : null;
 

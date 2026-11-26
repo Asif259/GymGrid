@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Dumbbell,
   Salad,
+  Sparkles,
   Target,
   UserCheck,
   UtensilsCrossed,
@@ -25,6 +26,19 @@ export interface MemberPlansProps {
   workout: WorkoutPlanData | null;
   diet: DietPlanData | null;
   trainerName: string;
+  onOpenAiPlan?: () => void;
+}
+
+function formatDietMacros(diet: DietPlanData | null): string | null {
+  if (!diet) return null;
+  const parts: string[] = [];
+  if (diet.target_kcal != null) {
+    parts.push(`${diet.target_kcal.toLocaleString("en-US")}\u00A0kcal`);
+  }
+  if (diet.protein_g != null) parts.push(`P ${diet.protein_g}g`);
+  if (diet.carbs_g != null) parts.push(`C ${diet.carbs_g}g`);
+  if (diet.fat_g != null) parts.push(`F ${diet.fat_g}g`);
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 function formatSetsAndReps(sets?: number, reps?: string): string | null {
@@ -44,17 +58,21 @@ export function MemberPlans({
   workout,
   diet,
   trainerName,
+  onOpenAiPlan,
 }: MemberPlansProps) {
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | "all">("all");
 
   const coachName = trainerName.trim() || "Not assigned";
   const goal = member.goal?.trim() || "";
   const dietPref = member.diet_pref?.trim() || "";
+  const allergies = member.allergies?.trim() || "";
   const injuries = member.injuries?.trim() || "";
-  const hasContextPills = Boolean(goal || dietPref || injuries);
+  const hasContextPills = Boolean(goal || dietPref || allergies || injuries);
 
   const workoutDays = workout?.days ?? [];
   const meals = diet?.meals ?? [];
+  const hasAnyPlan = workoutDays.length > 0 || meals.length > 0;
+  const macroLine = formatDietMacros(diet);
 
   const activeDayFilter =
     selectedDayIdx === "all" ||
@@ -71,20 +89,31 @@ export function MemberPlans({
   return (
     <div className="flex flex-col gap-6">
       <Card className="rounded-3xl shadow-xs">
-        <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
               <UserCheck className="size-4" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <CardTitle className="truncate">Coach: {coachName}</CardTitle>
-              <CardDescription className="truncate">
+              <CardTitle className="break-words text-balance">Coach: {coachName}</CardTitle>
+              <CardDescription className="break-words text-pretty">
                 {member.plans?.name
                   ? `${member.plans.name} · Verified training & nutrition`
                   : "Verified training & nutrition"}
               </CardDescription>
             </div>
           </div>
+          {onOpenAiPlan ? (
+            <Button
+              type="button"
+              variant={hasAnyPlan ? "outline" : "default"}
+              className="min-h-11 w-full shrink-0 touch-manipulation sm:min-h-9 sm:w-auto"
+              onClick={onOpenAiPlan}
+            >
+              <Sparkles className="size-4" aria-hidden="true" />
+              <span>{hasAnyPlan ? "Regenerate" : "Create my AI plan"}</span>
+            </Button>
+          ) : null}
         </CardHeader>
 
         {hasContextPills ? (
@@ -105,6 +134,15 @@ export function MemberPlans({
               >
                 <Salad aria-hidden="true" />
                 <span>Diet: {dietPref}</span>
+              </Badge>
+            ) : null}
+            {allergies ? (
+              <Badge
+                variant="outline"
+                className="h-auto max-w-full gap-1.5 rounded-xl px-2.5 py-1 text-left whitespace-normal break-words"
+              >
+                <AlertTriangle aria-hidden="true" />
+                <span>Allergies: {allergies}</span>
               </Badge>
             ) : null}
             {injuries ? (
@@ -198,21 +236,45 @@ export function MemberPlans({
                       <ul className="flex flex-col divide-y">
                         {day.exercises.map((ex, exIdx) => {
                           const setsReps = formatSetsAndReps(ex.sets, ex.reps);
+                          const restLabel =
+                            ex.rest_sec != null && ex.rest_sec > 0
+                              ? `${ex.rest_sec}s rest`
+                              : null;
+                          const notes = ex.notes?.trim();
                           return (
                             <li
                               key={`${ex.name}-${exIdx}`}
-                              className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
+                              className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
                             >
-                              <span className="min-w-0 flex-1 text-sm font-medium text-foreground break-words">
-                                {ex.name}
-                              </span>
-                              {setsReps ? (
-                                <Badge
-                                  variant="outline"
-                                  className="shrink-0 font-mono tabular-nums"
-                                >
-                                  {setsReps}
-                                </Badge>
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="min-w-0 flex-1 text-sm font-medium text-foreground break-words">
+                                  {ex.name}
+                                </span>
+                                {setsReps || restLabel ? (
+                                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                                    {setsReps ? (
+                                      <Badge
+                                        variant="outline"
+                                        className="font-mono tabular-nums"
+                                      >
+                                        {setsReps}
+                                      </Badge>
+                                    ) : null}
+                                    {restLabel ? (
+                                      <Badge
+                                        variant="secondary"
+                                        className="font-mono tabular-nums"
+                                      >
+                                        {restLabel}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                              </div>
+                              {notes ? (
+                                <p className="text-xs text-muted-foreground break-words">
+                                  {notes}
+                                </p>
                               ) : null}
                             </li>
                           );
@@ -246,10 +308,12 @@ export function MemberPlans({
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <CardTitle className="text-lg">Diet plan</CardTitle>
-                <CardDescription>
-                  {meals.length > 0
-                    ? `${meals.length} ${meals.length === 1 ? "meal" : "meals"} planned daily`
-                    : "Verified coach nutrition guide"}
+                <CardDescription className="break-words">
+                  {macroLine
+                    ? macroLine
+                    : meals.length > 0
+                      ? `${meals.length} ${meals.length === 1 ? "meal" : "meals"} planned daily`
+                      : "Verified coach nutrition guide"}
                 </CardDescription>
               </div>
               {meals.length > 0 ? (
@@ -337,6 +401,12 @@ export function MemberPlans({
           </CardContent>
         </Card>
       </div>
+
+      {hasAnyPlan ? (
+        <p className="text-center text-xs text-muted-foreground">
+          General fitness guidance, not medical advice. Details are sent to the gym&apos;s AI provider to build the plan.
+        </p>
+      ) : null}
     </div>
   );
 }

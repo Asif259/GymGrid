@@ -2,3 +2,9 @@
 # and pg_net/pg_cron send no Authorization header, so the gateway must not require a JWT.
 [functions.automation]
 verify_jwt = false
+
+[functions.ai-admin]
+verify_jwt = true
+
+[functions.generate-plan]
+verify_jwt = true

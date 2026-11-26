@@ -35,6 +35,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { MemberProfileSheet } from "@/components/member/MemberProfileSheet";
+import { AiPlanDialog } from "@/components/member/AiPlanDialog";
 
 /** Shared dashboard-shaped loading skeleton used by both the shell pre-ready
  * state and app/(member)/loading.tsx */
@@ -58,10 +59,11 @@ export function DashboardLoadingSkeleton() {
 function MemberShellInner({
   children,
 }: {
-  children: (ctx: { openProfile: () => void }) => React.ReactNode;
+  children: (ctx: { openProfile: () => void; openAiPlan: () => void }) => React.ReactNode;
 }) {
   const searchParams = useSearchParams();
   const gymSlugParam = searchParams.get("gym");
+  const setupParam = searchParams.get("setup");
   const { gymName: defaultGymName } = getSupabaseEnv();
 
   const {
@@ -83,6 +85,16 @@ function MemberShellInner({
   } = useMemberAppStore();
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(() => setupParam === "ai");
+
+  // Entry 1: clean ?setup=ai from URL once member data is ready (aiDialogOpen initialized from param)
+  useEffect(() => {
+    if (status === "ready" && member && setupParam === "ai") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("setup");
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+  }, [status, member, setupParam]);
 
   // Auth bootstrap + initial hash/tab resolution
   useEffect(() => {
@@ -338,19 +350,33 @@ function MemberShellInner({
           onSignOut: () => void signOut(),
         }}
       >
-        {children({ openProfile: () => setProfileOpen(true) })}
+        {children({
+          openProfile: () => setProfileOpen(true),
+          openAiPlan: () => setAiDialogOpen(true),
+        })}
       </DashboardShell>
 
       {member ? (
-        <MemberProfileSheet
-          open={profileOpen}
-          onOpenChange={setProfileOpen}
-          member={member}
-          settings={settings}
-          trainerName={trainerName}
-          email={user?.email ?? null}
-          onSignOut={() => void signOut()}
-        />
+        <>
+          <MemberProfileSheet
+            open={profileOpen}
+            onOpenChange={setProfileOpen}
+            member={member}
+            settings={settings}
+            trainerName={trainerName}
+            email={user?.email ?? null}
+            onSignOut={() => void signOut()}
+          />
+          <AiPlanDialog
+            open={aiDialogOpen}
+            onOpenChange={setAiDialogOpen}
+            member={member}
+            onGenerated={async () => {
+              await loadMemberData(member.gym_id ?? null);
+              selectTab("plans");
+            }}
+          />
+        </>
       ) : null}
     </>
   );
@@ -364,7 +390,7 @@ function MemberShellInner({
 export function MemberShell({
   children,
 }: {
-  children: (ctx: { openProfile: () => void }) => React.ReactNode;
+  children: (ctx: { openProfile: () => void; openAiPlan: () => void }) => React.ReactNode;
 }) {
   return (
     <Suspense fallback={<DashboardLoadingSkeleton />}>

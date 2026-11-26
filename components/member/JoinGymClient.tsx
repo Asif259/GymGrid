@@ -152,7 +152,7 @@ export function JoinGymClient({
 
       window.localStorage.removeItem(tokenStorageKey);
       toast.success("Registered! Opening your members app…");
-      router.push(`/member?gym=${encodeURIComponent(gymSlug)}`);
+      router.push(`/member?gym=${encodeURIComponent(gymSlug)}&setup=ai`);
     } finally {
       setSaving(false);
     }

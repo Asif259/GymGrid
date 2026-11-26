@@ -18,6 +18,24 @@ await db.exec(`
     nullif(current_setting('request.jwt.claim.sub', true), ''),
     nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid $$;
   grant usage on schema auth to authenticated, anon;
+  -- Minimal Supabase Vault shim for testing encrypted provider secret lifecycle in PGlite.
+  create schema vault;
+  create table vault.secrets (
+    id uuid primary key default gen_random_uuid(),
+    name text unique,
+    description text,
+    secret text not null,
+    created_at timestamptz default now()
+  );
+  create view vault.decrypted_secrets as
+    select id, name, description, secret, secret as decrypted_secret, created_at from vault.secrets;
+  create function vault.create_secret(new_secret text, new_name text default null, new_description text default null)
+  returns uuid language plpgsql as $$
+  declare sid uuid;
+  begin
+    insert into vault.secrets (name, description, secret) values (new_name, new_description, new_secret) returning id into sid;
+    return sid;
+  end $$;
 `);
 // Every migration except pg_cron (not available in PGlite), in filename order.
 for (const f of readdirSync(`${root}/supabase/migrations`).filter(f => f.endsWith('.sql') && !f.includes('cron')).sort())
@@ -436,9 +454,111 @@ try {
   `);
   check('service_role: can update payments/automation_events and insert/delete reminder_log', !payUpd && !evUpd && !remWrite, { payUpd, evUpd, remWrite });
   check('service_role: cannot write gyms', !!(await fails(`update gyms set name = name where false`)), 'gyms write');
+
+  // AI plans migration: constraints, source default, and service_role intake/plan grants
+  const aiBadLevel = await fails(`update members set level = 'pro' where id = '${A}'`);
+  const aiBadDays = await fails(`update members set days_per_week = 7 where id = '${A}'`);
+  const aiBadDaysLow = await fails(`update members set days_per_week = 1 where id = '${A}'`);
+  const aiBadEquip = await fails(`update members set equipment = 'kettlebells' where id = '${A}'`);
+  const aiBadAct = await fails(`update members set activity = 'extreme' where id = '${A}'`);
+  const aiBadGoalWt = await fails(`update members set goal_weight_kg = 20 where id = '${A}'`);
+  const aiBadAllergy = await fails(`update members set allergies = '${'a'.repeat(301)}' where id = '${A}'`);
+  check('ai_plans: invalid intake constraints rejected',
+    !!(aiBadLevel && aiBadDays && aiBadDaysLow && aiBadEquip && aiBadAct && aiBadGoalWt && aiBadAllergy),
+    { aiBadLevel, aiBadDays, aiBadEquip, aiBadAct, aiBadGoalWt, aiBadAllergy });
+
+  const aiIntakeOk = !(await fails(`
+    update members set
+      goal_weight_kg = 65.5, level = 'beginner', days_per_week = 2,
+      equipment = 'bodyweight', activity = 'sedentary', allergies = '${'a'.repeat(300)}'
+    where id = '${A}';
+    update members set days_per_week = 6, goal_weight_kg = 300, equipment = 'full_gym', activity = 'active', level = 'advanced'
+    where id = '${A}';
+  `));
+  check('ai_plans: valid edge intake values accepted via service_role', aiIntakeOk, 'intake edge ok');
+
+  const aiPlanIns = !(await fails(`
+    insert into workout_plans (member_id, plan, verified, source) values ('${A}', '{"days":[]}', true, 'ai');
+    insert into diet_plans (member_id, plan, verified, source) values ('${A}', '{"meals":[]}', true, 'ai');
+  `));
+  const aiBadSource = await fails(`insert into workout_plans (member_id, plan, verified, source) values ('${A}', '{"days":[]}', true, 'bot')`);
+  const [srcDef] = await q(`select source from workout_plans where member_id = '${A}' and verified = true order by created_at asc limit 1`);
+  check('ai_plans: source default staff, accepts ai, rejects unknown, service_role writes plans',
+    aiPlanIns && !!aiBadSource && srcDef?.source === 'staff', { aiPlanIns, aiBadSource, srcDef });
 } finally {
   await db.exec(`reset role`);
 }
+
+// Member still cannot write members or insert workout_plans/diet_plans after ai_plans migration
+await as(MEMBER, async () => {
+  const [mu] = await q(`with x as (update members set level = 'advanced' returning 1) select count(*)::int n from x`);
+  const wpIns = await fails(`insert into workout_plans (member_id, plan, verified, source) values ('${A}', '{"days":[]}', true, 'ai')`);
+  const dpIns = await fails(`insert into diet_plans (member_id, plan, verified, source) values ('${A}', '{"meals":[]}', true, 'ai')`);
+  check('ai_plans: member still cannot update intake or insert plans', mu.n === 0 && !!wpIns && !!dpIns, { mu, wpIns, dpIns });
+});
+
+// ---------- AI providers + Vault security checks ----------
+let savedProviderId;
+await as(OWNER, async () => {
+  const [sp] = await q(`select save_ai_provider('${DEFAULT_GYM}', 'gemini', 'Google Gemini', null, 'gemini-2.5-flash', 'AIzaSyTestSecret9988') id`);
+  savedProviderId = sp.id;
+  const rows = await q(`select id, label, model, key_hint, enabled from ai_providers`);
+  const hasKeyCol = await q(`select count(*)::int n from information_schema.columns where table_name = 'ai_providers' and column_name in ('api_key', 'key', 'secret')`);
+  const clientWrite = await fails(`insert into ai_providers (gym_id, kind, label, model, secret_id, key_hint) values ('${DEFAULT_GYM}', 'gemini', 'X', 'm', '${savedProviderId}', '1234')`);
+  const keyRpcBlocked = await fails(`select get_ai_provider_key('${savedProviderId}')`);
+  check('ai_providers: owner saves to Vault, reads hint only, no key column, no direct client insert, key RPC blocked',
+    !!savedProviderId && rows.length === 1 && rows[0].key_hint === '9988' && hasKeyCol[0].n === 0 && !!clientWrite && !!keyRpcBlocked,
+    { savedProviderId, rows, hasKeyCol, clientWrite, keyRpcBlocked });
+}, 'owner@example.test');
+
+await as(MEMBER, async () => {
+  const mRows = await q(`select count(*)::int n from ai_providers`);
+  const mSave = await fails(`select save_ai_provider('${DEFAULT_GYM}', 'gemini', 'Hack', null, 'gemini-2.5-flash', 'AIzaSyTestHack1234')`);
+  const mSet = await fails(`select set_ai_provider('${savedProviderId}', false, 1)`);
+  const mDel = await fails(`select delete_ai_provider('${savedProviderId}')`);
+  const mKey = await fails(`select get_ai_provider_key('${savedProviderId}')`);
+  check('ai_providers: member cannot read, save, toggle, delete, or decrypt key',
+    mRows[0].n === 0 && !!mSave && !!mSet && !!mDel && !!mKey,
+    { mRows, mSave, mSet, mDel, mKey });
+});
+
+await as(STAFF, async () => {
+  const sRows = await q(`select count(*)::int n from ai_providers`);
+  const sSave = await fails(`select save_ai_provider('${DEFAULT_GYM}', 'gemini', 'Trainer', null, 'gemini-2.5-flash', 'AIzaSyTestStaff1234')`);
+  check('ai_providers: trainer cannot read or save (owner only)', sRows[0].n === 0 && !!sSave, { sRows, sSave });
+});
+
+await as(OWNER_B, async () => {
+  const bRows = await q(`select count(*)::int n from ai_providers where gym_id = '${DEFAULT_GYM}'`);
+  const bSave = await fails(`select save_ai_provider('${DEFAULT_GYM}', 'gemini', 'Other', null, 'gemini-2.5-flash', 'AIzaSyTestOther1234')`);
+  const bSet = await fails(`select set_ai_provider('${savedProviderId}', false, 1)`);
+  const bDel = await fails(`select delete_ai_provider('${savedProviderId}')`);
+  check('ai_providers: other gym owner cannot read or modify Gym A providers',
+    bRows[0].n === 0 && !!bSave && !!bSet && !!bDel,
+    { bRows, bSave, bSet, bDel });
+}, 'ownerb@example.test');
+
+await db.exec(`set role service_role`);
+try {
+  const [dec] = await q(`select get_ai_provider_key('${savedProviderId}') k`);
+  const cdUpd = await fails(`update ai_providers set cooldown_until = now(), last_error = '429' where id = '${savedProviderId}'`);
+  check('ai_providers: service_role decrypts Vault key and updates cooldown',
+    dec.k === 'AIzaSyTestSecret9988' && !cdUpd, { dec, cdUpd });
+} finally {
+  await db.exec(`reset role`);
+}
+
+await as(OWNER, async () => {
+  await q(`select set_ai_provider('${savedProviderId}', false, 5)`);
+  const [upd] = await q(`select enabled, priority from ai_providers where id = '${savedProviderId}'`);
+  await q(`select delete_ai_provider('${savedProviderId}')`);
+  const [cnt] = await q(`select count(*)::int n from ai_providers where id = '${savedProviderId}'`);
+  check('ai_providers: owner can update and delete',
+    upd.enabled === false && upd.priority === 5 && cnt.n === 0,
+    { upd, cnt });
+}, 'owner@example.test');
+const [vcnt] = await q(`select count(*)::int n from vault.secrets`);
+check('ai_providers: delete_ai_provider removes Vault secret', vcnt.n === 0, vcnt);
 
 let pass = true;
 for (const r of results) { pass &&= r.ok; console.log(`${r.ok ? 'PASS' : 'FAIL'} - ${r.name}${r.ok ? '' : ' :: ' + JSON.stringify(r.evidence)}`); }
