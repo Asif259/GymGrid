@@ -256,7 +256,7 @@ export function DashboardShell({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h1 className="font-[family-name:var(--font-editorial)] text-xl leading-[1.2] font-medium tracking-[-0.02em] text-foreground text-balance md:text-[1.75rem]">
+                  <h1 className="font-heading text-xl leading-[1.2] font-semibold tracking-[-0.02em] text-foreground text-balance md:text-[1.75rem]">
                     {header.title}
                   </h1>
                   {header.badge ? (
@@ -345,7 +345,7 @@ export function DashboardShell({
                 </span>
                 <span
                   className={cn(
-                    "max-w-full truncate text-[11px] leading-[1.2]",
+                    "max-w-full truncate text-xs leading-[1.2]",
                     item.active ? "font-semibold text-primary" : "font-medium",
                   )}
                 >

@@ -45,7 +45,7 @@ export function PlanView({ workout, diet }: PlanViewProps) {
                       {day.focus ? `${day.day} - ${day.focus}` : day.day}
                     </div>
                     {estMin > 0 ? (
-                      <span className="text-[11px] font-mono text-muted-foreground tabular-nums">
+                      <span className="text-xs text-muted-foreground tabular-nums">
                         ~{estMin} min
                       </span>
                     ) : null}
@@ -74,7 +74,7 @@ export function PlanView({ workout, diet }: PlanViewProps) {
                             {muscles}
                           </span>
                           {notes ? (
-                            <span className="block text-[11px] text-muted-foreground/80">
+                            <span className="block text-xs leading-[1.4] text-muted-foreground/85">
                               {notes}
                             </span>
                           ) : null}
@@ -98,7 +98,7 @@ export function PlanView({ workout, diet }: PlanViewProps) {
                         {c.incline_pct != null ? ` · ${c.incline_pct}% incline` : ""}
                       </span>
                       {c.intensity?.trim() ? (
-                        <span className="block text-[11px] text-muted-foreground/80">
+                        <span className="block text-xs leading-[1.4] text-muted-foreground/85">
                           {c.intensity.trim()}
                         </span>
                       ) : null}

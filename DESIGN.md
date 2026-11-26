@@ -1,6 +1,6 @@
 ---
 name: GymGrid (Material 3 Operations Ledger & Member Pass)
-description: Google Material Design 3 neutral surfaces (#F8F9FA / #FFFFFF light, #131314 / #1E1F20 dark), Google Blue primary (#0B57D0 / #A8C7FA), Newsreader + Inter + JetBrains Mono typography, unified KPI ledger strip, and centered shadcn Dialog/AlertDialog primitives across Admin, Member, and Landing views.
+description: Google Material Design 3 neutral surfaces (#F8F9FA / #FFFFFF light, #131314 / #1E1F20 dark), Google Blue primary (#0B57D0 / #A8C7FA), IBM Plex Sans + Noto Sans Bengali + IBM Plex Mono typography in dashboards (Newsreader + Geist on Landing), unified KPI ledger strip, and centered shadcn Dialog/AlertDialog primitives across Admin, Member, and Landing views.
 colors:
   light:
     bg: "#f8f9fa"
@@ -61,19 +61,19 @@ typography:
     fontFamily: "Newsreader, Georgia, serif"
     weights: [500, 600]
   sans:
-    fontFamily: "Inter, ui-sans-serif, system-ui, Noto Sans Bengali, sans-serif"
-    weights: [400, 500, 600]
+    fontFamily: "IBM Plex Sans, Noto Sans Bengali, ui-sans-serif, system-ui, sans-serif"
+    weights: [400, 500, 600, 700]
   landingBody:
     fontFamily: "Geist, system-ui, sans-serif"
   mono:
-    fontFamily: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
   scale:
-    micro: { fontSize: "0.6875rem", lineHeight: 1.2, weight: 500 }
+    micro: { fontSize: "0.75rem", lineHeight: 1.2, weight: 500 }
     caption: { fontSize: "0.75rem", lineHeight: 1.4, weight: 400 }
     ui: { fontSize: "0.875rem", lineHeight: 1.35, weight: 500 }
     body: { fontSize: "1rem", lineHeight: 1.5, weight: 400 }
     section: { fontSize: "1rem", lineHeight: 1.35, weight: 500 }
-    pageTitle: { fontSize: "1.25rem–1.75rem", lineHeight: 1.2, weight: 500, font: "Newsreader" }
+    pageTitle: { fontSize: "1.25rem–1.75rem", lineHeight: 1.2, weight: 600, font: "IBM Plex Sans" }
     kpi: { fontSize: "1.5rem–1.875rem", lineHeight: 1.15, weight: 500 }
 rounded:
   base: "0.625rem (10px)"
@@ -101,7 +101,7 @@ A light- and dark-mode gym management workspace and public landing page grounded
 **Key Characteristics:**
 - **Unified neutrals, quiet chrome:** Tinted Workspace-style sidebar (`#f0f4f9` / `#1a1c1e`) with tonal active nav rows (`bg-sidebar-accent` + primary-tinted icon) instead of loud filled nav pills.
 - **Tonal KPI icon chips:** Metric columns keep colored Material 3 tonal icon wells (`TONAL_ICON_CLASSES` in `components/StatCards.tsx`) with >= 5:1 icon contrast across Blue, Green, Amber, Red, and Slate tones.
-- **Editorial-sans pairing:** `Newsreader` (`--font-editorial`) on dashboard `<h1>` headings and landing display headings paired with `Inter` for operational UI, `Geist` on landing body copy, and `JetBrains Mono` / `Geist Mono` (`tabular-nums`) for member IDs (`MM-xxx`), TrxIDs, receipt numbers, and chart ticks.
+- **Typography pairing:** Dashboards use `IBM Plex Sans` (`--font-plex-sans`) + `Noto Sans Bengali` across headings (`font-heading`), navigation, KPIs, and body copy, paired with `IBM Plex Mono` (`--font-plex-mono`, `tabular-nums`) strictly for member IDs (`MM-xxx`), TrxIDs, and receipt numbers (`tabular-nums` on `IBM Plex Sans` for all KPI metrics and chart axes); the landing page preserves `Newsreader` display + `Geist` body.
 - **Light + dark support:** Both themes defined in `:root` / `.dark` (`app/globals.css` and `app/landing.css`), with `ThemeToggle` in sidebar/header.
 
 ## Layout & Adaptivity
@@ -122,7 +122,7 @@ A light- and dark-mode gym management workspace and public landing page grounded
 
 ## Typography & Accessibility
 
-- **Scale & Unitless Line-Heights:** `1.15` on KPI figures, `1.2` on `Newsreader` `<h1>` page titles (wrapping with `text-balance`, never clipped with `truncate`) and compact nav labels, `1.35`–`1.45` on UI labels/metadata (`text-pretty`), and `1.5` on prose capped around `max-w-[65ch]`.
+- **Scale & Unitless Line-Heights:** `1.15` on KPI figures, `1.2` on `IBM Plex Sans` `<h1>` dashboard page titles (wrapping with `text-balance`, never clipped with `truncate`) and `12px` (`text-xs`) floor on compact nav/badge labels, `1.35`–`1.45` on UI labels/metadata (`text-pretty`), and `1.5` on prose capped around `max-w-[65ch]`.
 - **Weights & Numerals:** Interface weights stay in `400`–`500` (`600` sparingly), sentence case everywhere (no all-caps tracked eyebrows), global `font-variant-numeric: tabular-nums`, and typographic ellipsis `…` (`…{key_hint}`).
 - **Forms & Inputs (`components/ui/input.tsx`):** Inputs render at `16px` (`text-base`) below `md` to prevent iOS Safari zoom and `14px` (`md:text-sm`) on desktop, with explicit `name`, `inputMode`, `enterKeyHint`, `noValidate`, `aria-invalid`, and `aria-describedby` error association.
 

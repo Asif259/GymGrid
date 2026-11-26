@@ -802,7 +802,7 @@ export default function SettingsPage() {
                   className="gap-1.5 rounded-xl px-2.5 py-1"
                 >
                   <span>{p.label}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground">
+                  <span className="font-mono text-xs text-muted-foreground tabular-nums">
                     <bdi>…{p.key_hint}</bdi>
                   </span>
                 </Badge>

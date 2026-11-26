@@ -297,7 +297,7 @@ export function MemberPlans({
                                   ) : null}
                                 </div>
                                 {muscleLabel ? (
-                                  <p className="text-[11px] font-medium text-muted-foreground capitalize">
+                                  <p className="text-xs font-medium text-muted-foreground capitalize">
                                     {muscleLabel}
                                   </p>
                                 ) : null}

@@ -157,13 +157,13 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
                 tickLine={false}
                 axisLine={false}
                 minTickGap={10}
-                className="font-mono text-[11px]"
+                className="text-xs tabular-nums"
               />
               <YAxis
                 allowDecimals={false}
                 tickLine={false}
                 axisLine={false}
-                className="font-mono text-[11px]"
+                className="text-xs tabular-nums"
               />
               <ChartTooltip
                 content={

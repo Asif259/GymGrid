@@ -183,7 +183,7 @@ export function DataTable({
               {FILTERS.map((f) => (
                 <TabsTrigger key={f.key} value={f.key} className="gap-1.5">
                   <span>{f.label}</span>
-                  <Badge variant="secondary" className="px-1.5 text-[11px]">
+                  <Badge variant="secondary" className="px-1.5 text-xs tabular-nums">
                     {counts[f.key]}
                   </Badge>
                 </TabsTrigger>
@@ -285,7 +285,7 @@ export function DataTable({
                                 <bdi>{m.name}</bdi>
                               </span>
                               {m.member_code ? (
-                                <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
+                                <Badge variant="outline" className="rounded-md font-mono text-xs tabular-nums">
                                   <bdi>{m.member_code}</bdi>
                                 </Badge>
                               ) : null}

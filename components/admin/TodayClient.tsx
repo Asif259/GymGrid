@@ -260,13 +260,13 @@ export function TodayClient() {
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
-                  className="font-mono text-[11px]"
+                  className="text-xs tabular-nums"
                 />
                 <YAxis
                   allowDecimals={false}
                   tickLine={false}
                   axisLine={false}
-                  className="font-mono text-[11px]"
+                  className="text-xs tabular-nums"
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
@@ -325,7 +325,7 @@ export function TodayClient() {
                         {m.name}
                       </span>
                       {m.member_code ? (
-                        <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
+                        <Badge variant="outline" className="rounded-md font-mono text-xs tabular-nums">
                           <bdi>{m.member_code}</bdi>
                         </Badge>
                       ) : null}

@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import {
   Geist,
   Geist_Mono,
-  Inter,
+  IBM_Plex_Mono,
+  IBM_Plex_Sans,
   JetBrains_Mono,
   Newsreader,
   Noto_Sans_Bengali,
@@ -14,10 +15,17 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const inter = Inter({
+const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
-  axes: ["opsz"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plex-sans",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -48,6 +56,7 @@ const geistMono = Geist_Mono({
 const editorial = Newsreader({
   subsets: ["latin"],
   weight: ["500", "600"],
+  style: ["normal", "italic"],
   variable: "--font-editorial",
   display: "swap",
 });
@@ -82,7 +91,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       lang="en"
       dir="ltr"
       suppressHydrationWarning
-      className={`${inter.variable} ${bengali.variable} ${mono.variable} ${editorial.variable} ${geist.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${plexSans.variable} ${plexMono.variable} ${bengali.variable} ${mono.variable} ${editorial.variable} ${geist.variable} ${geistMono.variable} h-full antialiased`}
     >
       {/* <!-- Designed & built by Moh Asraful Hasan Asif --> */}
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">

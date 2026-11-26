@@ -474,7 +474,7 @@ export function MemberPay({
                       onClick={() => setSelectedMethod(option.id)}
                       onKeyDown={(e) => handleRadioKeyDown(e, option.id)}
                       className={cn(
-                        "inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors outline-none select-none touch-manipulation focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+                        "inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors outline-none touch-manipulation focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
                         isSelected
                           ? "bg-primary text-primary-foreground shadow-xs"
                           : "text-foreground hover:bg-muted",

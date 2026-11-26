@@ -379,7 +379,7 @@ export function MemberOverview({
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle className="text-base font-medium">Member pass</CardTitle>
                 {member.member_code ? (
-                  <Badge variant="outline" className="rounded-md font-mono text-[11px] tabular-nums">
+                  <Badge variant="outline" className="rounded-md font-mono text-xs tabular-nums">
                     <bdi>{member.member_code}</bdi>
                   </Badge>
                 ) : null}
@@ -397,7 +397,7 @@ export function MemberOverview({
                 .filter((chip) => chip.label !== "Member ID")
                 .map((chip) => (
                   <div key={chip.label} className="min-w-0">
-                    <dt className="text-[11px] leading-[1.3] font-medium text-muted-foreground">
+                    <dt className="text-xs leading-[1.3] font-medium text-muted-foreground">
                       {chip.label}
                     </dt>
                     <dd
@@ -581,13 +581,13 @@ export function MemberOverview({
                     dataKey="label"
                     tickLine={false}
                     axisLine={false}
-                    className="font-mono text-[11px]"
+                    className="text-xs tabular-nums"
                   />
                   <YAxis
                     allowDecimals={false}
                     tickLine={false}
                     axisLine={false}
-                    className="font-mono text-[11px]"
+                    className="text-xs tabular-nums"
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="count" radius={[6, 6, 0, 0]}>

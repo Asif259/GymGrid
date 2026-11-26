@@ -72,7 +72,7 @@ export function StatCards({
               </span>
             </div>
 
-            <p className="text-2xl leading-[1.15] font-medium tracking-tight tabular-nums text-foreground sm:text-[1.875rem]">
+            <p className="text-2xl leading-[1.15] font-semibold tracking-[-0.02em] tabular-nums text-foreground sm:text-[1.875rem]">
               {stat.value}
             </p>
 
@@ -82,7 +82,7 @@ export function StatCards({
               </span>
               <Badge
                 className={cn(
-                  "shrink-0 rounded-md font-mono text-[11px] font-medium tabular-nums",
+                  "shrink-0 rounded-md text-xs font-medium tabular-nums",
                   DELTA_CLASSES[stat.deltaTone],
                 )}
               >
