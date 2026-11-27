@@ -255,8 +255,28 @@ async function reminders() {
   return { sent, failed };
 }
 
+// ---------- receipt GC ----------
+// Receipts live under <member_id>/; remove folders whose member row is gone (delete = erasure).
+async function gcReceipts() {
+  const { data: dirs, error } = await db.storage.from('receipts').list('', { limit: 100 });
+  if (error) throw error;
+  const ids = (dirs ?? []).map((d) => d.name).filter((n) => /^[0-9a-f-]{36}$/i.test(n));
+  if (!ids.length) return 0;
+  const { data: live, error: me } = await db.from('members').select('id').in('id', ids);
+  if (me) throw me;
+  const keep = new Set((live ?? []).map((r) => r.id));
+  let removed = 0;
+  for (const id of ids.filter((i) => !keep.has(i))) {
+    const { data: files } = await db.storage.from('receipts').list(id, { limit: 1000 });
+    const paths = (files ?? []).map((f) => `${id}/${f.name}`);
+    if (paths.length && !(await db.storage.from('receipts').remove(paths)).error) removed += paths.length;
+  }
+  return removed;
+}
+
 // ---------- digest ----------
 async function digest() {
+  try { await gcReceipts(); } catch (e) { console.error(`receipt gc failed: ${safeMsg(e)}`); }
   const gyms = await loadActiveGyms();
   let sent = 0;
 
