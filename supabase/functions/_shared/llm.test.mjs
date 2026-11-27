@@ -171,3 +171,14 @@ test('runWithFailover falls over on 429/401, skips cooling-down providers, and r
     },
   );
 });
+
+test('assertSafeBaseUrl rejects trailing-dot and embedded-IPv4 IPv6 hosts', () => {
+  for (const u of ['https://localhost./v1', 'https://metadata.google.internal./', 'https://[2002:7f00:1::]/']) {
+    assert.throws(() => assertSafeBaseUrl(u), u);
+  }
+});
+
+test('classify does not cool a provider down for model output errors', () => {
+  assert.equal(classify(new ProviderError('bad json', { status: 502, code: 'invalid_json' })).cooldownMs, 0);
+  assert.equal(classify(new ProviderError('stopped', { status: 422, code: 'refusal' })).cooldownMs, 0);
+});

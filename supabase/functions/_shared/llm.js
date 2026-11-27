@@ -81,7 +81,7 @@ function isPrivateIpv4(host) {
 }
 
 function isUnsafeHost(hostname) {
-  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase().replace(/\.+$/, '');
   if (!host) return true;
   if (
     host === 'localhost' ||
@@ -96,6 +96,8 @@ function isUnsafeHost(hostname) {
   if (host === '::' || host === '::1') return true;
   if (host.includes(':')) {
     if (host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
+    // 6to4, Teredo, NAT64 and documentation ranges can embed or reach private IPv4 space
+    if (/^(2002|2001:0?:|2001:db8|64:ff9b)/.test(host)) return true;
     const mapped = host.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
     if (mapped && isPrivateIpv4(mapped[1])) return true;
     // Reject non-global IPv6 literals for safety
@@ -144,11 +146,30 @@ export class ProviderError extends Error {
   }
 }
 
+// Reject names that resolve to private addresses (only where the Deno runtime offers DNS).
+async function assertResolvesPublic(rawUrl) {
+  const D = globalThis.Deno;
+  if (!D?.resolveDns) return;
+  const host = new URL(rawUrl).hostname.replace(/^\[|\]$/g, '');
+  if (/^[0-9.]+$/.test(host) || host.includes(':')) return;
+  for (const type of ['A', 'AAAA']) {
+    let addrs = [];
+    try { addrs = await D.resolveDns(host, type); } catch { /* no records of this type */ }
+    for (const a of addrs) {
+      if (isUnsafeHost(a)) throw new ProviderError('Base URL resolves to a private address', { status: 400 });
+    }
+  }
+}
+
 async function fetchJson(fetchFn, url, init, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new Error('Request timed out')), timeoutMs);
   try {
-    const res = await fetchFn(url, { ...init, signal: controller.signal });
+    if (fetchFn === globalThis.fetch) await assertResolvesPublic(url);
+    const res = await fetchFn(url, { ...init, redirect: 'manual', signal: controller.signal });
+    if (res.status >= 300 && res.status < 400) {
+      throw new ProviderError('Provider redirected; redirects are not followed', { status: 502 });
+    }
     const text = await res.text();
     let body = null;
     try {
@@ -336,6 +357,7 @@ export async function complete(provider, { system, user }, fetchFn = fetch, time
           generationConfig: {
             responseMimeType: 'application/json',
             temperature: 0.4,
+            maxOutputTokens: 8192,
           },
         }),
       },
@@ -376,6 +398,7 @@ export async function complete(provider, { system, user }, fetchFn = fetch, time
         ],
         response_format: { type: 'json_object' },
         temperature: 0.4,
+        max_tokens: 8192,
       }),
     },
     timeoutMs,
@@ -402,6 +425,10 @@ export function classify(err) {
   const msg = String(err?.message ?? err ?? 'Provider error').slice(0, 240);
   if (status === 401 || status === 403) {
     return { cooldownMs: 60 * 60 * 1000, kind: 'auth', message: msg };
+  }
+  // Output the model chose (bad JSON, safety stop) says nothing about provider health.
+  if (err?.code === 'invalid_json' || err?.code === 'refusal') {
+    return { cooldownMs: 0, kind: 'output', message: msg };
   }
   if (status === 429 || status >= 500 || err?.isTimeout || /timeout|aborted/i.test(msg)) {
     return { cooldownMs: 5 * 60 * 1000, kind: 'transient', message: msg };

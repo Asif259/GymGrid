@@ -3,7 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import nodemailer from 'npm:nodemailer@6.9.16';
 import { receiptLines } from '../_shared/receipt.js';
-import { selectReminders, reminderEmail } from '../_shared/reminders.js';
+import { selectReminders, reminderEmail, isSingleEmail } from '../_shared/reminders.js';
 import { digestText, digestHtml } from '../_shared/digest.js';
 import { memberRow, paymentRow, MEMBER_HEADERS, PAYMENT_HEADERS } from '../_shared/sheets.js';
 
@@ -12,8 +12,20 @@ const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
 const MEMBER_SELECT = 'id, gym_id, name, phone, email, status, expiry_date, plans(name)';
 const MAX_ATTEMPTS = 5;
 
-const todayForZone = (tz = 'Asia/Dhaka') =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: tz || 'Asia/Dhaka' }).format(new Date());
+const todayForZone = (tz = 'Asia/Dhaka') => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: tz || 'Asia/Dhaka' }).format(new Date());
+  } catch {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+  }
+};
+const MAX_REMINDERS_PER_GYM = 200;
+const same = (a: string, b: string) => {
+  const x = new TextEncoder().encode(a), y = new TextEncoder().encode(b);
+  let d = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) d |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return d === 0;
+};
 
 // Error text can echo an address or a message body: keep the cause, drop the addresses.
 const safeMsg = (e: unknown) => String((e as Error)?.message ?? e).replace(/[^\s@<>"']+@[^\s@<>"']+/g, '[email]').slice(0, 300);
@@ -141,7 +153,7 @@ async function handle(ev: Ev, gym: GymConfig) {
   if (up.error) throw up.error;
   const { error: ue } = await db.from('payments').update({ receipt_path: path }).eq('id', p.id);
   if (ue) throw ue;
-  if (m.email) {
+  if (isSingleEmail(m.email)) {
     const { data: claimed, error: ce } = await db.from('payments')
       .update({ receipt_emailed_at: new Date().toISOString() }).eq('id', p.id).is('receipt_emailed_at', null).select('id');
     if (ce) throw ce;
@@ -204,6 +216,7 @@ async function reminders() {
   let sent = 0, failed = 0;
 
   for (const gym of gyms) {
+   try {
     const today = todayForZone(gym.timezone);
     const { data: members, error } = await db
       .from('members')
@@ -218,7 +231,8 @@ async function reminders() {
       .eq('gym_id', gym.id)
       .eq('day', today);
 
-    for (const m of selectReminders(members ?? [], today, (log ?? []).map((r) => r.member_id))) {
+    const due = selectReminders(members ?? [], today, (log ?? []).map((r) => r.member_id)).slice(0, MAX_REMINDERS_PER_GYM);
+    for (const m of due) {
       const { data: claimed, error: ce } = await db.from('reminder_log')
         .upsert({ gym_id: gym.id, member_id: m.id, day: today }, { onConflict: 'member_id,day', ignoreDuplicates: true })
         .select('member_id');
@@ -233,6 +247,10 @@ async function reminders() {
         failed++;
       }
     }
+   } catch (e) {
+    console.error(`reminders gym ${gym.slug} failed: ${safeMsg(e)}`);
+    failed++;
+   }
   }
   return { sent, failed };
 }
@@ -243,6 +261,7 @@ async function digest() {
   let sent = 0;
 
   for (const gym of gyms) {
+   try {
     const { data: d, error } = await db.rpc('owner_digest_for_gym', { p_gym_id: gym.id });
     if (error) throw error;
 
@@ -254,10 +273,10 @@ async function digest() {
     if (oe) throw oe;
 
     const to = new Set<string>();
-    if (gym.owner_digest_email) to.add(gym.owner_digest_email);
+    if (isSingleEmail(gym.owner_digest_email)) to.add(gym.owner_digest_email as string);
     for (const o of owners ?? []) {
       const { data } = await db.auth.admin.getUserById(o.user_id);
-      if (data?.user?.email) to.add(data.user.email.toLowerCase());
+      if (isSingleEmail(data?.user?.email)) to.add(data!.user!.email!.toLowerCase());
     }
 
     for (const addr of to) {
@@ -269,6 +288,9 @@ async function digest() {
       });
       sent++;
     }
+   } catch (e) {
+    console.error(`digest gym ${gym.slug} failed: ${safeMsg(e)}`);
+   }
   }
   return { gyms: gyms.length, sent };
 }
@@ -279,7 +301,7 @@ const routes: Record<string, () => Promise<unknown>> = { dispatch, reminders, di
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 });
   const secret = env('AUTOMATION_SECRET');
-  if (!secret || req.headers.get('x-automation-secret') !== secret) return new Response('forbidden', { status: 403 });
+  if (!secret || !same(req.headers.get('x-automation-secret') ?? '', secret)) return new Response('forbidden', { status: 403 });
   const route = routes[new URL(req.url).pathname.split('/').filter(Boolean).pop() ?? ''];
   if (!route) return new Response('not found', { status: 404 });
   try {

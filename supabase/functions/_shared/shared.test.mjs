@@ -40,3 +40,10 @@ test2('reminderEmail escapes member-controlled text in html', () => {
   assert2.ok(!e.html.includes('<img'));
   assert2.ok(e.html.includes('&lt;img'));
 });
+
+test('isSingleEmail accepts one address only', async () => {
+  const { isSingleEmail } = await import('./reminders.js');
+  assert.equal(isSingleEmail('a@x.com'), true);
+  assert.equal(isSingleEmail('a@x.com, b@y.com'), false);
+  assert.equal(isSingleEmail('A <a@x.com>'), false);
+});

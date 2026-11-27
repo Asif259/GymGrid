@@ -1,10 +1,13 @@
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const addDays = (d, n) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 
+// One plain address only: no list separators, display names or angle brackets.
+export const isSingleEmail = (s) => typeof s === 'string' && s.length <= 254 && /^[^@\s,;<>"()\[\]\\]+@[^@\s,;<>"()\[\]\\]+\.[^@\s,;<>"()\[\]\\]+$/.test(s);
+
 export function selectReminders(members, today, alreadySentIds = []) {
   const target = addDays(today, 2);
   const sent = new Set(alreadySentIds);
-  return members.filter((m) => m.expiry_date === target && m.status !== 'frozen' && m.email && !sent.has(m.id));
+  return members.filter((m) => m.expiry_date === target && m.status !== 'frozen' && isSingleEmail(m.email) && !sent.has(m.id));
 }
 
 export function reminderEmail(m, settings = {}) {

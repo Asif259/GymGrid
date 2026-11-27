@@ -125,7 +125,6 @@ Diet rules:
 - Strictly exclude every listed allergy and anything excluded by diet_pref (e.g. vegetarian = no meat/poultry/fish/seafood; vegan = no animal products; halal = no pork or alcohol). Watch out for hidden ingredients.`;
 }
 
-const RATE_LIMIT_MS = 24 * 60 * 60 * 1000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function buildUserPrompt(
@@ -273,20 +272,14 @@ Deno.serve(async (req) => {
   }
 
   const table = kind === 'workout' ? 'workout_plans' : 'diet_plans';
-  const since = new Date(Date.now() - RATE_LIMIT_MS).toISOString();
-  const { data: recentRows, error: rateErr } = await db
-    .from(table)
-    .select('id, created_at')
-    .eq('member_id', member.id)
-    .eq('source', 'ai')
-    .gte('created_at', since)
-    .limit(1);
+  // Atomic reservation: concurrent and failed attempts count (3 per 24h), a stored AI plan blocks for 24h.
+  const { data: reserved, error: rateErr } = await db.rpc('reserve_ai_slot', { p_member_id: member.id, p_kind: kind });
 
   if (rateErr) {
     console.error('rate limit check error:', rateErr.message);
     return json({ error: 'Failed to check plan generation limit' }, 500);
   }
-  if (recentRows && recentRows.length > 0) {
+  if (!reserved) {
     return json(
       {
         error: `You can generate one AI ${kind} plan every 24 hours. Please try again later.`,
