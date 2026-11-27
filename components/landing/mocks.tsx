@@ -1,4 +1,5 @@
-import { Banknote, CalendarCheck, Check, Clock, Download, MessageCircle, Users } from "lucide-react";
+import { Banknote, BatteryFull, CalendarCheck, Check, Clock, Download, Signal, Users, Wifi } from "lucide-react";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 
 /* Product visuals built in code from the real UI language (DESIGN.md): the KPI ledger strip,
    status badges, the member pass. Every number is sample data and the frames say so. */
@@ -84,10 +85,10 @@ function Renewals() {
     <div className="lp-panel">
       <h3>Expiring in 2 days</h3>
       <Person initials="SH" name="Samira Hossain" meta={<>Ends Friday · ৳1,500 plan</>}>
-        <span className="lp-btn-mini lp-btn-mini--wa text-white"><MessageCircle size={14} aria-hidden /> WhatsApp</span>
+        <span className="lp-btn-mini lp-btn-mini--wa"><WhatsAppIcon size={14} /> WhatsApp</span>
       </Person>
       <Person initials="RK" name="Rafi Karim" meta={<>Ends Friday · ৳2,500 plan</>}>
-        <span className="lp-btn-mini lp-btn-mini--wa text-white"><MessageCircle size={14} aria-hidden /> WhatsApp</span>
+        <span className="lp-btn-mini lp-btn-mini--wa"><WhatsAppIcon size={14} /> WhatsApp</span>
       </Person>
     </div>
   );
@@ -137,43 +138,74 @@ export function Register() {
 }
 
 /* One phone screen per step of the check-in and payment flow. */
+/** Phone status bar and app header shared by every showcase screen. */
+function Chrome({ step }: { step: number }) {
+  return (
+    <>
+      <div className="lp-statusbar" aria-hidden>
+        <span className="lp-num">9:41</span>
+        <span><Signal size={12} /><Wifi size={12} /><BatteryFull size={14} /></span>
+      </div>
+      <div className="lp-apphead">
+        <span translate="no">GymGrid</span>
+        <span className="lp-stepchip lp-num">Step {step + 1} of 5</span>
+      </div>
+    </>
+  );
+}
+
 export function StepScreen({ step }: { step: number }) {
   switch (step) {
     case 0:
       return (
         <div className="lp-screen lp-screen--scan">
-          <div className="lp-viewfinder">
-            <svg viewBox="0 0 21 21" shapeRendering="crispEdges" aria-hidden>
-              <rect width="21" height="21" fill="var(--lp-surface)" />
-              {QR.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="var(--lp-ink)" />)}
-              {[[0, 0], [14, 0], [0, 14]].map(([x, y]) => (
-                <g key={`f${x}${y}`}>
-                  <rect x={x} y={y} width="7" height="7" fill="var(--lp-ink)" />
-                  <rect x={x + 1} y={y + 1} width="5" height="5" fill="var(--lp-surface)" />
-                  <rect x={x + 2} y={y + 2} width="3" height="3" fill="var(--lp-ink)" />
-                </g>
-              ))}
-            </svg>
-            <i className="lp-scanline" />
+          <Chrome step={step} />
+          <div className="lp-scan-body">
+            <div className="lp-viewfinder">
+              <svg viewBox="0 0 21 21" shapeRendering="crispEdges" aria-hidden>
+                <rect width="21" height="21" fill="var(--lp-surface)" />
+                {QR.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="var(--lp-ink)" />)}
+                {[[0, 0], [14, 0], [0, 14]].map(([x, y]) => (
+                  <g key={`f${x}${y}`}>
+                    <rect x={x} y={y} width="7" height="7" fill="var(--lp-ink)" />
+                    <rect x={x + 1} y={y + 1} width="5" height="5" fill="var(--lp-surface)" />
+                    <rect x={x + 2} y={y + 2} width="3" height="3" fill="var(--lp-ink)" />
+                  </g>
+                ))}
+              </svg>
+              <i className="lp-scanline" />
+              <i className="lp-corner lp-corner--tl" /><i className="lp-corner lp-corner--tr" />
+              <i className="lp-corner lp-corner--bl" /><i className="lp-corner lp-corner--br" />
+            </div>
+            <p>Point the camera at the desk poster</p>
           </div>
-          <p>Point the camera at the desk poster</p>
         </div>
       );
     case 1:
       return (
-        <div className="lp-screen lp-screen--center">
-          <span className="lp-bigcheck"><Check size={34} aria-hidden /></span>
-          <b>Checked in · <span className="lp-num">06:42</span></b>
-          <Badge tone="active">Active</Badge>
-          <small>Plan active until 14 Dec</small>
+        <div className="lp-screen">
+          <Chrome step={step} />
+          <div className="lp-center-body">
+            <span className="lp-bigcheck"><Check size={34} aria-hidden /></span>
+            <b className="lp-screen-title">Checked in · <span className="lp-num">06:42</span></b>
+            <div className="lp-person lp-person--stack lp-person--wide">
+              <span className="lp-avatar" aria-hidden>AH</span>
+              <div><b>Arif Hasan</b><span><bdi className="lp-mono">MM-014</bdi> · Monthly plan</span></div>
+              <Badge tone="active">Active</Badge>
+            </div>
+            <div className="lp-meter" aria-hidden><i style={{ inlineSize: "62%" }} /></div>
+            <small>Plan active until <span className="lp-num">14 Dec</span></small>
+          </div>
         </div>
       );
     case 2:
       return (
         <div className="lp-screen">
-          <b className="lp-screen-title">Renew · <span className="lp-num">৳1,500</span></b>
+          <Chrome step={step} />
+          <b className="lp-screen-title">Renew your plan</b>
+          <div className="lp-plancard"><span>Monthly plan</span><b className="lp-num">৳1,500</b></div>
           <div className="lp-wallets"><span data-on>bKash</span><span>Nagad</span></div>
-          <small>TrxID from your wallet</small>
+          <small>Send Money to <bdi className="lp-mono">01712-345678</bdi>, then paste the TrxID.</small>
           <div className="lp-field"><bdi className="lp-mono">9F3K2L7Q</bdi></div>
           <span className="lp-btn-block">Submit for verification</span>
         </div>
@@ -181,8 +213,9 @@ export function StepScreen({ step }: { step: number }) {
     case 3:
       return (
         <div className="lp-screen">
+          <Chrome step={step} />
           <b className="lp-screen-title">Pending verification</b>
-          <div className="lp-person lp-person--stack">
+          <div className="lp-person lp-person--stack lp-person--wide">
             <span className="lp-avatar" aria-hidden>AH</span>
             <div><b>Arif Hasan</b><span><bdi className="lp-mono">MM-014</bdi> · Monthly plan</span></div>
             <Badge tone="pending">Pending</Badge>
@@ -199,7 +232,11 @@ export function StepScreen({ step }: { step: number }) {
     default:
       return (
         <div className="lp-screen">
-          <b className="lp-screen-title">Receipt <bdi className="lp-mono">R-0042</bdi></b>
+          <Chrome step={step} />
+          <div className="lp-receipt-head">
+            <span className="lp-bigcheck lp-bigcheck--sm"><Check size={22} aria-hidden /></span>
+            <div><b className="lp-screen-title">Paid</b><small>Receipt <bdi className="lp-mono">R-0042</bdi></small></div>
+          </div>
           <dl className="lp-receipt">
             <div><dt>Member</dt><dd>Arif Hasan</dd></div>
             <div><dt>Paid with</dt><dd>bKash</dd></div>

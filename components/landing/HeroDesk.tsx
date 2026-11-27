@@ -5,7 +5,6 @@ import {
   CalendarClock,
   Check,
   CreditCard,
-  MessageCircle,
   Pause,
   Play,
   QrCode,
@@ -14,6 +13,7 @@ import {
   ShieldCheck,
   Smartphone,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 
 /* Panoramic interactive workspace for the centered hero showcase.
    Shows four live operational panes (Reception queue, Pending TrxID, Member pass,
@@ -395,13 +395,13 @@ export function HeroDesk() {
                   </div>
                   <button
                     type="button"
-                    className={waSent[m.code] ? "lp-desk-tool" : "lp-desk-confirm"}
+                    className={waSent[m.code] ? "lp-desk-tool" : "lp-desk-confirm lp-desk-wa"}
                     onClick={() => {
                       setWaSent((w) => ({ ...w, [m.code]: !w[m.code] }));
                       setAnnounce(`Prepared WhatsApp reminder for ${m.name}.`);
                     }}
                   >
-                    <MessageCircle size={14} aria-hidden />
+                    <WhatsAppIcon size={14} />
                     <span>{waSent[m.code] ? "WhatsApp opened" : "Send reminder"}</span>
                   </button>
                 </li>

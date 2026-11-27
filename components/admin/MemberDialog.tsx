@@ -5,11 +5,11 @@ import Link from "next/link";
 import {
   CheckCircle2,
   ExternalLink,
-  MessageCircle,
   PauseCircle,
   Save,
   UserCheck,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -366,7 +366,7 @@ function MemberDialogContent({
                 target="_blank"
                 rel="noreferrer"
               >
-                <MessageCircle className="size-4" aria-hidden="true" />
+                <WhatsAppIcon className="size-4 text-[#008069] dark:text-[#25D366]" />
                 <span>WhatsApp</span>
               </a>
             </Button>

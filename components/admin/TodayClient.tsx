@@ -10,11 +10,11 @@ import {
   Clock,
   Coins,
   Copy,
-  MessageCircle,
   Monitor,
   QrCode,
   Users,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/lib/stores/auth-store";
@@ -398,7 +398,7 @@ export function TodayClient() {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        <MessageCircle className="size-4" aria-hidden="true" />
+                        <WhatsAppIcon className="size-4 text-[#008069] dark:text-[#25D366]" />
                         <span>WhatsApp</span>
                       </a>
                     </Button>
@@ -526,7 +526,7 @@ export function TodayClient() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          <MessageCircle className="size-4" aria-hidden="true" />
+                          <WhatsAppIcon className="size-4 text-[#008069] dark:text-[#25D366]" />
                           <span>WhatsApp</span>
                         </a>
                       </Button>
@@ -571,7 +571,7 @@ export function TodayClient() {
                             target="_blank"
                             rel="noreferrer"
                           >
-                            <MessageCircle className="size-4" aria-hidden="true" />
+                            <WhatsAppIcon className="size-4 text-[#008069] dark:text-[#25D366]" />
                             <span>WhatsApp</span>
                           </a>
                         </Button>
