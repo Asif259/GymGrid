@@ -84,10 +84,10 @@ function Renewals() {
     <div className="lp-panel">
       <h3>Expiring in 2 days</h3>
       <Person initials="SH" name="Samira Hossain" meta={<>Ends Friday · ৳1,500 plan</>}>
-        <span className="lp-btn-mini lp-btn-mini--wa"><MessageCircle size={14} aria-hidden /> WhatsApp</span>
+        <span className="lp-btn-mini lp-btn-mini--wa text-white"><MessageCircle size={14} aria-hidden /> WhatsApp</span>
       </Person>
       <Person initials="RK" name="Rafi Karim" meta={<>Ends Friday · ৳2,500 plan</>}>
-        <span className="lp-btn-mini lp-btn-mini--wa"><MessageCircle size={14} aria-hidden /> WhatsApp</span>
+        <span className="lp-btn-mini lp-btn-mini--wa text-white"><MessageCircle size={14} aria-hidden /> WhatsApp</span>
       </Person>
     </div>
   );

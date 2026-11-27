@@ -75,6 +75,26 @@ export function LandingShell() {
           // Hero: the headline paints at once (it is the LCP); only the desk demo rises in.
           gsap.fromTo(".lp-hero-visual", { y: 48, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.1, ease: "expo.out", delay: 0.15 });
 
+          if (desktop) {
+            // Register and measure the #how pin first (refreshPriority: 1) so every
+            // ScrollTrigger below #how accounts for its pin-spacer height.
+            const last = STEPS.length - 1;
+            gsap.timeline({
+              scrollTrigger: {
+                trigger: ".lp-how",
+                start: "top top",
+                end: () => `+=${window.innerHeight * last * 0.9}`,
+                pin: ".lp-how-stage",
+                anticipatePin: 1,
+                scrub: 0.6,
+                snap: { snapTo: 1 / last, duration: { min: 0.2, max: 0.5 }, ease: "power2.inOut" },
+                invalidateOnRefresh: true,
+                refreshPriority: 1,
+                onUpdate: (s) => setActive(Math.round(s.progress * last)),
+              },
+            }).fromTo(".lp-progress-bar", { scaleY: 0 }, { scaleY: 1, ease: "none" });
+          }
+
           gsap.utils.toArray<HTMLElement>("[data-words]").forEach((el) =>
             gsap.fromTo(el.querySelectorAll(".lp-word"), { yPercent: 115 }, {
               yPercent: 0, duration: 1, ease: "power4.out", stagger: 0.05,
@@ -97,26 +117,10 @@ export function LandingShell() {
           // The one type moment: the three "no" lines slide across as the section passes.
           gsap.fromTo(".lp-slide-track", { xPercent: 8 }, {
             xPercent: -42, ease: "none",
-            scrollTrigger: { trigger: ".lp-slide", start: "top bottom", end: "bottom top", scrub: 1 },
+            scrollTrigger: { trigger: ".lp-slide", start: "top bottom", end: "bottom top", scrub: 1, invalidateOnRefresh: true },
           });
 
-          if (desktop) {
-            // Pinned stage: one step per viewport of scroll; the phone screen follows the active step.
-            const last = STEPS.length - 1;
-            gsap.timeline({
-              scrollTrigger: {
-                trigger: ".lp-how",
-                start: "top top",
-                end: () => `+=${window.innerHeight * last * 0.9}`,
-                pin: ".lp-how-stage",
-                anticipatePin: 1,
-                scrub: 0.6,
-                snap: { snapTo: 1 / last, duration: { min: 0.2, max: 0.5 }, ease: "power2.inOut" },
-                invalidateOnRefresh: true,
-                onUpdate: (s) => setActive(Math.round(s.progress * last)),
-              },
-            }).fromTo(".lp-progress-bar", { scaleY: 0 }, { scaleY: 1, ease: "none" });
-          }
+          ScrollTrigger.sort();
 
           return () => {
             gsap.ticker.remove(tick);
