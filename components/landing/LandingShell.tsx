@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { FAQ } from "./faq";
 import { HeroDesk } from "./HeroDesk";
 import { MemberPass, OwnerView, Register, StepScreen } from "./mocks";
+import { WalkthroughFilm } from "./WalkthroughFilm";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -199,6 +200,16 @@ export function LandingShell() {
             </ul>
           </div>
           <div data-reveal><Register /></div>
+        </section>
+
+        <section id="walkthrough" className="lp-film lp-wrap" aria-labelledby="walkthrough-title">
+          <div className="lp-film-head">
+            <h2 id="walkthrough-title" className="lp-h2" data-words><Words text="Thirty seconds at the front desk." /></h2>
+            <p className="lp-lead" data-reveal>
+              One member scans in at 06:42, clears an expired fee with a bKash TrxID, and gets a PDF receipt without touching paper.
+            </p>
+          </div>
+          <WalkthroughFilm />
         </section>
 
         <section id="how" className="lp-how" aria-labelledby="how-title">
