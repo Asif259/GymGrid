@@ -215,13 +215,13 @@ export function DataTable({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="status:asc">Sort: Status</SelectItem>
-              <SelectItem value="name:asc">Sort: Name (A–Z)</SelectItem>
-              <SelectItem value="name:desc">Sort: Name (Z–A)</SelectItem>
-              <SelectItem value="amount:desc">Sort: Amount (high–low)</SelectItem>
-              <SelectItem value="amount:asc">Sort: Amount (low–high)</SelectItem>
-              <SelectItem value="expiry:asc">Sort: Expiry (soonest)</SelectItem>
-              <SelectItem value="expiry:desc">Sort: Expiry (latest)</SelectItem>
+              <SelectItem value="status:asc">Status</SelectItem>
+              <SelectItem value="name:asc">Name (A–Z)</SelectItem>
+              <SelectItem value="name:desc">Name (Z–A)</SelectItem>
+              <SelectItem value="amount:desc">Amount (high–low)</SelectItem>
+              <SelectItem value="amount:asc">Amount (low–high)</SelectItem>
+              <SelectItem value="expiry:asc">Expiry (soonest)</SelectItem>
+              <SelectItem value="expiry:desc">Expiry (latest)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -272,7 +272,7 @@ export function DataTable({
                           className="flex items-center gap-3 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <Avatar className="size-8 shrink-0">
-                            <AvatarFallback className="bg-accent text-xs font-medium text-accent-foreground">
+                            <AvatarFallback className="bg-secondary text-xs font-medium text-secondary-foreground">
                               {initials}
                             </AvatarFallback>
                           </Avatar>

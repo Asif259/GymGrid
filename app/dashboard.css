@@ -1,0 +1,105 @@
+@layer components {
+  .dashboard-shell {
+    font-family: var(--font-sans);
+  }
+
+  .dashboard-title {
+    font-size: clamp(1.375rem, 1rem + 1.1vw, 2rem);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .dashboard-shell [data-slot="card-title"] {
+    font-family: inherit;
+    letter-spacing: -0.015em;
+  }
+
+  .dashboard-panel[data-slot="card"] {
+    --card-spacing: clamp(1rem, 2vw, 1.5rem);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    box-shadow: none;
+  }
+
+  .dashboard-workbench[data-slot="card"] {
+    background: var(--muted);
+  }
+
+  .dashboard-pass[data-slot="card"] {
+    --card-spacing: clamp(1rem, 2vw, 1.5rem);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    box-shadow: none;
+  }
+
+  .auth-layout {
+    container-type: inline-size;
+    width: 100%;
+    max-width: 30rem;
+    margin: clamp(1rem, 5vh, 4rem) auto;
+    border-radius: 1.25rem;
+    overflow: clip;
+    background: var(--card);
+    color: var(--card-foreground);
+  }
+
+  .auth-panel { padding: clamp(1.3rem, 5cqi, 3.5rem); min-width: 0; }
+  .auth-panel h2 { font-family: var(--font-editorial), Georgia, serif; font-size: clamp(2.25rem, 7cqi, 3.5rem); font-weight: 500; line-height: 1.05; letter-spacing: -0.045em; }
+  .auth-description { margin: 0.8rem 0 1.75rem; color: var(--muted-foreground); line-height: 1.55; }
+  .auth-panel [role="status"] { overflow-wrap: anywhere; }
+
+  .dashboard-workflow {
+    scroll-margin-block-start: 1rem;
+  }
+
+  .dashboard-workflow:target {
+    border-color: var(--primary);
+  }
+
+  .dashboard-metrics {
+    container: dashboard-metrics / inline-size;
+  }
+
+  .dashboard-metric-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-metric {
+    padding: 0.875rem;
+  }
+
+  .dashboard-metric + .dashboard-metric {
+    border-block-start: 1px solid var(--border);
+  }
+
+  @container dashboard-metrics (inline-size >= 22rem) {
+    .dashboard-metric-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-metric:nth-child(2) {
+      border-block-start: 0;
+    }
+
+    .dashboard-metric:nth-child(even) {
+      border-inline-start: 1px solid var(--border);
+    }
+  }
+
+  @container dashboard-metrics (inline-size >= 56rem) {
+    .dashboard-metric-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .dashboard-metric {
+      padding: 1.25rem;
+    }
+
+    .dashboard-metric + .dashboard-metric {
+      border-block-start: 0;
+      border-inline-start: 1px solid var(--border);
+    }
+  }
+}

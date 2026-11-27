@@ -198,7 +198,7 @@ export default function SettingsPage() {
 
   if (role !== "owner" || !gymId) {
     return (
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader>
           <CardTitle>Owner settings</CardTitle>
           <CardDescription>
@@ -393,7 +393,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader>
           <CardTitle className="text-xl">Gym settings</CardTitle>
           <CardDescription>
@@ -403,7 +403,7 @@ export default function SettingsPage() {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-secondary/60 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-secondary/60 p-4">
             <div className="flex items-center gap-4">
               <Avatar size="lg" className="size-14">
                 {gym?.logo_url ? (
@@ -774,7 +774,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-lg">AI workout &amp; diet plans</CardTitle>
@@ -816,7 +816,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader>
           <CardTitle className="text-lg">Staff & trainers</CardTitle>
           <CardDescription>
@@ -857,7 +857,7 @@ export default function SettingsPage() {
           </div>
 
           <form
-            className="grid gap-3 rounded-2xl border bg-secondary/60 p-4 sm:grid-cols-4 sm:items-end"
+            className="grid gap-3 rounded-lg border bg-secondary/60 p-4 sm:grid-cols-4 sm:items-end"
             onSubmit={(e) => void addStaffMember(e)}
           >
             <div className="flex flex-col gap-1.5 sm:col-span-2">

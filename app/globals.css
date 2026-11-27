@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "./tokens.css";
 @import "./landing.css";
+@import "./dashboard.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -63,102 +64,90 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* GymGrid palette. Graphite neutral ramp with cobalt accent and semantic status pairs. */
 :root {
+  color-scheme: light;
   --radius: 0.625rem;
-  /* Google Material Design 3 light surface & Google Blue baseline palette */
-  --background: #f8f9fa;
-  --foreground: #1f1f1f;
+  --background: #fafafa;
+  --foreground: #171717;
   --card: #ffffff;
-  --card-foreground: #1f1f1f;
-  --popover: #ffffff;
-  --popover-foreground: #1f1f1f;
-
-  --primary: #0b57d0;
+  --muted-foreground: #626266;
+  --primary: #2357c6;
   --primary-foreground: #ffffff;
-
-  --secondary: #f0f4f9;
-  --secondary-foreground: #1f1f1f;
-  --muted: #eef2f6;
-  --muted-foreground: #444746;
-  --accent: #d3e3fd;
-  --accent-foreground: #041e49;
-
-  --destructive: #b3261e;
+  --secondary: #f4f4f5;
+  --accent: #eef2ff;
+  --accent-foreground: #153b82;
+  --border: #e4e4e7;
+  --input: #d4d4d8;
+  --destructive: #b42318;
   --destructive-foreground: #ffffff;
-  --border: #dadce0;
-  --input: #dadce0;
-  --ring: #0b57d0;
-
-  --chart-1: #1a73e8;
-  --chart-2: #1e8e3e;
-  --chart-3: #f9ab00;
-  --chart-4: #d93025;
-  --chart-5: #12b5cb;
-
-  /* Google Workspace tinted navigation rail */
-  --sidebar: #f0f4f9;
-  --sidebar-foreground: #1f1f1f;
-  --sidebar-primary: #0b57d0;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #d3e3fd;
-  --sidebar-accent-foreground: #041e49;
-  --sidebar-border: #dadce0;
-  --sidebar-ring: #0b57d0;
-
-  --status-lime-bg: #e6f4ea;
-  --status-lime-fg: #137333;
-  --status-yellow-bg: #fef7e0;
-  --status-yellow-fg: #8a4b00;
-  --status-rose-bg: #fce8e6;
-  --status-rose-fg: #b3261e;
+  --chart-1: #2357c6;
+  --chart-2: #167950;
+  --chart-3: #946000;
+  --chart-4: #b42318;
+  --chart-5: #087488;
+  --status-lime-bg: #e6f4ec;
+  --status-lime-fg: #156347;
+  --status-yellow-bg: #fef3d4;
+  --status-yellow-fg: #754500;
+  --status-rose-bg: #fdebec;
+  --status-rose-fg: #991b1b;
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--secondary);
+  --ring: var(--primary);
+  --sidebar: var(--secondary);
+  --sidebar-border: var(--border);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--primary);
 }
 
 .dark {
-  /* Google Material Design 3 dark surface & Google Blue 200 palette */
-  --background: #131314;
-  --foreground: #e3e3e3;
-  --card: #1e1f20;
-  --card-foreground: #e3e3e3;
-  --popover: #242628;
-  --popover-foreground: #e3e3e3;
-
-  --primary: #a8c7fa;
-  --primary-foreground: #062e6f;
-
-  --secondary: #282a2c;
-  --secondary-foreground: #e3e3e3;
-  --muted: #282a2c;
-  --muted-foreground: #c4c7c5;
-  --accent: #0842a0;
-  --accent-foreground: #d3e3fd;
-
-  --destructive: #f2b8b5;
-  --destructive-foreground: #601410;
-  --border: #333537;
-  --input: #3c4043;
-  --ring: #a8c7fa;
-
-  --chart-1: #8ab4f8;
-  --chart-2: #81c995;
-  --chart-3: #fdd663;
-  --chart-4: #f28b82;
-  --chart-5: #78d9ec;
-
-  --sidebar: #1a1c1e;
-  --sidebar-foreground: #e3e3e3;
-  --sidebar-primary: #a8c7fa;
-  --sidebar-primary-foreground: #062e6f;
-  --sidebar-accent: #282a2c;
-  --sidebar-accent-foreground: #d3e3fd;
-  --sidebar-border: #333537;
-  --sidebar-ring: #a8c7fa;
-
-  --status-lime-bg: #163825;
-  --status-lime-fg: #81c995;
-  --status-yellow-bg: #3b2a08;
-  --status-yellow-fg: #fdd663;
-  --status-rose-bg: #4a1917;
-  --status-rose-fg: #f2b8b5;
+  color-scheme: dark;
+  --background: #141415;
+  --foreground: #ededed;
+  --card: #19191b;
+  --muted-foreground: #9a9aa0;
+  --primary: #afcbff;
+  --primary-foreground: #112b56;
+  --secondary: #202023;
+  --accent: #222c42;
+  --accent-foreground: #dce8ff;
+  --border: #2c2c30;
+  --input: #3a3a40;
+  --destructive: #ff9aa6;
+  --destructive-foreground: #5c101b;
+  --chart-1: #afcbff;
+  --chart-2: #67d6a7;
+  --chart-3: #f6c86d;
+  --chart-4: #ff9aaa;
+  --chart-5: #69cde0;
+  --status-lime-bg: #193b2d;
+  --status-lime-fg: #9de4c1;
+  --status-yellow-bg: #3d2e17;
+  --status-yellow-fg: #ffd487;
+  --status-rose-bg: #421d26;
+  --status-rose-fg: #ffc0c9;
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--secondary);
+  --ring: var(--primary);
+  --sidebar: #161618;
+  --sidebar-border: var(--border);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--primary);
 }
 
 @layer base {

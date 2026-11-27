@@ -149,7 +149,7 @@ export default function PlansPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <div>
             <CardTitle className="text-xl">Membership plans</CardTitle>
@@ -211,7 +211,7 @@ export default function PlansPage() {
 
           {role === "owner" ? (
             <form
-              className="grid gap-3 rounded-2xl border bg-secondary/60 p-4 sm:grid-cols-4 sm:items-end"
+              className="grid gap-3 rounded-lg border bg-secondary/60 p-4 sm:grid-cols-4 sm:items-end"
               onSubmit={(e) => void handleCreatePlan(e)}
             >
               <div className="flex flex-col gap-1.5">
@@ -254,7 +254,7 @@ export default function PlansPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader>
           <CardTitle className="text-xl">Plan templates</CardTitle>
           <CardDescription>
@@ -323,7 +323,7 @@ export default function PlansPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader className="flex flex-row items-center gap-2">
           <CardTitle className="text-lg">Saved templates</CardTitle>
           <Badge variant="secondary">{templates.length}</Badge>

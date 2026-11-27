@@ -157,7 +157,7 @@ export function MembersClient({ initialFilter }: { initialFilter?: MemberFilter 
 
   return (
     <div className="flex flex-col gap-5">
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardContent className="flex flex-col gap-5 pt-6">
           {templates.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-secondary/60 p-3">

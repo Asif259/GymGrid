@@ -20,7 +20,7 @@ export default function LegacyJoinRedirectPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center p-6">
-      <Skeleton className="h-64 rounded-3xl" />
+      <Skeleton className="h-64 rounded-xl" />
     </main>
   );
 }

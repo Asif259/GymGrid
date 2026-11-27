@@ -84,7 +84,6 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
       value: `${currentStreak}d`,
       delta: currentStreak > 0 ? "Active" : "Start today",
       deltaTone: currentStreak > 0 ? "lime" : "neutral",
-      iconBgClass: "bg-chart-4",
       caption: todayVisit ? "Checked in today" : "Consecutive days",
     },
     {
@@ -99,7 +98,6 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
             : "All-time",
       deltaTone:
         bestStreak > 0 && currentStreak >= bestStreak ? "lime" : "neutral",
-      iconBgClass: "bg-chart-2",
       caption: "Longest run",
     },
     {
@@ -112,7 +110,6 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
           ? "Logged"
           : "No visits",
       deltaTone: todayVisit ? "lime" : "neutral",
-      iconBgClass: "bg-chart-3",
       caption: todayVisit
         ? `At ${safeFormatTime(todayVisit.checked_in_at)}`
         : "Monthly check-ins",
@@ -123,7 +120,6 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
       value: String(visits.length),
       delta: `${pulseVisits} / 14d`,
       deltaTone: pulseVisits > 0 ? "lime" : "neutral",
-      iconBgClass: "bg-chart-1",
       caption: "Recent check-ins",
     },
   ];
@@ -132,7 +128,7 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
     <div className="flex flex-col gap-6">
       <StatCards stats={kpiStats} />
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             <CardDescription>14-day attendance pulse</CardDescription>
@@ -202,7 +198,7 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 flex-col gap-1">
@@ -242,7 +238,7 @@ export function MemberVisits({ visits, streak }: MemberVisitsProps) {
               ))}
             </ul>
           ) : (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed bg-secondary/30 p-6 text-center">
+            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed bg-secondary/30 p-6 text-center">
               <CalendarCheck
                 className="size-6 text-muted-foreground"
                 aria-hidden="true"

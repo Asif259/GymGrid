@@ -232,7 +232,7 @@ function MemberProfileForm({
   }
 
   return (
-    <Card className="rounded-2xl shadow-xs">
+    <Card className="ring-0 dashboard-panel">
       <CardHeader>
         <CardTitle id={formHeadingId} className="text-lg text-balance">
           Personal &amp; fitness details
@@ -714,7 +714,7 @@ export function MemberProfile({
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3.5">
             <Avatar className="size-12 shrink-0">
@@ -766,7 +766,7 @@ export function MemberProfile({
         </CardHeader>
 
         <CardContent>
-          <dl className="grid grid-cols-2 gap-3 rounded-2xl border bg-secondary/40 p-3.5 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-3 rounded-lg border bg-secondary/40 p-3.5 sm:grid-cols-4">
             <div className="min-w-0">
               <dt className="text-xs text-muted-foreground">Membership plan</dt>
               <dd className="mt-0.5 text-sm font-medium text-foreground break-words">
@@ -804,7 +804,7 @@ export function MemberProfile({
           />
         </div>
 
-        <Card className="rounded-2xl shadow-xs">
+        <Card className="ring-0 dashboard-panel">
           <CardHeader>
             <CardTitle className="text-lg">Gym contact &amp; account</CardTitle>
             <CardDescription translate="no" className="break-words">

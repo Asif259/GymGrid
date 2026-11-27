@@ -191,7 +191,7 @@ export function MemberPay({
         return;
       }
       setTrxId("");
-      toast.success("Submitted! The gym will verify your TrxID.");
+      toast.success("Payment submitted. The gym will verify your TrxID.");
       await onSubmitted();
     } finally {
       setSubmitting(false);
@@ -201,7 +201,7 @@ export function MemberPay({
   return (
     <div className="grid items-start gap-6 lg:grid-cols-2">
       <div className="flex flex-col gap-6">
-        <Card className="rounded-2xl shadow-xs">
+        <Card className="ring-0 dashboard-panel">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
@@ -252,7 +252,7 @@ export function MemberPay({
         </Card>
 
         {owed ? (
-          <Card className="rounded-2xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-xs">
+          <Card className="rounded-xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-none">
             <CardHeader>
               <div className="flex items-start gap-3">
                 <Clock className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
@@ -315,7 +315,7 @@ export function MemberPay({
         ) : null}
 
         {gymPlans.length > 0 ? (
-          <Card className="rounded-2xl shadow-xs">
+          <Card className="ring-0 dashboard-panel">
             <CardHeader>
               <CardTitle className="text-lg">Gym plan tiers</CardTitle>
               <CardDescription>Ask the front desk to switch plans.</CardDescription>
@@ -328,7 +328,7 @@ export function MemberPay({
                   <div
                     key={plan.id}
                     className={cn(
-                      "flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5",
+                      "flex items-center justify-between gap-3 rounded-lg border px-3.5 py-2.5",
                       isCurrent ? "border-primary/40 bg-accent/60" : "bg-secondary/30",
                     )}
                   >
@@ -343,7 +343,7 @@ export function MemberPay({
                         {plan.months} {plan.months === 1 ? "month" : "months"}
                       </span>
                     </div>
-                    <span className="shrink-0 text-sm font-semibold text-foreground tabular-nums">
+                    <span className="shrink-0 text-sm font-medium text-foreground tabular-nums">
                       {money(plan.price, currency)}
                     </span>
                   </div>
@@ -354,7 +354,7 @@ export function MemberPay({
         ) : null}
       </div>
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader>
           <CardTitle className="text-lg">Submit mobile payment</CardTitle>
           <CardDescription>
@@ -366,7 +366,7 @@ export function MemberPay({
           <ol className="flex list-decimal flex-col gap-1.5 ps-5 text-sm text-muted-foreground">
             <li>
               Send{" "}
-              <strong className="font-semibold text-foreground tabular-nums">
+              <strong className="font-medium text-foreground tabular-nums">
                 {planPrice != null ? money(planPrice, currency) : "your exact plan fee"}
               </strong>{" "}
               to one of the gym’s wallet numbers below.
@@ -379,7 +379,7 @@ export function MemberPay({
               {walletCards.map((wallet) => (
                 <div
                   key={wallet.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border bg-secondary/50 px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-lg border bg-secondary/50 px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-medium text-muted-foreground">
@@ -474,9 +474,9 @@ export function MemberPay({
                       onClick={() => setSelectedMethod(option.id)}
                       onKeyDown={(e) => handleRadioKeyDown(e, option.id)}
                       className={cn(
-                        "inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm font-medium transition-colors outline-none touch-manipulation focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+                        "inline-flex min-h-11 items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors outline-none touch-manipulation focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
                         isSelected
-                          ? "bg-primary text-primary-foreground shadow-xs"
+                          ? "bg-primary text-primary-foreground"
                           : "text-foreground hover:bg-muted",
                       )}
                     >

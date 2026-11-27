@@ -152,7 +152,7 @@ export default function AddMemberPage() {
   }
 
   return (
-    <Card className="rounded-2xl shadow-xs">
+    <Card className="ring-0 dashboard-panel">
       <CardHeader>
         <CardTitle className="text-xl">New member</CardTitle>
         <CardDescription>
@@ -319,7 +319,7 @@ export default function AddMemberPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border bg-secondary/60 p-4">
+          <div className="flex flex-col gap-3 rounded-lg border bg-secondary/60 p-4">
             <h3 className="text-base font-medium text-foreground">First payment</h3>
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">

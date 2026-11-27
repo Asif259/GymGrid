@@ -6,30 +6,18 @@ export interface StatItem {
   label: string;
   value: string;
   delta: string;
-  deltaTone: "lime" | "rose" | "neutral";
+  deltaTone: "lime" | "yellow" | "rose" | "neutral";
   caption: string;
   icon: LucideIcon;
-  iconBgClass: string;
 }
 
 const DELTA_CLASSES: Record<StatItem["deltaTone"], string> = {
   lime: "border-transparent bg-status-lime-bg text-status-lime-fg",
+  yellow: "border-transparent bg-status-yellow-bg text-status-yellow-fg",
   rose: "border-transparent bg-status-rose-bg text-status-rose-fg",
   neutral: "border-transparent bg-secondary text-muted-foreground",
 };
 
-const TONAL_ICON_CLASSES: Record<string, string> = {
-  "bg-chart-1": "bg-accent/75 text-primary",
-  "bg-chart-2": "bg-status-lime-bg text-status-lime-fg",
-  "bg-chart-3": "bg-status-yellow-bg text-status-yellow-fg",
-  "bg-chart-4": "bg-status-rose-bg text-status-rose-fg",
-  "bg-chart-5": "bg-secondary text-foreground",
-};
-
-/**
- * Architectural 4-column KPI ledger strip with hairline dividers,
- * tonal Material 3 icon wells, and tabular numeric hierarchy.
- */
 export function StatCards({
   stats,
   className,
@@ -40,43 +28,23 @@ export function StatCards({
   return (
     <section
       aria-label="Key metrics"
-      className={cn(
-        "grid w-full grid-cols-1 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card sm:grid-cols-2 sm:divide-y-0 xl:grid-cols-4 xl:divide-x",
-        className,
-      )}
+      className={cn("dashboard-metrics w-full rounded-xl border border-border bg-card", className)}
     >
-      {stats.map((stat, idx) => {
-        const Icon = stat.icon;
-        const iconTone =
-          TONAL_ICON_CLASSES[stat.iconBgClass] ?? "bg-secondary text-foreground";
-        return (
+      <dl className="dashboard-metric-grid">
+        {stats.map((stat) => (
           <div
             key={stat.label}
-            className={cn(
-              "flex flex-col justify-between gap-4 p-4 sm:p-5",
-              idx >= 2 && "sm:border-t sm:border-border xl:border-t-0",
-              idx % 2 === 1 && "sm:border-s sm:border-border xl:border-s-0",
-            )}
+            className="dashboard-metric flex min-w-0 flex-col gap-2"
           >
-            <div className="flex items-start justify-between gap-3">
-              <span className="min-w-0 text-sm leading-[1.35] font-medium text-muted-foreground text-pretty">
-                {stat.label}
-              </span>
-              <span
-                className={cn(
-                  "flex size-8 shrink-0 items-center justify-center rounded-lg",
-                  iconTone,
-                )}
-              >
-                <Icon className="size-4" aria-hidden="true" />
-              </span>
-            </div>
+            <dt className="min-w-0 text-sm leading-[1.35] font-medium text-muted-foreground text-pretty">
+              {stat.label}
+            </dt>
 
-            <p className="text-2xl leading-[1.15] font-semibold tracking-[-0.02em] tabular-nums text-foreground sm:text-[1.875rem]">
+            <dd className="break-words text-[clamp(1.5rem,3vw,2rem)] leading-[1.08] font-medium tracking-[-0.02em] tabular-nums text-foreground">
               {stat.value}
-            </p>
+            </dd>
 
-            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
+            <dd className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1">
               <span className="min-w-0 text-xs leading-[1.4] text-muted-foreground text-pretty">
                 {stat.caption}
               </span>
@@ -88,10 +56,10 @@ export function StatCards({
               >
                 {stat.delta}
               </Badge>
-            </div>
+            </dd>
           </div>
-        );
-      })}
+        ))}
+      </dl>
     </section>
   );
 }

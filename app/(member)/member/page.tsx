@@ -61,7 +61,7 @@ function MemberPageInner() {
 
   return (
     <MemberShell>
-      {({ openProfile, openAiPlan }) => {
+      {({ openAiPlan }) => {
         switch (tab) {
           case "plans":
             return member ? (
@@ -129,7 +129,6 @@ function MemberPageInner() {
                 checkinBanner={checkinBanner}
                 onDismissCheckin={() => setCheckinBanner(null)}
                 onNavigateTab={navigateTab}
-                onOpenProfile={openProfile}
                 onRefresh={() => void refreshMemberData()}
                 onDownloadPdf={(payment) => void downloadPdf(payment)}
                 refreshing={refreshing}

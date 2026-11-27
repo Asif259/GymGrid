@@ -26,6 +26,7 @@ import {
 } from "@/lib/member-helpers";
 import { DashboardShell, type DashboardNavItem } from "@/components/DashboardShell";
 import { LoginCard } from "@/components/LoginCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { SiteFooter } from "@/components/SiteFooter";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -46,12 +47,12 @@ export function DashboardLoadingSkeleton() {
     <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-2xl" />
+          <Skeleton key={i} className="h-28 rounded-xl" />
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-12">
-        <Skeleton className="h-56 rounded-2xl lg:col-span-7" />
-        <Skeleton className="h-56 rounded-2xl lg:col-span-5" />
+        <Skeleton className="h-56 rounded-xl lg:col-span-7" />
+        <Skeleton className="h-56 rounded-xl lg:col-span-5" />
       </div>
     </div>
   );
@@ -209,20 +210,24 @@ function MemberShellInner({
     if (gymSlugParam) nextParams.set("gym", gymSlugParam);
     if (tab && tab !== "home") nextParams.set("tab", memberTabParam(tab));
     const qs = nextParams.toString();
-    const basePath = typeof window !== "undefined" && window.location.pathname.startsWith("/member")
-      ? "/member"
-      : "/";
-    const nextPath = qs ? `${basePath}?${qs}` : basePath;
+    const nextPath = qs ? `/member?${qs}` : "/member";
     return (
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 py-10">
-        <div className="flex-1">
+      <div className="mx-auto flex min-h-svh w-full max-w-5xl flex-col px-4 py-6">
+        <header className="flex items-center justify-between gap-4">
+          <span className="font-semibold">{gymName}</span>
+          <ThemeToggle className="size-11" />
+        </header>
+        <main className="flex-1">
           <LoginCard
-            title="Members app"
+            title="Member sign in"
             subtitle="Use the email you gave the front desk. We'll email you a sign-in link."
             placeholder="member@example.com"
             nextPath={nextPath}
           />
-        </div>
+          <p className="mt-5 text-center text-sm text-muted-foreground">
+            Gym staff? <Link href="/admin" className="font-medium text-primary underline underline-offset-2">Staff sign in</Link>
+          </p>
+        </main>
         <SiteFooter brandName={gymName} className="mt-8" />
       </div>
     );
@@ -231,7 +236,7 @@ function MemberShellInner({
   if (status === "no_member") {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col items-center gap-6 px-4 py-16">
-        <Card className="w-full rounded-2xl shadow-xs">
+        <Card className="w-full rounded-xl shadow-none">
           <CardHeader>
             <CardTitle>Not registered as a member</CardTitle>
             <CardDescription>

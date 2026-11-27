@@ -18,7 +18,6 @@ import {
   Phone,
   RefreshCw,
   ShieldCheck,
-  User,
   X,
 } from "lucide-react";
 import { StatCards, type StatItem } from "@/components/StatCards";
@@ -79,7 +78,6 @@ export interface MemberOverviewProps {
   checkinBanner: { ok: boolean; text: string } | null;
   onDismissCheckin: () => void;
   onNavigateTab: (tab: MemberTab) => void;
-  onOpenProfile: () => void;
   onRefresh: () => void;
   onDownloadPdf: (payment: Payment) => void;
   refreshing: boolean;
@@ -101,7 +99,6 @@ export function MemberOverview({
   checkinBanner,
   onDismissCheckin,
   onNavigateTab,
-  onOpenProfile,
   onRefresh,
   onDownloadPdf,
   refreshing,
@@ -137,7 +134,6 @@ export function MemberOverview({
       value: kpis.standingLabel,
       delta: kpis.daysDelta,
       deltaTone: kpis.daysTone,
-      iconBgClass: "bg-chart-1",
       caption: kpis.planCaption,
     },
     {
@@ -146,7 +142,6 @@ export function MemberOverview({
       value: kpis.expiryLabel,
       delta: kpis.billingDelta,
       deltaTone: kpis.billingTone,
-      iconBgClass: member.status === "expired" ? "bg-chart-5" : "bg-chart-2",
       caption: kpis.billingCaption,
     },
     {
@@ -155,7 +150,6 @@ export function MemberOverview({
       value: String(kpis.visitsMonth),
       delta: kpis.todayVisitTime ? "In today" : `${kpis.weekVisits} / 7d`,
       deltaTone: kpis.todayVisitTime ? "lime" : "neutral",
-      iconBgClass: "bg-chart-3",
       caption: kpis.todayVisitTime
         ? `Checked in at ${kpis.todayVisitTime}`
         : "Not checked in today",
@@ -166,7 +160,6 @@ export function MemberOverview({
       value: `${kpis.currentStreak}d`,
       delta: kpis.currentStreak > 0 ? "Active" : "Start today",
       deltaTone: kpis.currentStreak > 0 ? "lime" : "neutral",
-      iconBgClass: "bg-chart-4",
       caption: `Best: ${kpis.bestStreak}d`,
     },
   ];
@@ -234,7 +227,7 @@ export function MemberOverview({
                 <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
               )}
               <div className="flex min-w-0 flex-1 flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-semibold text-foreground break-words sm:text-base">
+                <p className="text-sm font-medium text-foreground break-words sm:text-base">
                   {checkinBanner.text}
                 </p>
                 {!checkinBanner.ok ? (
@@ -269,7 +262,7 @@ export function MemberOverview({
             <div className="flex min-w-0 items-start gap-3">
               <Clock className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-sm font-medium text-foreground">
                   Payment awaiting verification
                 </p>
                 <p className="text-xs text-foreground/85 break-words tabular-nums">
@@ -329,7 +322,7 @@ export function MemberOverview({
             <div className="flex min-w-0 items-start gap-3">
               <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-sm font-medium text-foreground">
                   {member.status === "expired"
                     ? "Renewal due"
                     : member.expiry_date
@@ -358,7 +351,7 @@ export function MemberOverview({
               aria-hidden="true"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm font-medium text-foreground">
                 Membership paused
               </p>
               <p className="text-xs text-muted-foreground break-words">
@@ -373,7 +366,7 @@ export function MemberOverview({
       <StatCards stats={kpiStats} />
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="rounded-xl border-t-2 border-t-primary shadow-xs lg:col-span-5">
+        <Card className="ring-0 dashboard-panel dashboard-pass lg:col-span-5">
           <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-border/60 pb-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -438,7 +431,7 @@ export function MemberOverview({
                         size="sm"
                         variant={safeDayIdx === idx ? "default" : "outline"}
                         aria-pressed={safeDayIdx === idx}
-                        className="min-h-11 max-w-full rounded-full px-3 touch-manipulation sm:min-h-8"
+                        className="min-h-11 max-w-full rounded-lg px-3 touch-manipulation sm:min-h-8"
                         onClick={() => setSelectedDayIdx(idx)}
                       >
                         <span className="truncate">{day.day}</span>
@@ -510,7 +503,7 @@ export function MemberOverview({
               onClick={() => onNavigateTab("pay")}
             >
               <CreditCard data-icon="inline-start" aria-hidden="true" />
-              <span>Renew / Pay</span>
+              <span>{owed ? "View pending payment" : "Renew / Pay"}</span>
             </Button>
             <Button
               type="button"
@@ -525,10 +518,12 @@ export function MemberOverview({
               type="button"
               variant="outline"
               className="min-h-11 touch-manipulation sm:min-h-0"
-              onClick={onOpenProfile}
+              onClick={() => onNavigateTab(latestReceipt ? "receipts" : "visits")}
             >
-              <User data-icon="inline-start" aria-hidden="true" />
-              <span>Profile</span>
+              {latestReceipt
+                ? <CreditCard data-icon="inline-start" aria-hidden="true" />
+                : <CalendarCheck data-icon="inline-start" aria-hidden="true" />}
+              <span>{latestReceipt ? "Receipts" : "Visit history"}</span>
             </Button>
             {gymPhone ? (
               <Button
@@ -548,7 +543,7 @@ export function MemberOverview({
           </CardFooter>
         </Card>
 
-        <Card className="rounded-xl shadow-none lg:col-span-7">
+        <Card className="ring-0 dashboard-panel lg:col-span-7">
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-sm font-medium text-muted-foreground">

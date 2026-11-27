@@ -1,15 +1,8 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Mail, Send } from "lucide-react";
+import { CircleAlert, Mail, MailCheck, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
@@ -43,26 +36,26 @@ export function LoginCard({
     event.preventDefault();
     if (sending) return;
     setSending(true);
+    setStatus({ text: "" });
     try {
       const supabase = createClient();
       const result = await sendLoginLink(supabase, email, nextPath);
       setStatus({ text: result.message, ok: result.ok });
+    } catch {
+      setStatus({ text: "Could not send the sign-in link. Try again.", ok: false });
     } finally {
       setSending(false);
     }
   }
 
   return (
-    <Card className="mx-auto mt-14 w-full max-w-md rounded-2xl shadow-xs">
-      <CardHeader>
-        <CardTitle className="text-xl">{title}</CardTitle>
-        <CardDescription>{subtitle}</CardDescription>
-      </CardHeader>
-
-      <CardContent>
+    <section className="auth-layout" aria-labelledby="auth-title">
+      <div className="auth-panel">
+        <h2 id="auth-title">{title}</h2>
+        <p className="auth-description">{subtitle}</p>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="login-email">Email</Label>
+            <Label htmlFor="login-email">Email address</Label>
             <div className="relative flex items-center">
               <Mail
                 className="pointer-events-none absolute start-2.5 size-4 text-muted-foreground"
@@ -75,38 +68,40 @@ export function LoginCard({
                 placeholder={placeholder}
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="ps-8"
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (status.text) setStatus({ text: "" });
+                }}
+                readOnly={sending}
+                className="h-11 ps-8 dark:bg-background"
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={sending}>
+          <Button type="submit" className="min-h-11 w-full" disabled={sending}>
             <Send className="size-4" aria-hidden="true" />
             <span>{sending ? "Sending…" : buttonLabel}</span>
           </Button>
 
-          {status.text ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className={
-                status.ok === true
-                  ? "rounded-lg bg-status-lime-bg px-3 py-2 text-xs font-medium text-status-lime-fg"
-                  : status.ok === false
-                    ? "rounded-lg bg-status-rose-bg px-3 py-2 text-xs font-medium text-status-rose-fg"
-                    : "rounded-lg bg-muted px-3 py-2 text-xs font-medium text-muted-foreground"
-              }
-            >
-              {status.text}
-            </div>
-          ) : null}
+          <div role="status" aria-live="polite" aria-atomic="true">
+            {status.text && (
+              <div className={`flex items-start gap-2 rounded-lg px-3 py-3 text-sm font-medium ${status.ok
+                ? "bg-status-lime-bg text-status-lime-fg"
+                : "bg-status-rose-bg text-status-rose-fg"}`}>
+                {status.ok
+                  ? <MailCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  : <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />}
+                <p>{status.text}{status.ok && <> Sent to <bdi>{email.trim()}</bdi>.</>}</p>
+              </div>
+            )}
+          </div>
+
         </form>
 
         {note ? (
           <p className="mt-3 text-xs text-muted-foreground">{note}</p>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

@@ -100,7 +100,6 @@ export function TodayClient() {
       value: String(activeCount),
       delta: `${summary?.due ?? 0} due`,
       deltaTone: (summary?.due ?? 0) > 0 ? "neutral" : "lime",
-      iconBgClass: "bg-chart-1",
       caption: `${members.length} registered total`,
     },
     {
@@ -109,7 +108,6 @@ export function TodayClient() {
       value: String(attendanceToday),
       delta: `${weekVisits} / 7d`,
       deltaTone: "lime",
-      iconBgClass: "bg-chart-2",
       caption: "Checked in today",
     },
     {
@@ -118,7 +116,6 @@ export function TodayClient() {
       value: money(revenueMonth, currency),
       delta: money(revenueToday, currency),
       deltaTone: revenueToday > 0 ? "lime" : "neutral",
-      iconBgClass: "bg-chart-3",
       caption: "Collected today",
     },
     {
@@ -126,8 +123,7 @@ export function TodayClient() {
       label: "Pending payments",
       value: money(pendingAmount, currency),
       delta: `${pendingCount} waiting`,
-      deltaTone: pendingAmount > 0 ? "rose" : "neutral",
-      iconBgClass: pendingAmount > 0 ? "bg-chart-5" : "bg-chart-4",
+      deltaTone: pendingCount > 0 ? "yellow" : "neutral",
       caption: "Awaiting confirmation",
     },
   ];
@@ -226,10 +222,32 @@ export function TodayClient() {
 
   return (
     <div className="flex flex-col gap-6">
+      <nav aria-label="Front desk shortcuts" className="flex flex-wrap items-center gap-2">
+        <Button asChild className="min-h-11">
+          <a href="#staff-check-in">
+            <CalendarCheck aria-hidden="true" />
+            Check in a member
+          </a>
+        </Button>
+        <Button asChild variant="outline" className="min-h-11">
+          <a href="#payment-approvals">
+            <Clock aria-hidden="true" />
+            Review payments
+            {pendingRows.length > 0 && <Badge variant="secondary">{pendingRows.length}</Badge>}
+          </a>
+        </Button>
+        <Button asChild variant="outline" className="min-h-11">
+          <a href="#renewals-watchlist">
+            <WhatsAppIcon className="size-4" />
+            View renewals
+          </a>
+        </Button>
+      </nav>
+
       <StatCards stats={kpiStats} />
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="rounded-xl shadow-xs lg:col-span-7">
+        <Card className="ring-0 dashboard-panel lg:col-span-7">
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-muted-foreground">
@@ -286,7 +304,7 @@ export function TodayClient() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl bg-secondary/45 shadow-none lg:col-span-5">
+        <Card id="staff-check-in" tabIndex={-1} className="ring-0 dashboard-panel dashboard-workbench dashboard-workflow lg:col-span-5">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base font-medium">Check someone in</CardTitle>
             <div className="flex items-center gap-2">
@@ -408,7 +426,7 @@ export function TodayClient() {
             </Card>
           ) : null}
 
-          <Card className="rounded-xl shadow-none">
+          <Card id="payment-approvals" tabIndex={-1} className="ring-0 dashboard-panel dashboard-workflow">
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base font-medium">Pending approvals</CardTitle>
@@ -425,6 +443,11 @@ export function TodayClient() {
             </CardHeader>
 
             <CardContent className="flex flex-col divide-y">
+              {pendingRows.length > 0 && (
+                <p className="pb-3 text-sm text-muted-foreground">
+                  Match the amount and TrxID in your wallet before confirming.
+                </p>
+              )}
               {pendingRows.map((m) => {
                 const owed = pendingPayment(m.payments ?? []);
                 return (
@@ -477,7 +500,7 @@ export function TodayClient() {
         </div>
 
         <div className="flex flex-col gap-6 lg:col-span-5">
-          <Card className="rounded-xl shadow-none">
+          <Card id="renewals-watchlist" tabIndex={-1} className="ring-0 dashboard-panel dashboard-workflow">
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-base font-medium">Renewals watchlist</CardTitle>

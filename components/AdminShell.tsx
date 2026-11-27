@@ -103,12 +103,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
           {status === "loading" ? (
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Skeleton className="h-32 rounded-2xl" />
-                <Skeleton className="h-32 rounded-2xl" />
-                <Skeleton className="h-32 rounded-2xl" />
-                <Skeleton className="h-32 rounded-2xl" />
+                <Skeleton className="h-32 rounded-xl" />
+                <Skeleton className="h-32 rounded-xl" />
+                <Skeleton className="h-32 rounded-xl" />
+                <Skeleton className="h-32 rounded-xl" />
               </div>
-              <Skeleton className="h-64 rounded-2xl" />
+              <Skeleton className="h-64 rounded-xl" />
             </div>
           ) : null}
 
@@ -119,7 +119,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 <>
                   We will email you a sign-in link. Members can use{" "}
                   <Link
-                    href="/"
+                    href="/member"
                     className="text-primary underline underline-offset-2"
                   >
                     the members app
@@ -127,12 +127,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   .
                 </>
               }
-              nextPath={pathname || "/admin"}
             />
           ) : null}
 
           {status === "no_gym" ? (
-            <Card className="mx-auto mt-12 w-full max-w-md rounded-2xl">
+            <Card className="mx-auto mt-12 w-full max-w-md rounded-xl shadow-none">
               <CardHeader>
                 <CardTitle>Complete gym setup</CardTitle>
                 <CardDescription>
@@ -145,21 +144,21 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   <Link href="/onboarding">Set up gym</Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/">Members app</Link>
+                  <Link href="/member">Members app</Link>
                 </Button>
               </CardContent>
             </Card>
           ) : null}
 
           {status === "not_staff" ? (
-            <Card className="mx-auto mt-12 w-full max-w-md rounded-2xl">
+            <Card className="mx-auto mt-12 w-full max-w-md rounded-xl shadow-none">
               <CardHeader>
                 <CardTitle>Account is not staff</CardTitle>
                 <CardDescription>
                   You are signed in, but the owner has not added this account to the
                   staff list. Members use{" "}
                   <Link
-                    href="/"
+                    href="/member"
                     className="text-primary underline underline-offset-2"
                   >
                     the members app

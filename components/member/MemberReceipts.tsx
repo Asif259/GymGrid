@@ -144,7 +144,7 @@ export function MemberReceipts({
   return (
     <div className="flex flex-col gap-6">
       {pendingPayments.length > 0 ? (
-        <Card className="rounded-2xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-xs">
+        <Card className="rounded-xl border-transparent bg-status-yellow-bg text-status-yellow-fg shadow-none">
           <CardHeader>
             <div className="flex items-start gap-3">
               <Clock className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
@@ -169,10 +169,10 @@ export function MemberReceipts({
             {pendingPayments.map((p) => (
               <div
                 key={String(p.id)}
-                className="flex flex-col gap-2.5 rounded-2xl bg-card/85 p-3.5 text-foreground sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2.5 rounded-lg bg-card/85 p-3.5 text-foreground sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-semibold tabular-nums">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-medium tabular-nums">
                     <span>{money(p.amount, resolvedCurrency)}</span>
                     <span className="text-muted-foreground" aria-hidden="true">
                       ·
@@ -203,7 +203,7 @@ export function MemberReceipts({
         </Card>
       ) : null}
 
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 flex-col gap-1">
@@ -264,7 +264,7 @@ export function MemberReceipts({
                                 ) : null}
                               </div>
                             </TableCell>
-                            <TableCell className="text-end font-semibold text-foreground tabular-nums">
+                            <TableCell className="text-end font-medium text-foreground tabular-nums">
                               {money(p.amount, resolvedCurrency)}
                             </TableCell>
                             <TableCell className="text-end">
@@ -294,7 +294,7 @@ export function MemberReceipts({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                          <span className="truncate text-sm font-semibold text-foreground tabular-nums">
+                          <span className="truncate text-sm font-medium text-foreground tabular-nums">
                             {money(p.amount, resolvedCurrency)} ·{" "}
                             {formatMethod(p.method)}
                           </span>

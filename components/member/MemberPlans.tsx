@@ -91,7 +91,7 @@ export function MemberPlans({
 
   return (
     <div className="flex flex-col gap-6">
-      <Card className="rounded-2xl shadow-xs">
+      <Card className="ring-0 dashboard-panel">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">
@@ -159,7 +159,7 @@ export function MemberPlans({
       </Card>
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <Card className="rounded-2xl shadow-xs">
+        <Card className="ring-0 dashboard-panel">
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -190,7 +190,7 @@ export function MemberPlans({
                   size="sm"
                   variant={activeDayFilter === "all" ? "default" : "outline"}
                   aria-pressed={activeDayFilter === "all"}
-                  className="min-h-11 rounded-full px-3.5 touch-manipulation sm:min-h-10"
+                  className="min-h-11 rounded-lg px-3.5 touch-manipulation sm:min-h-10"
                   onClick={() => setSelectedDayIdx("all")}
                 >
                   All
@@ -202,7 +202,7 @@ export function MemberPlans({
                     size="sm"
                     variant={activeDayFilter === idx ? "default" : "outline"}
                     aria-pressed={activeDayFilter === idx}
-                    className="min-h-11 max-w-full rounded-full px-3.5 touch-manipulation sm:min-h-10"
+                    className="min-h-11 max-w-full rounded-lg px-3.5 touch-manipulation sm:min-h-10"
                     onClick={() => setSelectedDayIdx(idx)}
                   >
                     <span className="truncate">{day.day}</span>
@@ -218,11 +218,11 @@ export function MemberPlans({
                   return (
                     <section
                       key={`${day.day}-${idx}`}
-                      className="flex flex-col gap-3 rounded-2xl border bg-secondary/40 p-4"
+                      className="flex flex-col gap-3 rounded-lg border bg-secondary/40 p-4"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                          <h3 className="text-sm font-semibold text-foreground break-words">
+                          <h3 className="text-sm font-medium text-foreground break-words">
                             {day.day}
                           </h3>
                           {day.focus?.trim() ? (
@@ -319,9 +319,9 @@ export function MemberPlans({
                   );
                 })}
                 {cardioItems.length > 0 ? (
-                  <section className="flex flex-col gap-3 rounded-2xl border bg-secondary/40 p-4">
+                  <section className="flex flex-col gap-3 rounded-lg border bg-secondary/40 p-4">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-foreground">Cardio</h3>
+                      <h3 className="text-sm font-medium text-foreground">Cardio</h3>
                       <Badge variant="secondary" className="shrink-0 tabular-nums">
                         {cardioItems.length}{" "}
                         {cardioItems.length === 1 ? "session" : "sessions"}
@@ -375,7 +375,7 @@ export function MemberPlans({
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl shadow-xs">
+        <Card className="ring-0 dashboard-panel">
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -405,10 +405,10 @@ export function MemberPlans({
                 return (
                   <section
                     key={`${meal.name}-${mealIdx}`}
-                    className="flex flex-col gap-3 rounded-2xl border bg-secondary/40 p-4"
+                    className="flex flex-col gap-3 rounded-lg border bg-secondary/40 p-4"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="min-w-0 flex-1 text-sm font-semibold text-foreground break-words">
+                      <h3 className="min-w-0 flex-1 text-sm font-medium text-foreground break-words">
                         {meal.name}
                       </h3>
                       <Badge variant="secondary" className="shrink-0 tabular-nums">

@@ -67,11 +67,17 @@ export async function middleware(request: NextRequest) {
         .eq("auth_user_id", user.id)
         .limit(1);
 
-      if (!memberRows || memberRows.length === 0) {
+      const isMember = Boolean(memberRows?.length);
+      const fromLandingLogin = pathname === "/admin" && request.nextUrl.searchParams.get("entry") === "login";
+      if (!isMember || fromLandingLogin) {
         const target = request.nextUrl.clone();
-        target.pathname = "/onboarding";
+        target.pathname = isMember ? "/member" : "/onboarding";
         target.search = "";
-        return NextResponse.redirect(target);
+        const response = NextResponse.redirect(target);
+        for (const cookie of supabaseResponse.cookies.getAll()) {
+          response.cookies.set(cookie);
+        }
+        return response;
       }
     } else if (hasGym && pathname === "/onboarding") {
       const target = request.nextUrl.clone();

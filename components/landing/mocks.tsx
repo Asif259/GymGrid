@@ -103,36 +103,12 @@ export function OwnerView() {
       </div>
       <Ledger />
       <div className="lp-owner-grid">
-        <div className="lp-stack" data-owner-rows>
+        <div className="lp-stack">
           <UnpaidAlert />
           <Pending />
         </div>
         <Renewals />
       </div>
-    </div>
-  );
-}
-
-/* The paper register, drawn the way owners know it: names, times, and a Paid column nobody fills. */
-export function Register() {
-  const rows: [string, string, string][] = [
-    ["Samira H.", "6:40", "paid"],
-    ["Arif", "6:42", "?"],
-    ["Rafi K.", "6:55", "paid"],
-    ["Tanvir", "7:15", ""],
-    ["Nusrat J.", "7:30", "paid?"],
-    ["Imran", "7:31", ""],
-  ];
-  return (
-    <div className="lp-paper" aria-hidden>
-      <div className="lp-paper-head"><span>Name</span><span>In</span><span>Paid</span></div>
-      {rows.map(([n, t, p], i) => (
-        <div key={i} className="lp-paper-row" data-blank={!p || p.includes("?") || undefined}>
-          <span>{n}</span>
-          <span>{t}</span>
-          <span>{p}</span>
-        </div>
-      ))}
     </div>
   );
 }

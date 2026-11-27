@@ -52,7 +52,6 @@ export default function DesignPreviewPage() {
       value: String(s.active),
       delta: `${s.due} due`,
       deltaTone: "neutral",
-      iconBgClass: "bg-chart-1",
       caption: `${PREVIEW_MEMBERS.length} sample profiles`,
     },
     {
@@ -61,7 +60,6 @@ export default function DesignPreviewPage() {
       value: String(s.attendance_today ?? 0),
       delta: "143 / 7d",
       deltaTone: "lime",
-      iconBgClass: "bg-chart-2",
       caption: "Sample desk scans",
     },
     {
@@ -70,7 +68,6 @@ export default function DesignPreviewPage() {
       value: money(s.revenue_month),
       delta: money(s.revenue_today),
       deltaTone: "lime",
-      iconBgClass: "bg-chart-3",
       caption: "Sample today total",
     },
     {
@@ -78,18 +75,17 @@ export default function DesignPreviewPage() {
       label: "Pending payments",
       value: money(s.pending_amount),
       delta: `${s.pending_payments} waiting`,
-      deltaTone: "rose",
-      iconBgClass: "bg-chart-5",
+      deltaTone: s.pending_payments > 0 ? "yellow" : "neutral",
       caption: "Sample TrxIDs",
     },
   ];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
+    <main className="dashboard-shell mx-auto flex min-h-screen bg-background w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-medium text-foreground">
+            <h1 className="dashboard-title text-foreground">
               {PREVIEW_GYM_NAME} — UI Preview
             </h1>
             <Badge variant="secondary">Sample data</Badge>
@@ -112,7 +108,7 @@ export default function DesignPreviewPage() {
 
       <StatCards stats={stats} />
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="dashboard-panel ring-0">
         <CardHeader>
           <CardTitle className="text-sm font-medium text-muted-foreground">
             7-day attendance sample
@@ -133,7 +129,7 @@ export default function DesignPreviewPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl shadow-xs">
+      <Card className="dashboard-panel ring-0">
         <CardContent className="pt-6">
           <DataTable
             members={PREVIEW_MEMBERS}

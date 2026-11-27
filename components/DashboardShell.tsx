@@ -121,7 +121,7 @@ export function DashboardShell({
   );
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="dashboard-shell">
       <Sidebar variant="floating" collapsible="icon">
         <SidebarHeader className="gap-3 p-3">
           <div className="flex items-center gap-2.5 overflow-hidden">
@@ -244,8 +244,8 @@ export function DashboardShell({
       </Sidebar>
 
       <SidebarInset className="min-w-0 px-4 pt-0 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6 md:p-6">
-        <div className="mx-auto flex min-w-0 w-full max-w-7xl flex-1 flex-col gap-5 md:gap-6">
-          <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between gap-3 border-b border-border/80 bg-background/95 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-md sm:-mx-6 sm:px-6 md:static md:mx-0 md:border-b-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+        <div className="mx-auto flex min-w-0 w-full max-w-7xl flex-1 flex-col gap-5 md:gap-8">
+          <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between gap-3 border-b border-border/80 bg-background px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] sm:-mx-6 sm:px-6 md:static md:mx-0 md:px-0 md:pt-3 md:pb-5">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <SidebarTrigger className="hidden md:inline-flex" />
               <BrandAvatar
@@ -256,7 +256,7 @@ export function DashboardShell({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h1 className="font-heading text-xl leading-[1.2] font-semibold tracking-[-0.02em] text-foreground text-balance md:text-[1.75rem]">
+                  <h1 className="dashboard-title break-words text-foreground text-balance">
                     {header.title}
                   </h1>
                   {header.badge ? (
@@ -309,7 +309,7 @@ export function DashboardShell({
 
       <nav
         aria-label="Primary navigation"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgb(0_0_0/0.06)] dark:shadow-[0_-4px_16px_rgb(0_0_0/0.25)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         <div
           className={cn(
@@ -345,8 +345,8 @@ export function DashboardShell({
                 </span>
                 <span
                   className={cn(
-                    "max-w-full truncate text-xs leading-[1.2]",
-                    item.active ? "font-semibold text-primary" : "font-medium",
+                    "max-w-full truncate text-xs leading-[1.2] font-medium",
+                    item.active && "text-primary",
                   )}
                 >
                   {item.mobileLabel ?? item.label}

@@ -161,7 +161,7 @@ export function JoinGymClient({
   if (!loading && !gym) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center gap-6 p-4 sm:p-6">
-        <Card className="rounded-3xl border-destructive shadow-xs">
+        <Card className="rounded-xl border-destructive shadow-none">
           <CardHeader>
             <CardTitle>Gym not found</CardTitle>
           </CardHeader>
@@ -212,7 +212,7 @@ export function JoinGymClient({
         </div>
       </header>
 
-      {loading ? <Skeleton className="h-96 rounded-3xl" /> : null}
+      {loading ? <Skeleton className="h-96 rounded-xl" /> : null}
 
       {!loading && !user ? (
         <LoginCard
@@ -224,7 +224,7 @@ export function JoinGymClient({
       ) : null}
 
       {!loading && user ? (
-        <Card className="rounded-3xl shadow-xs">
+        <Card className="ring-0 dashboard-panel">
           <CardHeader>
             <CardTitle className="text-xl">Member registration</CardTitle>
           </CardHeader>
