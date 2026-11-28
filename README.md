@@ -1,77 +1,93 @@
 # GymGrid
 
-Multi-tenant gym management workspace, QR desk check-in system, and member portal built for neighbourhood gyms in Bangladesh—replacing paper registers with bKash/Nagad `TrxID` verification, tap-to-send WhatsApp renewal reminders, automated receipts, and AI workout/diet plans.
+Multi-tenant gym management workspace, QR desk check-in kiosk, and member portal designed for neighbourhood gyms in Bangladesh—replacing paper registers with bKash/Nagad `TrxID` payment reconciliation, tap-to-send WhatsApp renewal reminders, automated PDF receipts, and AI workout & diet plans.
 
-![Next.js 16](https://img.shields.io/badge/Next.js-16.4-000000?style=flat-square&logo=next.js)
-![React 19](https://img.shields.io/badge/React-19.3-149ECA?style=flat-square&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript)
-![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss)
-![Supabase](https://img.shields.io/badge/Supabase-Postgres_%2B_RLS_%2B_Edge_Functions-3ECF8E?style=flat-square&logo=supabase)
+Designed & built by [Ashraful Asif](https://ashrafulasif.vercel.app)
+
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.4.6-000000?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19.3.1-149ECA?style=flat-square&logo=react)](https://react.dev/)
+[![TypeScript 6](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.3.5-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres_%2B_RLS_%2B_Edge_Functions-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
+[![Zustand 5](https://img.shields.io/badge/Zustand-5.1.0-4338CA?style=flat-square)](https://github.com/pmndrs/zustand)
+[![GSAP 3](https://img.shields.io/badge/GSAP-3.15.1-88CE02?style=flat-square&logo=greensock)](https://greensock.com/)
 
 ---
 
 ## Overview & Key Features
 
-GymGrid brings owner operations, front-desk reception verification, and mobile member self-service into one Material Design 3 workspace (`Asia/Dhaka` timezone, `৳` BDT currency, zero third-party payment gateway fees).
+GymGrid addresses the operational realities of neighbourhood gyms across Bangladesh: unmetered cash and mobile wallet payments (bKash & Nagad), manual paper ledger tracking, lost receipts, and irregular attendance. Built around the `Asia/Dhaka` timezone and Bangladeshi Taka (`৳` BDT), GymGrid operates with **zero third-party payment gateway fees** by combining direct peer-to-peer mobile payments with staff TrxID verification and automated workflows.
 
-### Owner & Front-Desk Operations (`/admin`, `/members`, `/add`, `/plans`, `/settings`, `/desk`, `/desk-qr`)
-- **Today Overview & KPI Ledger (`/admin`):** Tracks active members, today's check-ins, monthly/daily revenue, pending payments waiting on `TrxID` verification, expiring 48-hour renewals, and "checked in without paying" alerts.
-- **Mobile Wallet Reconciliation (`/admin`, `/members`):** Confirms bKash, Nagad, cash, or card payments from a centralized queue; Postgres triggers automatically compute plan periods, extend member `expiry_date`, generate receipt numbers, and enqueue PDF receipt generation.
-- **Tap-to-Send WhatsApp Reminders:** Generates prefilled `wa.me` renewal and receipt links tailored to each member's phone, plan, and expiry date.
-- **Live Desk Screen & Printable QR Poster (`/desk`, `/desk-qr`):** Streams real-time check-ins over Supabase Realtime, flags expired or due memberships immediately on scan, and generates rotatable desk QR check-in tokens (`checkin_qr_token()`, `rotate_checkin_token()`).
-- **Workout & Diet Templates + Multi-Tenant Branding (`/plans`, `/settings`):** Reusable plan templates, customizable member ID codes, gym branding upload (logo, phone, address, bKash/Nagad numbers), and owner-configured encrypted AI providers stored in Supabase Vault.
+### 🏢 Owner & Front-Desk Operations (`/admin`, `/members`, `/add`, `/plans`, `/settings`, `/desk`, `/desk-qr`)
+- **Today Operations Ledger (`/admin`):** Real-time monitoring of active memberships, today's attendance count, daily and monthly revenue in BDT, pending payments awaiting `TrxID` confirmation, memberships expiring within 48 hours, and "checked in without paying" alerts.
+- **Mobile Wallet Reconciliation (`/admin`, `/members`):** Queue-based confirmation for bKash, Nagad, cash, and card payments. Atomic Postgres triggers compute plan dates, extend `expiry_date`, generate sequential receipt numbers, and queue PDF receipt generation in the background outbox.
+- **Tap-to-Send WhatsApp Integration:** One-click prefilled `wa.me` links customized with member name, current plan, expiry date, and payment status—allowing staff to send personalized reminders in seconds without manual typing.
+- **Live Reception Desk Feed (`/desk`):** Supabase Realtime broadcast screen designed for front-desk monitors, displaying real-time check-ins with immediate visual warnings for expired, due, or unpaid gym members.
+- **Printable Desk QR Poster (`/desk-qr`):** Generates high-resolution scannable desk posters with cryptographically signed, rotatable check-in tokens (`checkin_qr_token()`, `rotate_checkin_token()`) preventing duplicate or off-site check-ins.
+- **Customizable Branding & Member IDs (`/settings`, `/plans`):** Reusable plan packages, customizable member ID code formats (e.g. `MM-001`), gym logo upload, mobile wallet configurations, and custom AI provider credentials stored in Supabase Vault.
 
-### Member Self-Service Portal (`/member`, `/checkin`, `/join`, `/join/[gymSlug]`, `/receipt`)
-- **Passwordless Magic-Link Auth:** Email OTP sign-in automatically links authenticated accounts to matching `members` records via `claim_member()`.
-- **QR Check-In & Streak Tracking (`/checkin`, `/member`):** Members scan the printed desk QR with their phone camera to record attendance, view streak metrics, and inspect a 14-day attendance pulse chart.
-- **bKash / Nagad Renewal Submissions:** Displays the gym's wallet numbers and exact plan price locked by Postgres trigger (`payments_guard()`), letting members submit their `TrxID` for staff verification and download PDF receipts (`/receipt?id=...`).
-- **AI Workout & Diet Plan Generator (`generate-plan`):** Generates personalized workout splits and nutrition plans checked against Mifflin-St Jeor calorie bounds, injury constraints, and allergens with rate limiting and provider failover.
+### 🏋️ Member Self-Service Portal (`/member`, `/checkin`, `/join`, `/join/[gymSlug]`, `/receipt`)
+- **Passwordless Magic-Link Authentication:** Secure email OTP login linking authenticated users to their gym profile record via Postgres `claim_member()`.
+- **In-Browser Camera QR Check-In (`/checkin`):** Camera-based scanner reads the gym's desk QR token, instantly recording attendance, tracking workout streaks, and updating a 14-day attendance pulse chart.
+- **bKash & Nagad Renewal Submissions (`/member#pay`):** Displays the gym's official bKash/Nagad merchant or personal numbers and exact plan prices locked by Postgres triggers (`payments_guard()`), allowing members to submit their payment `TrxID` for instant staff review.
+- **Digital PDF Receipts (`/receipt?id=...`):** Instant verification and download of official branded payment receipts backed by Supabase Storage.
+- **AI Workout & Diet Generator (`generate-plan`):** Generates customized workout splits and nutrition targets verified against Mifflin-St Jeor calorie formulas, injury exclusions, and allergy constraints.
 
-### Automated Backend (`supabase/functions/`)
-- **Outbox Dispatch (`automation`):** Asynchronous `pg_cron` + `pg_net` pipeline generates receipt PDFs to Supabase Storage (`receipts`), sends receipt emails via SMTP, and syncs `Members` & `Payments` tabs to Google Sheets.
-- **Morning Owner Digest & 2-Day Renewal Emails:** Scheduled Dhaka-timezone cron passes email members expiring within 2 days (`reminder_log`) and deliver morning owner digests.
+### ⚡ Automated Backend & Edge Architecture (`supabase/functions/` & `pg_cron`)
+- **Outbox Dispatch Automation (`automation`):** Asynchronous `pg_cron` + `pg_net` background pipeline renders receipt PDFs to Supabase Storage (`receipts`), delivers SMTP confirmation emails, and synchronizes `Members` and `Payments` rows directly to Google Sheets.
+- **Scheduled Morning Digests & Renewal Alerts:** Daily Dhaka-timezone cron passes notify members expiring within 48 hours via email (`reminder_log`) and deliver executive morning summaries (`owner_digest_for_gym`) to gym owners.
 
 ---
 
-## Screenshots / Visual Tour
+## Screenshots & Visual Tour
 
-> Note: Routes requiring a live Supabase OTP staff or member session (`/admin`, `/member`, `/desk`, `/desk-qr`, `/receipt`) are represented here alongside the public UI preview (`/preview`) populated with realistic sample data.
+> **Note:** Authenticated staff and member views (`/admin`, `/members`, `/member`, `/desk`, `/desk-qr`) are showcased below using the public interactive demonstration route (`/preview`), populated with realistic sample data.
 
-### Landing Page & Interactive UI Preview
+### Public Landing & Interactive Experience
 
-| Landing Hero (`1440×900`) | Three Screens Section (`1440×900`) |
+| Centered Hero & Interactive Workbench (`1440×900`) | 30-Second Walkthrough Video & Chapters (`1440×900`) |
 | :---: | :---: |
-| ![GymGrid landing page hero showing Newsreader headline and mobile KPI preview](docs/screenshots/01-landing-hero.png) | ![GymGrid landing page Three Screens preview showing Admin dashboard and role cards](docs/screenshots/02-landing-surfaces.png) |
-| Editorial landing page with mobile KPI preview and TrxID/check-in highlights | Surfaces overview linking to Admin, Member Mobile Pass, and Live Desk |
+| ![GymGrid landing page hero showing centered headline and interactive 4-pane workbench](docs/screenshots/01-landing-hero.png) | ![GymGrid landing page walkthrough film and 5-step visit timeline](docs/screenshots/02-landing-walkthrough.png) |
+| *Editorial hero featuring the interactive 4-pane workbench (`HeroDesk.tsx`) displaying live check-in feed, pending TrxIDs, member pass, and WhatsApp renewals.* | *Embedded 30-second walkthrough video (`WalkthroughFilm.tsx`) detailing door QR scanning, desk sync, expired flag alerts, and bKash TrxID verification.* |
 
-### Workspace & Onboarding Flows
+### Owner Operations & Member Management
 
-![GymGrid Admin Dashboard Preview with 4-card KPI ledger, 7-day attendance bar chart, and filterable member directory](docs/screenshots/03-admin-dashboard-preview.png)
-*Admin Dashboard UI Preview (`/preview`) showcasing the Material 3 KPI ledger, 7-day attendance bar chart, status filter tabs, search, sorting, and single-click actions.*
-
-| Member Self-Signup (`/join`) | Multi-Tenant Onboarding (`/onboarding`) | Welcome Hub (`/welcome`) |
-| :---: | :---: | :---: |
-| ![Member self-signup OTP card](docs/screenshots/04-member-self-signup.png) | ![Gym owner onboarding sign-in screen](docs/screenshots/05-gym-onboarding.png) | ![GymGrid overview and quick links page](docs/screenshots/06-welcome-hub.png) |
-
-### Mobile Views (`390×844`)
-
-| Mobile Landing (`390×844`) | Mobile Admin KPI Preview (`390×844`) |
+| Admin Dashboard & KPI Ledger (`1440×900`) | Member Directory & DataTable (`1440×900`) |
 | :---: | :---: |
-| ![GymGrid landing page mobile layout](docs/screenshots/07-landing-mobile.png) | ![GymGrid mobile KPI ledger stack](docs/screenshots/08-admin-preview-mobile.png) |
+| ![GymGrid Admin Dashboard Preview with KPI cards and 7-day attendance pulse chart](docs/screenshots/03-admin-dashboard-preview.png) | ![Filterable member directory table with search, status filters, and action menus](docs/screenshots/04-admin-members-directory.png) |
+| *Admin Today overview with neutral graphite color ramp, active member KPIs, today's attendance, monthly revenue, pending TrxIDs, and 7-day attendance pulse chart.* | *Filterable DataTable featuring live multi-column search, status chips (`Active`, `Due`, `Expired`), bKash/Nagad badges, and single-click WhatsApp action menus.* |
+
+### Member Portal & Multi-Tenant Onboarding
+
+| Member Self-Registration (`1440×900`) | Gym Owner Workspace Creation (`1440×900`) |
+| :---: | :---: |
+| ![Member self-signup form for joining a gym](docs/screenshots/05-member-self-signup.png) | ![Multi-tenant gym owner onboarding and workspace setup screen](docs/screenshots/06-gym-onboarding.png) |
+| *Member registration portal (`/join`) with OTP verification, emergency contact collection, and automated membership profile matching.* | *Multi-tenant onboarding wizard (`/onboarding`) allowing gym owners to configure gym name, slug, address, contact phone, and wallet credentials.* |
+
+### Responsive Mobile Experience
+
+| Mobile Landing View (`390×844`) | Mobile Operations Overview (`390×844`) |
+| :---: | :---: |
+| ![GymGrid mobile landing page view](docs/screenshots/07-landing-mobile.png) | ![GymGrid mobile dashboard showing stacked KPI cards and quick actions](docs/screenshots/08-admin-preview-mobile.png) |
+| *Mobile-optimized landing page with adaptive typography, interactive feature drawers, and touch-first navigation.* | *Mobile admin dashboard stack with quick attendance counters, pending payment alerts, and mobile wallet reconciliation.* |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-| :--- | :--- |
-| **Framework** | Next.js `16.4.6` (App Router, Turbopack), React `19.3.1`, TypeScript `6` |
-| **Styling & UI** | Tailwind CSS `v4`, `shadcn/ui` (Radix UI primitives), Lucide React, Sonner |
-| **Data Viz & Motion** | Recharts `3.8`, GSAP `3.15` + ScrollTrigger, Lenis `1.3` |
-| **State Management** | Zustand `5.1` (`auth-store`, `gym-store`, `members-store`, `member-app-store`, `desk-store`) |
-| **Backend & Database** | Supabase (PostgreSQL, Row-Level Security, Auth OTP, Realtime, Storage, Vault, `pg_cron`/`pg_net`) |
-| **Edge Functions** | Deno (`ai-admin`, `generate-plan`, `automation`) |
-| **QR & Utilities** | `qrcode`, Node built-in test runner (`node --test`), `@electric-sql/pglite` for DB migration testing |
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Framework** | Next.js `16.4.6` (App Router, Turbopack) | Server Components, Route Handlers, Edge Runtime compatibility |
+| **Runtime & Language** | React `19.3.1`, TypeScript `6.0.3` | Modern strict-mode TypeScript and React 19 primitives |
+| **Styling & Design** | Tailwind CSS `v4.3.5`, `shadcn/ui` | Native CSS variables, Radix UI accessibility, custom neutral graphite palette |
+| **Typography** | IBM Plex Sans, IBM Plex Mono, Noto Sans Bengali | Clear readability for operational tables, numerals, and bilingual English/Bengali UI |
+| **Animation & Motion** | GSAP `3.15.1`, Lenis `1.3.28` | Smooth scroll transitions, scroll-triggered reveals, and reduced-motion fallbacks |
+| **Data Visualization** | Recharts `3.8.0` | Responsive 7-day and 14-day attendance pulse charts with custom theme tooltip styling |
+| **State Management** | Zustand `5.1.0` | Lightweight modular stores: `auth-store`, `gym-store`, `members-store`, `member-app-store`, `desk-store` |
+| **Database & Auth** | Supabase (PostgreSQL 15+) | Multi-tenant Row Level Security (RLS), PKCE magic-link OTP authentication, Realtime broadcasts |
+| **Storage & Secrets** | Supabase Storage & Supabase Vault | Branded receipt PDFs (`receipts`), gym logos (`gym-logos`), encrypted LLM API keys |
+| **Edge Functions** | Deno Runtime | `ai-admin`, `generate-plan`, and `automation` (outbox processor) |
+| **Testing & Tooling** | Node.js Test Runner (`node --test`), ESLint 9 | Native sub-millisecond unit test execution across frontend, lib, and Deno edge functions |
 
 ---
 
@@ -79,48 +95,66 @@ GymGrid brings owner operations, front-desk reception verification, and mobile m
 
 ```text
 Gym/
-├── app/                         # Next.js App Router pages, layouts, and API routes
-│   ├── (admin)/                 # Staff-protected routes: /admin, /members, /add, /plans, /settings
-│   ├── (member)/                # Member portal & self-signup: /member, /join, /join/[gymSlug]
-│   ├── api/health/route.ts      # GET /api/health readiness endpoint
-│   ├── auth/callback/route.ts   # Supabase OAuth / OTP code exchange handler
-│   ├── checkin/                 # Desk QR scan check-in flow
-│   ├── desk/ & desk-qr/         # Live reception monitor & printable QR poster
-│   ├── onboarding/              # Multi-tenant gym workspace onboarding
-│   ├── preview/                 # Sample-data interactive dashboard UI preview
-│   ├── receipt/ & welcome/      # Public receipt view & quick-navigation hub
-│   ├── globals.css & landing.css
-│   └── layout.tsx               # Root layout, Material 3 typography, ThemeProvider, metadata
-├── components/                  # Shared shells, charts, tables, dialogs, and landing components
-│   ├── admin/                   # Admin dialogs and Today overview client
-│   ├── landing/                 # LandingShell & FAQ schema data
-│   ├── member/                  # Member overview, plans, pay, visits, receipts, profile, AI dialog
-│   └── ui/                      # Canonical shadcn/ui primitives
-├── lib/                         # Business logic, Supabase clients/env helpers, Zustand stores
-├── supabase/
-│   ├── config.toml              # Edge Function JWT verification rules
-│   ├── migrations/              # 29 SQL migrations (core schema, RLS, triggers, multi-tenancy, AI, cron)
-│   ├── seed.sql                 # Sample gym plans, members, and payment records
-│   ├── functions/               # Deno Edge Functions: ai-admin, generate-plan, automation (+ _shared)
-│   └── tests/verify-db.mjs      # In-process PGlite migration, RLS, and trigger verification suite
-├── web/                         # Companion zero-build static HTML/ESM app & logic unit tests
-├── public/                      # Static icons, PWA manifest, screenshots, humans.txt, qr_demo.html
-├── middleware.ts                # Supabase SSR session refresh & /onboarding route guard
-└── next.config.ts               # Image domains, security headers, CSP for qr_demo iframe, redirects
+├── app/                           # Next.js App Router routes & layouts
+│   ├── (admin)/                   # Protected gym owner & staff workspace
+│   │   ├── add/                   # Register new member manually
+│   │   ├── admin/                 # Daily operational ledger & revenue metrics
+│   │   ├── members/               # Comprehensive member directory & filters
+│   │   ├── plans/                 # Membership packages & workout/diet templates
+│   │   └── settings/              # Gym branding, mobile wallets & AI credentials
+│   ├── (member)/                  # Member self-service portal
+│   │   ├── join/ & join/[gymSlug] # Public self-registration & invite links
+│   │   └── member/                # Multi-tab member PWA (Pass, Plans, Pay, History)
+│   ├── api/health/route.ts        # GET /api/health monitoring endpoint
+│   ├── auth/callback/route.ts     # Supabase PKCE auth code exchange & redirect guard
+│   ├── checkin/page.tsx           # In-browser QR camera check-in scanner
+│   ├── desk/ & desk-qr/           # Realtime front-desk monitor & printable scannable poster
+│   ├── onboarding/page.tsx        # Multi-tenant gym workspace creation wizard
+│   ├── preview/page.tsx           # Interactive demonstration preview with mock data
+│   ├── receipt/page.tsx           # Branded public receipt PDF viewer & printer
+│   ├── welcome/page.tsx           # Navigation hub for gym staff and members
+│   ├── globals.css & landing.css  # Tailwind CSS v4 variables & custom keyframe animations
+│   └── layout.tsx                 # Root layout, typography, theme provider & metadata
+├── components/                    # Reusable React components
+│   ├── admin/                     # Admin modals, MemberDialog, AiProvidersDialog
+│   ├── landing/                   # HeroDesk, WalkthroughFilm, FAQ, and comparison cards
+│   ├── member/                    # MemberPass, MemberPay, MemberReceipts, AiPlanDialog
+│   └── ui/                        # Radix UI + Tailwind component library (shadcn/ui)
+├── lib/                           # Core utilities, stores, and business logic
+│   ├── stores/                    # Zustand stores (auth, gym, members, member-app, desk)
+│   ├── supabase/                  # SSR and browser Supabase client factories & env validators
+│   ├── logic.ts                   # Date math, BDT formatting, and attendance pulse computation
+│   └── preview-data.ts            # Realistic fixture dataset for /preview demonstration
+├── supabase/                      # Database configuration, migrations & functions
+│   ├── config.toml                # Supabase local stack configuration & function JWT rules
+│   ├── migrations/                # 31 SQL migrations (RLS, Triggers, Multitenancy, Vault, Cron)
+│   ├── seed.sql                   # Starter gym data, membership plans, and members
+│   ├── functions/                 # Deno Edge Functions
+│   │   ├── _shared/               # Shared validation, Mifflin-St Jeor math, SSRF guards & tests
+│   │   ├── ai-admin/              # Secure AI provider credentials management via Vault
+│   │   ├── automation/            # Outbox dispatch (receipt PDFs, SMTP emails, Google Sheets sync)
+│   │   └── generate-plan/         # LLM workout/diet plan generation with safety verification
+│   └── tests/verify-db.mjs        # PGlite migration and RLS policy verification harness
+├── docs/                          # Project documentation and screenshots
+│   └── screenshots/               # High-resolution desktop and mobile UI screenshots
+├── public/                        # Static assets, PWA manifest, and demo media
+│   └── our-gym-qr-checkin.mp4    # 30-second walkthrough video
+├── middleware.ts                  # Supabase session refresh & onboarding routing guards
+└── next.config.ts                 # Security headers (HSTS, CSP, XFO), remote image patterns
 ```
 
 ---
 
 ## Prerequisites
 
-- **Node.js** `20+` (verified locally with **Node `v24.21.0`** and **npm `11.19.0`**)
-- **Supabase Project** (cloud project or local Supabase CLI stack for Auth, Postgres migrations, Vault, Storage, and Edge Functions)
+- **Node.js** `20+` (verified and tested on **Node `v24.21.0`** and **npm `11.19.0`**)
+- **Supabase Project** (Cloud instance or local Supabase CLI stack running PostgreSQL 15+, Auth, Storage, and Edge Functions)
 
 ---
 
 ## Getting Started
 
-### 1. Clone & Install Dependencies
+### 1. Clone the Repository & Install Dependencies
 
 ```bash
 git clone https://github.com/Asif259/GymGrid.git
@@ -130,100 +164,146 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
+Create a `.env.local` file in the root directory by copying `.env.example`:
 
 ```bash
 cp .env.example .env.local
 ```
 
-#### Next.js App Environment Variables (`.env.local`)
+#### Application Environment Variables (`.env.local`)
 
 | Variable | Required | Description | Example |
 | :--- | :---: | :--- | :--- |
 | `NEXT_PUBLIC_SUPABASE_URL` | **Yes** | Your Supabase project URL | `https://your-project-ref.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **Yes** | Supabase publishable or anon key | `sb_publishable_...` |
-| `NEXT_PUBLIC_GYM_NAME` | No | Fallback display name before gym branding loads (defaults to `GymGrid` in `lib/supabase/env.ts`) | `Our Gym` |
-| `NEXT_PUBLIC_DEFAULT_GYM_SLUG` | No | Default slug used when redirecting legacy `/join` links (defaults to `default-gym`) | `default-gym` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **Yes** | Supabase publishable (or anon) API key | `sb_publishable_...` |
+| `NEXT_PUBLIC_GYM_NAME` | No | Fallback name used before gym branding loads (defaults to `GymGrid`) | `Powerhouse Fitness` |
+| `NEXT_PUBLIC_DEFAULT_GYM_SLUG` | No | Fallback slug for legacy `/join` routes (defaults to `default-gym`) | `powerhouse-dhaka` |
 
-#### Supabase Edge Function Secrets (for `automation`, `ai-admin`, `generate-plan`)
+#### Supabase Edge Function Secrets
 
-Set these in Supabase (`supabase secrets set ...`) when deploying the Deno Edge Functions (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by Supabase):
+When deploying Deno Edge Functions (`supabase functions deploy ...`), configure these secrets in your Supabase project:
 
-| Secret | Used By | Description |
+| Secret | Function | Description |
 | :--- | :--- | :--- |
-| `AUTOMATION_SECRET` | `automation` | Shared secret verified against the `x-automation-secret` header (also stored in Supabase Vault as `automation_secret`) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `automation` | SMTP credentials (`SMTP_PORT` defaults to `465` TLS) for payment receipts, 2-day renewal reminders, and owner morning digests |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | `automation` | Service account JSON string for upserting `Members` and `Payments` rows into configured Google Sheets |
+| `AUTOMATION_SECRET` | `automation` | Shared secret matched against `x-automation-secret` header (also in Supabase Vault) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `automation` | SMTP credentials (defaults to port `465` TLS) for sending receipt PDFs and renewal emails |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | `automation` | Service account JSON string used to mirror `Members` and `Payments` into Google Sheets |
 
-> Note: Gym-level LLM API keys (Google Gemini or OpenAI-compatible providers) are managed by gym owners inside `/settings` (`ai-admin` function) and encrypted in Supabase Vault rather than hardcoded as environment variables.
+> **Privacy & Security Note:** LLM API keys (Google Gemini or OpenAI-compatible providers) are entered securely by gym owners in `/settings` and stored directly in **Supabase Vault** (`app_vault_secrets`). They are never exposed to browser clients or committed into source control.
 
-### 3. Apply Database Migrations & Seed Data
+### 3. Run Database Migrations
 
-Apply the SQL files in `supabase/migrations/` in chronological order against your Supabase database (plus optionally `supabase/seed.sql` for sample plans, members, and payments), then verify migrations & RLS locally without a remote database using PGlite:
+Apply the 31 sequential migrations in `supabase/migrations/` using the Supabase CLI:
 
 ```bash
-npm run verify:db
+supabase db push
+# Optional: Seed sample plans and members
+supabase db reset
 ```
 
-### 4. Start the Development Server
+> **Note on `npm run verify:db`:** The test suite `npm run verify:db` validates schema logic against an in-process `@electric-sql/pglite` engine. Full storage policy verification requires standard Supabase cloud or local Supabase CLI instances where the `storage` schema is pre-provisioned.
+
+### 4. Launch the Local Development Server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the landing page, or [http://localhost:3000/preview](http://localhost:3000/preview) to explore the admin dashboard UI without signing in.
+Visit [http://localhost:3000](http://localhost:3000) to view the landing page, or visit [http://localhost:3000/preview](http://localhost:3000/preview) to interact with the full administrative dashboard preview without needing live Supabase credentials.
 
 ---
 
 ## Available Scripts
 
-| Command | Purpose |
+| Command | Description |
 | :--- | :--- |
-| `npm run dev` | Start the Next.js development server on port `3000` |
-| `npm run build` | Build the optimized Next.js production bundle |
-| `npm run start` | Serve the production build |
-| `npm run lint` | Run ESLint (`eslint .`) across the codebase |
-| `npm run typecheck` | Run TypeScript typechecking (`tsc --noEmit`) |
-| `npm test` | Run all Node unit tests across `web/*.test.mjs`, `supabase/functions/_shared/*.test.mjs`, and `lib/*.test.mjs` |
-| `npm run verify:db` | Execute all non-cron SQL migrations + `seed.sql` in PGlite and verify triggers, constraints, and RLS |
-| `npm run web` | Serve the standalone zero-build static HTML companion app in `web/` on port `3000` |
+| `npm run dev` | Starts the Next.js development server with Turbopack on port `3000` |
+| `npm run build` | Compiles the production application bundle with typechecking and linting |
+| `npm run start` | Runs the compiled Next.js production server |
+| `npm run lint` | Analyzes code quality using ESLint 9 |
+| `npm run typecheck` | Executes strict TypeScript compilation verification (`tsc --noEmit`) |
+| `npm test` | Runs the full unit test suite (40 tests across frontend, Edge functions, and core logic) |
+| `npm run verify:db` | Runs the in-memory PGlite database migration and RLS integrity tests |
+| `npm run web` | Serves the standalone companion zero-build static app in `web/` on port `3000` |
 
 ---
 
 ## API & Edge Functions Reference
 
 ### Next.js Route Handlers
-- `GET /api/health` — Returns `{ ok: true, timestamp }` (`force-dynamic`).
-- `GET /auth/callback` — Exchanges Supabase auth PKCE `code` for a session cookie and redirects safely to validated local `next` paths.
+- **`GET /api/health`**: Readiness and healthcheck endpoint returning `{ ok: true, timestamp }` (`Cache-Control: no-store`).
+- **`GET /auth/callback`**: Handles Supabase PKCE authentication code exchange, sets server-side session cookies, and safely redirects to validated relative paths.
 
 ### Supabase Edge Functions (`supabase/functions/`)
-- **`POST /functions/v1/ai-admin`** (`verify_jwt = true`, owner role required): `status`, `test`, `models`, and `save` actions for Google Gemini / OpenAI-compatible AI provider configuration stored in Supabase Vault.
-- **`POST /functions/v1/generate-plan`** (`verify_jwt = true`, member JWT required): Generates verified AI workout or diet plans with deterministic safety checks, provider failover, and 24-hour rate limiting (`1` plan per kind per day).
-- **`POST /functions/v1/automation`** (`verify_jwt = false`, requires `x-automation-secret`):
-  - `POST /automation/dispatch` — Processes outbox events (PDF receipts in Storage, receipt email, Google Sheets sync).
-  - `POST /automation/reminders` — Emails renewal links to members expiring in 2 days.
-  - `POST /automation/digest` — Sends daily digest summaries (`owner_digest_for_gym`) to gym owners.
+- **`POST /functions/v1/ai-admin`** (`verify_jwt = true`, owner role required):
+  - Actions: `status`, `test`, `models`, `save`.
+  - Securely validates and stores custom Google Gemini or OpenAI-compatible provider credentials in Supabase Vault.
+- **`POST /functions/v1/generate-plan`** (`verify_jwt = true`, member JWT required):
+  - Generates custom workout splits and calorie-balanced diet plans.
+  - Enforces deterministic safety bounds: Mifflin-St Jeor caloric floors, maximum 500 kcal deficits, allergen filtering, and a strict 24-hour rate limit (1 workout plan and 1 diet plan per member per day).
+- **`POST /functions/v1/automation`** (`verify_jwt = false`, secured via `x-automation-secret`):
+  - `/automation/dispatch`: Processes outbox events (renders PDF receipts into Supabase Storage, sends SMTP receipts, syncs Google Sheets).
+  - `/automation/reminders`: Dispatches renewal notification emails to members whose plans expire within 48 hours.
+  - `/automation/digest`: Computes and emails the daily executive digest (`owner_digest_for_gym`) to gym owners.
 
 ---
 
-## Deployment
+## Security & Architecture Highlights
 
-### Next.js Frontend (Vercel / Node Host)
-1. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (plus optional `NEXT_PUBLIC_GYM_NAME` and `NEXT_PUBLIC_DEFAULT_GYM_SLUG`).
-2. Run the verification suite before deploying:
+- **Multi-Tenant Row Level Security (RLS):** Every database table isolates records by `gym_id` with strict Postgres RLS policies preventing cross-tenant leakage. Owner and staff permissions are verified via helper functions (`is_gym_owner()`, `is_gym_staff()`).
+- **SSRF Protection:** Outbound requests to user-defined LLM endpoints in `ai-admin` are strictly validated by `assertSafeBaseUrl()`, blocking loopback (`127.0.0.1`, `localhost`), link-local, private IP ranges (RFC 1918), and internal cloud metadata endpoints (`169.254.169.254`).
+- **Cryptographic Desk Tokens:** Front-desk check-in QR codes use rotatable cryptographic tokens (`checkin_qr_token()`) rather than static links, preventing remote or unauthorized check-in replay attacks.
+- **Enterprise Security Headers:** Configured in `next.config.ts` with strict HSTS (`max-age=63072000; includeSubDomains; preload`), `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: strict-origin-when-cross-origin`.
+
+---
+
+## Deployment Guide
+
+### Deploying the Frontend (Vercel)
+1. Push your code to GitHub.
+2. Import the repository into [Vercel](https://vercel.com).
+3. Set the required environment variables in the Vercel dashboard:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+4. Deploy. Vercel automatically detects Next.js and builds the project with zero additional configuration.
+
+### Deploying the Backend (Supabase)
+1. Link your local project to your remote Supabase organization:
    ```bash
-   npm run typecheck && npm run lint && npm test && npm run build
+   supabase link --project-ref your-project-ref
    ```
-3. Start with `npm run start` or deploy directly to Vercel (no custom `Dockerfile` or `vercel.json` is needed).
-
-### Supabase Backend & Cron Setup
-1. Push all migrations from `supabase/migrations/`.
-2. Deploy Edge Functions matching `supabase/config.toml` (`ai-admin` and `generate-plan` with JWT verification; `automation` with `--no-verify-jwt`).
-3. Populate Vault entries `automation_url` and `automation_secret` (see `supabase/migrations/20261126000019_automation_cron.sql`) along with Edge Function secrets (`AUTOMATION_SECRET`, SMTP credentials, and `GOOGLE_SERVICE_ACCOUNT_JSON`).
+2. Push all database migrations:
+   ```bash
+   supabase db push
+   ```
+3. Deploy Edge Functions:
+   ```bash
+   supabase functions deploy ai-admin --no-verify-jwt=false
+   supabase functions deploy generate-plan --no-verify-jwt=false
+   supabase functions deploy automation --no-verify-jwt=true
+   ```
+4. Set required function secrets in Supabase:
+   ```bash
+   supabase secrets set AUTOMATION_SECRET=your_secret_key
+   supabase secrets set SMTP_HOST=smtp.example.com SMTP_PORT=465 SMTP_USER=user SMTP_PASS=pass MAIL_FROM="Gym <gym@example.com>"
+   ```
 
 ---
 
 ## Contributing & License
 
-1. Fork or branch from `main`, keep changes covered by `npm test` and `npm run verify:db`, and verify `npm run typecheck && npm run lint && npm run build` passes before opening a PR.
-2. **License:** No `LICENSE` file is currently included in this repository (`"private": true` in `package.json`). Contact the author for licensing or reuse inquiries.
+Contributions, bug reports, and suggestions are welcome!
+
+1. Fork the repository and create a feature branch (`git checkout -b feature/amazing-feature`).
+2. Ensure all linting, typechecking, and tests pass:
+   ```bash
+   npm run lint && npm run typecheck && npm test
+   ```
+3. Commit your changes (`git commit -m 'Add amazing feature'`).
+4. Push to your branch (`git push origin feature/amazing-feature`) and open a Pull Request.
+
+### Author
+Designed & built with precision by **[Ashraful Asif](https://ashrafulasif.vercel.app)**.
+
+### License
+This project is currently private and proprietary (`"private": true` in `package.json`). All rights reserved. For licensing or commercial inquiries, please contact the author.
